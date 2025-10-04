@@ -1,4 +1,5 @@
-KOKKOS_PATH ?= $(HOME)/kokkos/install
+#KOKKOS_PATH ?= $(HOME)/kokkos/install
+KOKKOS_PATH = /usr/local
 KOKKOS_INC = $(KOKKOS_PATH)/include
 KOKKOS_LIB = $(KOKKOS_PATH)/lib64
 
@@ -7,7 +8,7 @@ CUDA_INC = $(CUDA_PATH)/include
 CUDA_LIB = $(CUDA_PATH)/lib64
 
 NVCC_WRAPPER = $(KOKKOS_PATH)/bin/nvcc_wrapper
-OPTS = -O3
+OPTS = -O3 -std=c++17
 
 CHARM_PATH = $(HOME)/charm
 CHARMC = $(CHARM_PATH)/bin/charmc -c++ $(NVCC_WRAPPER) $(OPTS)

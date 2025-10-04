@@ -119,7 +119,6 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
       } else {
         // TODO: Reneighboring not supported (not converted to async)
-        /*
         if(check_safeexchange) {
           double d_max = 0;
 
@@ -169,7 +168,6 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
         Kokkos::Profiling::pushRegion("neighbor::build");
         neighbor.build(atom);
         Kokkos::Profiling::popRegion();
-        */
       }
 
       Kokkos::Profiling::pushRegion("force");
