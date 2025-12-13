@@ -570,7 +570,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
   /* enforce PBC */
 
-  atom.pbc();
+  atom.pbc();//wrap around atoms going out of boundry
 
   // Create host mirrors for integrate loop
   if (!preprocess) {
@@ -616,13 +616,13 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     if (exc_sendflag.extent(0)<nlocal) {
       CmiEnforce(preprocess);
-      Kokkos::resize(exc_sendflag,nlocal);
+      Kokkos::resize(exc_sendflag,nlocal);//frequent resizing of kokkos views
     }
 
-    count.h_view(0) = exc_sendlist.extent(0);
+    count.view_host()(0) = exc_sendlist.extent(0);//force entry to the loop
 
-    while (count.h_view(0) >= exc_sendlist.extent(0)) {
-      count.h_view(0) = 0;
+    while (count.view_host()(0) >= exc_sendlist.extent(0)) {
+      count.view_host()(0) = 0;
       count.modify<HostType>();
       count.sync<DeviceType>();
 
@@ -631,16 +631,16 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
       count.modify<DeviceType>();
       count.sync<HostType>();
-      if ((count.h_view(0)>=exc_sendlist.extent(0)) ||
-          (count.h_view(0)>=exc_copylist.extent(0)) ) {
+      if ((count.view_host()(0)>=exc_sendlist.extent(0)) ||
+          (count.view_host()(0)>=exc_copylist.extent(0)) ) {
         CmiEnforce(preprocess);
-        Kokkos::resize(exc_sendlist,(count.h_view(0)+1)*1.1);
-        Kokkos::resize(exc_copylist,(count.h_view(0)+1)*1.1);
-        count.h_view(0)=exc_sendlist.extent(0);
+        Kokkos::resize(exc_sendlist,(count.view_host()(0)+1)*1.1);
+        Kokkos::resize(exc_copylist,(count.view_host()(0)+1)*1.1);
+        count.view_host()(0)=exc_sendlist.extent(0);
       }
-      if (count.h_view(0)*7>=maxsend) {
+      if (count.view_host()(0)*7>=maxsend) {
         CmiEnforce(preprocess);
-        growsend(count.h_view(0));
+        growsend(count.view_host()(0));
       }
     }
     if (preprocess) {
@@ -654,8 +654,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     Kokkos::deep_copy(h_exc_sendlist,exc_sendlist);
 
     int sendpos = nlocal-1;
-    nlocal -= count.h_view(0);
-    for(int i = 0; i < count.h_view(0); i++) {
+    nlocal -= count.view_host()(0);
+    for(int i = 0; i < count.view_host()(0); i++) {
       if (h_exc_sendlist(i)<nlocal) {
         while (h_exc_sendflag(sendpos)) sendpos--;
         h_exc_copylist(i) = sendpos;
@@ -665,12 +665,12 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     }
     Kokkos::deep_copy(exc_copylist,h_exc_copylist);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.h_view(0)), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.view_host()(0)), *this);
 
-    atom.nlocal -= count.h_view(0);
+    atom.nlocal -= count.view_host()(0);
     Kokkos::fence();
 
-    nsend = count.h_view(0) * 7;
+    nsend = count.view_host()(0) * 7;
 
     send1 = static_cast<void*>(&nsend);
     send1_size = sizeof(int);
@@ -751,7 +751,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     if(nrecv_atoms>0)
     atom.nlocal += nrecv;
 
-    count.h_view(0) = nlocal;
+    count.view_host()(0) = nlocal;
     count.modify<HostType>();
     count.sync<DeviceType>();
 
@@ -769,7 +769,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeSendlist, const int& i) const {
   if (x(i,idim) < lo || x(i,idim) >= hi) {
-    const int mysend=Kokkos::atomic_fetch_add(&count.d_view(0),1);
+    const int mysend=Kokkos::atomic_fetch_add(&count.view_device()(0),1);//it's like a ticket and turn lock of sorts
     if(mysend<exc_sendlist.extent(0)) {
       exc_sendlist(mysend) = i;
       exc_sendflag(i) = 1;
@@ -795,7 +795,7 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
   double value = buf_recv[i * 7 + idim];
 
   if(value >= lo && value < hi)
-    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.d_view(0),1), &buf_recv[i * 7]);
+    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.view_device()(0),1), &buf_recv[i * 7]);
 }
 
 /* borders:
@@ -810,7 +810,7 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
 void Comm::borders(Atom &atom_, bool preprocess)
 {
   //NVTXTracer("Comm::borders", NVTXColor::Carrot);
-  Kokkos::Profiling::pushRegion("Comm::borders");
+  // Kokkos::Profiling::pushRegion("Comm::borders");
 
   // Create host mirrors for integrate loop
   if (!preprocess && !h_buf_alloc) {
@@ -863,25 +863,25 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = 0;
 
-      count.h_view(0) = 0;
+      count.view_host()(0) = 0;
       count.modify<HostType>();
       count.sync<DeviceType>();
 
-      send_count = count.d_view;
+      send_count = count.view_device();
 
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
 
       count.modify<DeviceType>();
       count.sync<HostType>();
 
-      nsend = count.h_view(0);
+      nsend = count.view_host()(0);
       if(nsend > exc_sendlist.extent(0)) {
         CmiEnforce(preprocess);
         Kokkos::resize(exc_sendlist , nsend);
 
         growlist(iswap, nsend);
 
-        count.h_view(0) = 0;
+        count.view_host()(0) = 0;
         count.modify<HostType>();
         count.sync<DeviceType>();
 

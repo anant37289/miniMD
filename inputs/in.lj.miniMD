@@ -2,7 +2,7 @@ Lennard-Jones input file for miniMD
 
 lj             units (lj or metal)
 none           data file (none or filename)       
-lj	       force style (lj or eam)
+lj        orce style (lj or eam)
 1.0 1.0        LJ parameters (epsilon and sigma; COMD: 0.167 / 2.315)
 32 32 32       size of problem
 100            timesteps

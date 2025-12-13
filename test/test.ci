@@ -1,0 +1,23 @@
+mainmodule test {
+    readonly CProxy_worker worker_proxy;
+    mainchare main {
+        entry main(CkArgMsg* m);
+    }
+    array [1D] user{
+        entry user();
+        entry [threaded] void run(){
+            serial "preprocess" {
+                worker* local_worker = (worker*)worker_proxy(thisIndex).ckLocal();
+                local_worker->suspend();
+            }
+            serial "postprocess" {
+                worker* local_worker = (worker*)worker_proxy(thisIndex).ckLocal();
+                
+            }
+        }
+    }
+    array [1D] worker{
+        entry worker(); 
+        entry void suspend();
+    };
+}

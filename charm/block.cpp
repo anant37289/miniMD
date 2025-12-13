@@ -224,6 +224,7 @@ void Block::init() {
 
      if (in_forcetype == FORCEEAM) atom.mass = force->mass;
 
+     ckout<<"creating atoms"<<endl;
      create_atoms(atom, in_nx, in_ny, in_nz, in_rho);
 
      thermo.setup(in_rho, integrate, atom, in_units);
@@ -251,7 +252,7 @@ void Block::printConfig() {
     CkPrintf("# Charm++ + Kokkos MiniMD output ...\n");
     CkPrintf("# Run Settings: \n");
     CkPrintf("\t# Chares: %i\n", num_chares);
-    CkPrintf("\t# Host Threads: %i\n", Kokkos::HostSpace::execution_space::concurrency());
+    CkPrintf("\t# Host Threads: %i\n", Kokkos::DefaultHostExecutionSpace().concurrency());
     CkPrintf("\t# Inputfile: %s\n", input_file.c_str());
     CkPrintf("\t# Datafile: %s\n", in_datafile.empty() ? "None" : in_datafile.c_str());
     CkPrintf("# Physics Settings: \n");

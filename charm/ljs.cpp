@@ -65,12 +65,12 @@ class Main : public CBase_Main {
 public:
   Main(CkArgMsg* m) {
     // Default parameters
-    num_chares = 4;
+    num_chares = 1;
     num_threads = 1;
     teams = 1;
     num_steps = -1;
     system_size = -1;
-    nx = -1; int ny = -1; int nz = -1;
+    nx = -1; ny = -1; nz = -1;
     ntypes = 8;
     neighbor_size = -1;
     halfneigh = 1;
@@ -93,7 +93,7 @@ public:
 
     int error = 0;
     if (input_file.empty()) {
-      error = input("../inputs/in.lj.miniMD", in_nx, in_ny, in_nz, in_t_request,
+      error = input("/u/ajain18/miniMD/inputs/in.lj.miniMD", in_nx, in_ny, in_nz, in_t_request,
           in_rho, in_units, in_forcetype, in_epsilon, in_sigma, in_datafile,
           in_ntimes, in_dt, in_neigh_every, in_force_cut, in_neigh_cut,
           in_thermo_nstat);
@@ -258,10 +258,10 @@ public:
 
 KokkosManager::KokkosManager() {
   // Initialize Kokkos
-  Kokkos::InitArguments args_kokkos;
-  args_kokkos.num_threads = num_threads;
-  args_kokkos.num_numa = teams;
-  args_kokkos.device_id = 0;
+  Kokkos::InitializationSettings args_kokkos;
+  if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
+  // if (teams > 0) args_kokkos.set_num_numa(teams);
+  args_kokkos.set_device_id(0);
   Kokkos::initialize(args_kokkos);
 
   // Create per-GPU streams (only works with 1 process per GPU)

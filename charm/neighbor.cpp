@@ -35,6 +35,8 @@
 #include "neighbor.h"
 #include "hapi_nvtx.h"
 
+#include "charm++.h"
+
 #define FACTOR 0.999
 #define SMALL 1.0e-6
 
@@ -71,7 +73,7 @@ void Neighbor::dealloc() {
 
 void Neighbor::build(Atom &atom)
 {
-  NVTXTracer("Neighbor::build", NVTXColor::Clouds);
+  // NVTXTracer("Neighbor::build", NVTXColor::Clouds);
   ncalls++;
   nlocal = atom.nlocal;
   const int nall = atom.nlocal + atom.nghost;
@@ -107,7 +109,8 @@ void Neighbor::build(Atom &atom)
     if(ntypes<MAX_STACK_TYPES) {
       if(!team_neigh_build) {
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(0,nlocal), *this);
+          {Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(0,nlocal), *this);
+          ckout<<"here"<<endl;}
         else
           Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,1> >(0,nlocal), *this);
       } else {
@@ -124,7 +127,8 @@ void Neighbor::build(Atom &atom)
     } else {
       if(!team_neigh_build) {
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(0,nlocal), *this);
+          {Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(0,nlocal), *this);
+          ckout<<"no here"<<endl;}
         else
           Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,0> >(0,nlocal), *this);
       } else {

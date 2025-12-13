@@ -110,44 +110,47 @@ module block {
     // Main code flow
     entry [threaded] void run() {
       serial "preprocess" {
-        comm->exchange(atom, true);
-        if (sort > 0)
-          atom.sort(neighbor);
+        //comm->exchange(atom, true);
+        //if (sort > 0)
+          //atom.sort(neighbor);
+        //Kokkos::fence();
         comm->borders(atom, true);
+        Kokkos::fence();
 
         force->evflag = 1;
         neighbor.build(atom);
 
-        force->compute(atom, neighbor, comm, thisIndex);
 
-        if (neighbor.halfneigh && neighbor.ghost_newton)
-          comm->reverse_communicate(atom, true);
+        //force->compute(atom, neighbor, comm, thisIndex);
+
+        //if (neighbor.halfneigh && neighbor.ghost_newton)
+        //  comm->reverse_communicate(atom, true);
 
         thermo.compute(0, atom, neighbor, force, comm);
       }
 
       serial "integrate" {
         // Main iteration loop
-        integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
+       // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
       }
 
       serial "postprocess" {
-        force->evflag = 1;
-        force->compute(atom, neighbor, comm, thisIndex);
+        //force->evflag = 1;
+        //force->compute(atom, neighbor, comm, thisIndex);
 
-        if (neighbor.halfneigh && neighbor.ghost_newton)
-          comm->reverse_communicate(atom, false);
+        //if (neighbor.halfneigh && neighbor.ghost_newton)
+        //  comm->reverse_communicate(atom, false);
 
-        thermo.compute(-1, atom, neighbor, force, comm);
+        //thermo.compute(-1, atom, neighbor, force, comm);
 
         // XXX: Missing performance summary and yaml output
 
-        neighbor.dealloc();
-        delete force;
+        //neighbor.dealloc();
+        //delete force;
       }
 
       serial {
-        contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
+        //contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
       }
     }
 
