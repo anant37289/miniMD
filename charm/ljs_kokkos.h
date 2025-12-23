@@ -3,13 +3,8 @@
 
 #include "types.h"
 
-#ifdef ALIGN
 #undef ALIGN
-#endif
-
-#ifdef ALIGN_BYTES
 #undef ALIGN_BYTES
-#endif
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_DualView.hpp"

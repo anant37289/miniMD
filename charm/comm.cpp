@@ -616,11 +616,11 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     if (exc_sendflag.extent(0)<nlocal) {
       CmiEnforce(preprocess);
-      Kokkos::resize(exc_sendflag,nlocal);//frequent resizing of kokkos views
+      Kokkos::resize(exc_sendflag,nlocal);
     }
 
     count.view_host()(0) = exc_sendlist.extent(0);//force entry to the loop
-
+    //count the atoms which are leaving, also keep track of position in the lists
     while (count.view_host()(0) >= exc_sendlist.extent(0)) {
       count.view_host()(0) = 0;
       count.modify<HostType>();
@@ -636,7 +636,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         CmiEnforce(preprocess);
         Kokkos::resize(exc_sendlist,(count.view_host()(0)+1)*1.1);
         Kokkos::resize(exc_copylist,(count.view_host()(0)+1)*1.1);
-        count.view_host()(0)=exc_sendlist.extent(0);
+        count.view_host()(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count.view_host()(0)*7>=maxsend) {
         CmiEnforce(preprocess);
@@ -655,6 +655,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     int sendpos = nlocal-1;
     nlocal -= count.view_host()(0);
+    //fill the holes left by the send operation
     for(int i = 0; i < count.view_host()(0); i++) {
       if (h_exc_sendlist(i)<nlocal) {
         while (h_exc_sendflag(sendpos)) sendpos--;
@@ -740,7 +741,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nrecv_atoms = nrecv / 7;
 
     /* check incoming atoms to see if they are in my box
-       if they are, add to my list */
+       if they are, add to my list, otherwise lost which is fine */
 
     nrecv = 0;
 
