@@ -108,51 +108,8 @@ module block {
     entry [threaded] void contCreateVelocity(double vxtot, double vytot, double vztot);
 
     // Main code flow
-    entry [threaded] void run() {
-      serial "preprocess" {
-        comm->exchange(atom, true);
-        if (sort > 0)
-          atom.sort(neighbor);
-        Kokkos::fence();
-        comm->borders(atom, true);
-        Kokkos::fence();
-
-        force->evflag = 1;
-        neighbor.build(atom);
-        thermo.compute(0, atom, neighbor, force, comm);
-
-
-        force->compute(atom, neighbor, comm, thisIndex);
-
-        if (neighbor.halfneigh && neighbor.ghost_newton)
-          comm->reverse_communicate(atom, true);
-
-      }
-
-      serial "integrate" {
-        //Main iteration loop
-        integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
-      }
-
-      serial "postprocess" {
-        force->evflag = 1;
-        force->compute(atom, neighbor, comm, thisIndex);
-
-        if (neighbor.halfneigh && neighbor.ghost_newton)
-          comm->reverse_communicate(atom, false);
-
-        thermo.compute(-1, atom, neighbor, force, comm);
-
-        // XXX: Missing performance summary and yaml output
-
-        neighbor.dealloc();
-        delete force;
-      }
-
-      serial {
-        contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
-      }
-    }
+    entry [threaded] void run(); 
+    entry void run_neighbour_build(CkCallback cb);
 
     // Allreduce routines for Thermo
     entry void temperature_allreduce(CkCallback cb) {

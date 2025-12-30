@@ -61,7 +61,7 @@ class Integrate
     MMD_int sort_every;
 
     int index;
-    CkCallbackResumeThread* resume_cb;
+    // CkCallbackResumeThread* resume_cb;
 
     Integrate();
     ~Integrate();

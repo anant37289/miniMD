@@ -139,6 +139,32 @@ MMD_float Thermo::energy(Atom &atom, Neighbor &neighbor, Force* force)
 }
 
 /*  reduced temperature */
+// void calc_temperature(Atom &atom)
+// {
+//   MMD_float t = 0.0;
+//   t_act = 0;
+
+//   v = atom.v;
+//   mass = atom.mass;
+
+//   Kokkos::parallel_reduce(atom.nlocal, *this, t);
+
+//   t_act += t;
+
+//   t1 = 0;
+
+//   CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+//   CkCallback* cb = new CkCallback(CkIndex_Block::calc_temperature_done(), myIndex, thisArrayID);
+//   block_proxy[index].temperature_allreduce(cb);
+//   /*
+//   if(sizeof(MMD_float) == 4)
+//     MPI_Allreduce(&t_act, &t1, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+//   else
+//     MPI_Allreduce(&t_act, &t1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//     */
+// }
+
+
 
 MMD_float Thermo::temperature(Atom &atom)
 {
@@ -183,6 +209,7 @@ MMD_float Thermo::pressure(MMD_float t, Force* force)
 
   virial = 0;
   block_proxy[index].pressure_allreduce(CkCallbackResumeThread());
+  /*
   /*
   if(sizeof(MMD_float) == 4)
     MPI_Allreduce(&p_act, &virial, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);

@@ -284,6 +284,21 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
     }
   }
 
+  //info
+  nswap=0;
+  ckout<<"for chare "<<thisIndex<<"\n";
+  for(idim = 0; idim < 3; idim++) {
+    ckout<<"share index along "<<idim<<"\n";
+    for(ineed = 0; ineed < 2 * need[idim]; ineed++) {
+      ckout<<sendchare[nswap]<<" ";
+      ckout<<recvchare[nswap]<<": ";
+      nswap++;
+    }
+    ckout<<"\n";
+  }
+  ckout<<endl;
+  //info
+
   return 0;
 }
 
@@ -296,7 +311,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
   os << "Comm::communicate " << index;
   NVTXTracer(os.str(), NVTXColor::PeterRiver);
   */
-  Kokkos::Profiling::pushRegion("Comm::communicate");
+  // Kokkos::Profiling::pushRegion("Comm::communicate");
 
   // Create host mirrors for integrate loop
   if (!preprocess && !h_buf_alloc) {
@@ -422,7 +437,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
 #endif
   }
 
-  Kokkos::Profiling::popRegion();
+  // Kokkos::Profiling::popRegion();
 }
 
 /* reverse communication of atom info every timestep */
@@ -434,7 +449,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
   os << "Comm::reverse_communicate " << index;
   NVTXTracer(os.str(), NVTXColor::PeterRiver);
   */
-  Kokkos::Profiling::pushRegion("Comm::reverse_communicate");
+  // Kokkos::Profiling::pushRegion("Comm::reverse_communicate");
 
   // Create host mirrors for integrate loop
   if (!preprocess && !h_buf_alloc) {
@@ -552,7 +567,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
 #endif
   }
 
-  Kokkos::Profiling::popRegion();
+  // Kokkos::Profiling::popRegion();
 }
 
 /* exchange:
@@ -565,7 +580,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
 void Comm::exchange(Atom &atom_, bool preprocess)
 {
   //NVTXTracer("Comm::exchange", NVTXColor::WetAsphalt);
-  Kokkos::Profiling::pushRegion("exchange");
+  // Kokkos::Profiling::pushRegion("exchange");
   atom = atom_;
 
   /* enforce PBC */
@@ -764,7 +779,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
   }
   atom_ = atom;
-  Kokkos::Profiling::popRegion();
+  // Kokkos::Profiling::popRegion();
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -807,6 +822,10 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
      call communicate routine on reneighboring timestep)
    this routine is called before every reneighboring
 */
+//notes:
+//the ghosts are stored in the same lists as the local atoms(weird)
+//this is ordered in dimension so that things travelling along diagonals can do so
+//also reuse the send and recv buffers for all swaps growing them whenever needed so the same 
 
 void Comm::borders(Atom &atom_, bool preprocess)
 {
@@ -987,7 +1006,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
   }
   atom_ = atom;
 
-  Kokkos::Profiling::popRegion();
 }
 
 KOKKOS_INLINE_FUNCTION

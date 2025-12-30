@@ -165,15 +165,15 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
         Kokkos::fence();
 
-        Kokkos::Profiling::pushRegion("neighbor::build");
+        // Kokkos::Profiling::pushRegion("neighbor::build");
         neighbor.build(atom);
-        Kokkos::Profiling::popRegion();
+        // Kokkos::Profiling::popRegion();
       }
 
-      Kokkos::Profiling::pushRegion("force");
+      // Kokkos::Profiling::pushRegion("force");
       force->evflag = (n + 1) % thermo.nstat == 0;
       force->compute(atom, neighbor, comm, comm->index);
-      Kokkos::Profiling::popRegion();
+      // Kokkos::Profiling::popRegion();
 
       if (neighbor.halfneigh && neighbor.ghost_newton) {
         comm->reverse_communicate(atom, false);

@@ -114,18 +114,7 @@ class Atom
       comm_size = src.comm_size;
       reverse_size = src.reverse_size;
       border_size = src.border_size;
-
-      h_x = src.h_x;
-      h_v = src.h_v;
-      h_f = src.h_f;
-      h_type = src.h_type;
-
-      compute_instance = src.compute_instance;
-      h2d_instance = src.h2d_instance;
-      d2h_instance = src.d2h_instance;
-      pack_instance = src.pack_instance;
-      unpack_instance = src.unpack_instance;
-
+      
       binpos = src.binpos;
       bins = src.bins;
       x_copy = src.x_copy;

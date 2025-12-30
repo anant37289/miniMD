@@ -109,8 +109,7 @@ void Neighbor::build(Atom &atom)
     if(ntypes<MAX_STACK_TYPES) {
       if(!team_neigh_build) {
         if(halfneigh)
-          {Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(0,nlocal), *this);
-          ckout<<"here"<<endl;}
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(0,nlocal), *this);
         else
           Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,1> >(0,nlocal), *this);
       } else {
@@ -127,8 +126,7 @@ void Neighbor::build(Atom &atom)
     } else {
       if(!team_neigh_build) {
         if(halfneigh)
-          {Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(0,nlocal), *this);
-          ckout<<"no here"<<endl;}
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(0,nlocal), *this);
         else
           Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,0> >(0,nlocal), *this);
       } else {

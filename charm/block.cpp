@@ -236,6 +236,172 @@ void Block::init() {
    contribute(3*sizeof(double), vtot, CkReduction::set, cb);
 }
 
+void Block::run(){
+      comm->exchange(atom, true);
+      if (sort > 0)
+        atom.sort(neighbor);
+      comm->borders(atom, true);
+
+      force->evflag = 1;
+      
+      // thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      neighbor.build(atom);
+      thermo.compute(0, atom, neighbor, force, comm);
+
+      force->compute(atom, neighbor, comm, thisIndex);
+
+      if (neighbor.halfneigh && neighbor.ghost_newton)
+        comm->reverse_communicate(atom, true);
+
+      //Main iteration loop
+      // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
+      {
+        int i, n;
+
+        int check_safeexchange = comm->check_safeexchange;
+
+        integrate.mass = atom.mass;
+        integrate.dtforce = integrate.dtforce / integrate.mass;
+
+        int next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
+        double total_time = 0;
+
+        for(n = 0; n < integrate.ntimes; n++) {
+          double iter_start_time = CkWallTimer();
+          if (integrate.index == 0 && (n == 0 || n % 10 == 0)) {
+            CkPrintf("[Block] Starting iteration %d\n", n);
+          }
+
+          // Store iteration counter in Comm
+          comm->iter = n;
+
+          integrate.x = atom.x;
+          integrate.v = atom.v;
+          integrate.f = atom.f;
+          integrate.xold = atom.xold;
+          integrate.nlocal = atom.nlocal;
+
+          integrate.initialIntegrate();
+
+          if((n + 1) % neighbor.every) {
+            /*
+            Frequency: Runs every timestep (except when re-neighboring).
+            What it does: It assumes the list of atoms that are "ghosts" (neighbors on other processors) has not changed. It only updates their coordinates (and potentially velocities).
+            Why: This is very fast because it reuses the pre-calculated sendlist and recvlist. It doesn't need to search for atoms or resize buffers. It just packs the new x values of the same atoms and sends them.
+            */
+            comm->communicate(atom, false);
+
+          } else {
+            // TODO: Reneighboring not supported (not converted to async)
+            if(check_safeexchange) {
+              double d_max = 0;
+
+              for(i = 0; i < atom.nlocal; i++) {
+                double dx = (integrate.x(i,0) - integrate.xold(i,0));
+
+                if(dx > atom.box.xprd) dx -= atom.box.xprd;
+
+                if(dx < -atom.box.xprd) dx += atom.box.xprd;
+
+                double dy = (integrate.x(i,1) - integrate.xold(i,1));
+
+                if(dy > atom.box.yprd) dy -= atom.box.yprd;
+
+                if(dy < -atom.box.yprd) dy += atom.box.yprd;
+
+                double dz = (integrate.x(i,2) - integrate.xold(i,2));
+
+                if(dz > atom.box.zprd) dz -= atom.box.zprd;
+
+                if(dz < -atom.box.zprd) dz += atom.box.zprd;
+
+                double d = dx * dx + dy * dy + dz * dz;
+
+                if(d > d_max) d_max = d;
+              }
+
+          d_max = sqrt(d_max);
+
+          if((d_max > atom.box.xhi - atom.box.xlo) || (d_max > atom.box.yhi - atom.box.ylo) || (d_max > atom.box.zhi - atom.box.zlo))
+            printf("Warning: Atoms move further than your subdomain size, which will eventually cause lost atoms.\n"
+                "Increase reneighboring frequency or choose a different processor grid\n"
+                "Maximum move distance: %lf; Subdomain dimensions: %lf %lf %lf\n",
+                d_max, atom.box.xhi - atom.box.xlo, atom.box.yhi - atom.box.ylo, atom.box.zhi - atom.box.zlo);
+
+        }
+
+          comm->exchange(atom, false);
+          if(n+1>=next_sort) {
+            atom.sort(neighbor);
+            next_sort +=  integrate.sort_every;
+          }
+          comm->borders(atom, false);
+
+          Kokkos::fence();
+
+        // Kokkos::Profiling::pushRegion("neighbor::build");
+        thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+        // neighbor.build(atom);
+        // Kokneighborkos::Profiling::popRegion();
+      }
+
+      // Kokkos::Profiling::pushRegion("force");
+      force->evflag = (n + 1) % thermo.nstat == 0;
+      force->compute(atom, neighbor, comm, comm->index);
+      // Kokkos::Profiling::popRegion();
+
+      if (neighbor.halfneigh && neighbor.ghost_newton) {
+        comm->reverse_communicate(atom, false);
+      }
+
+      integrate.v = atom.v;
+      integrate.f = atom.f;
+      integrate.nlocal = atom.nlocal;
+
+      integrate.finalIntegrate();
+
+      if(thermo.nstat) thermo.compute(n + 1, atom, neighbor, force, comm);
+
+      /*
+      if (index == 0) {
+        CkPrintf("[Block] Iteration %d time: %.6lf\n", n, CkWallTimer() - iter_start_time);
+      }
+      */
+
+      // Don't include first iteration time
+      if (n > 0) {
+        total_time += CkWallTimer() - iter_start_time;
+      }
+    }
+
+    if (integrate.index == 0) {
+      CkPrintf("[Block] Total time (exclude 1st iteration): %.6lf s\n", total_time);
+      CkPrintf("[Block] Average time per iteration: %.6lf s\n", total_time / (integrate.ntimes-1));
+    }
+      }
+
+
+      force->evflag = 1;
+      force->compute(atom, neighbor, comm, thisIndex);
+
+      if (neighbor.halfneigh && neighbor.ghost_newton)
+        comm->reverse_communicate(atom, false);
+
+      thermo.compute(-1, atom, neighbor, force, comm);
+
+      // XXX: Missing performance summary and yaml output
+
+      neighbor.dealloc();
+      // delete force;
+
+      contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
+}
+
+void Block::run_neighbour_build(CkCallback cb){
+  neighbor.build(atom);
+  cb.send();
+}
+
 void Block::contCreateVelocity(double vxtot, double vytot, double vztot) {
   if (in_datafile.empty()) {
     create_velocity_2(in_t_request, atom, thermo, vxtot, vytot, vztot);
