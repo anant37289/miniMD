@@ -36,6 +36,7 @@
 #include "types.h"
 #include "integrate.h"
 #include "neighbor.h"
+#include "hapi.h"
 
 #include <cstring>
 #include <cstdio>

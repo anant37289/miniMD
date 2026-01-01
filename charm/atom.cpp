@@ -242,14 +242,14 @@ void Atom::sort(Neighbor &neighbor)
 
   neighbor.binatoms(*this,nlocal);
 
-  Kokkos::fence();
+  // Kokkos::fence();
 
   binpos = neighbor.bincount;
   bins = neighbor.bins;
 
   const int mbins = neighbor.mbins;
 
-  Kokkos::parallel_scan(Kokkos::RangePolicy<TagAtomSort>(0,mbins), *this);
+  Kokkos::parallel_scan(Kokkos::RangePolicy<TagAtomSort>(compute_instance, 0,mbins), *this);
 
   if(copy_size<nmax) {
     x_copy = x_view_type("atom::x_copy",nmax);

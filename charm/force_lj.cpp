@@ -155,7 +155,7 @@ void ForceLJ::compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me)
 
     if(neighbor.halfneigh) {
       if(neighbor.ghost_newton) {
-        if(nthreads > 1 || !host_device)
+        if(nthreads > 1 || !host_device)//is this correct nthread 0 then even this runs
           return compute_halfneigh_threaded<0, 1>(atom, neighbor, me);
         else
           return compute_halfneigh<0, 1>(atom, neighbor, me);
@@ -166,7 +166,6 @@ void ForceLJ::compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me)
           return compute_halfneigh<0, 0>(atom, neighbor, me);
       }
     } else return compute_fullneigh<0>(atom, neighbor, me);
-
   }
 }
 

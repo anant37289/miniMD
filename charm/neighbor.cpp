@@ -403,6 +403,7 @@ void Neighbor::operator() (TagNeighborBuild<HALF_NEIGH,STACK_ARRAYS> , const typ
 
 void Neighbor::binatoms(Atom &atom, int count)
 {
+  NVTXTracer("Neighbor::binatoms", NVTXColor::PeterRiver);
   const int nall = count<0?atom.nlocal + atom.nghost:count;
   x = atom.x;
 
@@ -416,15 +417,16 @@ void Neighbor::binatoms(Atom &atom, int count)
   /* repeat if running out of space */
 
   while(resize > 0) {
-    Kokkos::fence();
     resize = 0;
 
-    Kokkos::deep_copy(bincount,0);
-    Kokkos::deep_copy(bin_has_local,0);
+    Kokkos::deep_copy(h2d_instance, bincount,0);
+    Kokkos::deep_copy(h2d_instance, bin_has_local,0);
 
-    Kokkos::fence();
+    wait(h2d_instance, compute_instance);
+
+    // Kokkos::fence();
     /* count aotms in each bin */
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagNeighborBinning>(0,nall), *this, resize);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,nall), *this, resize);
 
     if(resize) {
       atoms_per_bin *= 2;
@@ -432,8 +434,10 @@ void Neighbor::binatoms(Atom &atom, int count)
     }
   }
 
-  Kokkos::deep_copy(bin_list,-1);
-  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(0,mbins), *this);
+  Kokkos::deep_copy(h2d_instance, bin_list,-1);
+  wait(h2d_instance, compute_instance);
+  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,mbins), *this);
+  NVTXTracer("Neighbor::binatoms::end", NVTXColor::PeterRiver);
 }
 
 
@@ -680,4 +684,12 @@ MMD_float Neighbor::bindist(int i, int j, int k)
     delz = (k + 1) * binsizez;
 
   return (delx * delx + dely * dely + delz * delz);
+}
+
+void Neighbor::wait(Kokkos::Cuda instance_1, Kokkos::Cuda instance_2){
+  //instance 2 waits for instance 1
+  cudaEvent_t dep_event_1;
+  hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
+  hapiCheck(cudaEventRecord(dep_event_1, instance_1.cuda_stream()));
+  hapiCheck(cudaStreamWaitEvent(instance_2.cuda_stream(), dep_event_1, 0));
 }

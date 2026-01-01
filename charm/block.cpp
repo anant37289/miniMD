@@ -237,6 +237,8 @@ void Block::init() {
 }
 
 void Block::run(){
+      //preprocess
+      ckout<<"called run"<<endl;
       comm->exchange(atom, true);
       if (sort > 0)
         atom.sort(neighbor);
@@ -244,8 +246,8 @@ void Block::run(){
 
       force->evflag = 1;
       
-      // thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
-      neighbor.build(atom);
+      thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      // neighbor.build(atom);
       thermo.compute(0, atom, neighbor, force, comm);
 
       force->compute(atom, neighbor, comm, thisIndex);
@@ -290,7 +292,6 @@ void Block::run(){
             Why: This is very fast because it reuses the pre-calculated sendlist and recvlist. It doesn't need to search for atoms or resize buffers. It just packs the new x values of the same atoms and sends them.
             */
             comm->communicate(atom, false);
-
           } else {
             // TODO: Reneighboring not supported (not converted to async)
             if(check_safeexchange) {

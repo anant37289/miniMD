@@ -33,6 +33,7 @@
 #define NEIGHBOR_H
 
 #include "atom.h"
+#include "hapi.h"
 
 class Neighbor
 {
@@ -71,6 +72,7 @@ class Neighbor
     void dealloc();
     int setup(Atom &);               // setup bins based on box and cutoff
     void build(Atom &);              // create neighbor list
+    void wait(Kokkos::Cuda, Kokkos::Cuda);
 
     // Atom is going to call binatoms etc for sorting
     void binatoms(Atom & atom, int count = -1);           // bin all atoms

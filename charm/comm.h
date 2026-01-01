@@ -82,6 +82,7 @@ class Comm : public CBase_Comm
     void growrecv(int);
     void growlist(int, int);
     void suspend(Kokkos::Cuda);
+    void wait(Kokkos::Cuda, Kokkos::Cuda);
 
   public:
     void* block;
@@ -110,6 +111,8 @@ class Comm : public CBase_Comm
     int_1d_host_view_type h_exc_sendflag;
     int_1d_host_view_type h_exc_sendlist;
     int_1d_host_view_type h_exc_copylist;
+    int_1d_host_view_type count_host;
+    int_1d_view_type count_device;
     int_1d_dual_view_type count;
     bool h_exc_alloc;
 
