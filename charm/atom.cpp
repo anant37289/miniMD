@@ -33,6 +33,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "atom.h"
+#include "hapi_nvtx.h"
 #include "neighbor.h"
 
 #define DELTA 20000
@@ -240,6 +241,7 @@ void Atom::sort(Neighbor &neighbor)
 
   return;*/
 
+  NVTXTracer("Atom::sort", NVTXColor::Pomegranate);
   neighbor.binatoms(*this,nlocal);
 
   // Kokkos::fence();
@@ -265,9 +267,8 @@ void Atom::sort(Neighbor &neighbor)
   old_v = v;
   old_type = type;
 
-  Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomSort>(0,mbins), *this);
-  Kokkos::fence();
-
+  Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomSort>(compute_instance, 0,mbins), *this);
+  
   x_view_type x_tmp = x;
   x_view_type v_tmp = v;
   int_1d_view_type type_tmp = type;
@@ -278,6 +279,8 @@ void Atom::sort(Neighbor &neighbor)
   x_copy = x_tmp;
   v_copy = v_tmp;
   type_copy = type_tmp;
+  NVTXTracer("Atom::sort::end", NVTXColor::Pomegranate);
+  // Kokkos::fence();
 }
 
 

@@ -308,11 +308,9 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
 
 void Comm::communicate(Atom &atom, bool preprocess)
 {
-  /*
   std::ostringstream os;
   os << "Comm::communicate " << index;
   NVTXTracer(os.str(), NVTXColor::PeterRiver);
-  */
   // Kokkos::Profiling::pushRegion("Comm::communicate");
 
   // Create host mirrors for integrate loop
@@ -855,15 +853,15 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
 
 void Comm::borders(Atom &atom_, bool preprocess)
 {
-  //NVTXTracer("Comm::borders", NVTXColor::Carrot);
-  // Kokkos::Profiling::pushRegion("Comm::borders");
+  NVTXTracer("Comm::borders", NVTXColor::Carrot);
+  Kokkos::Profiling::pushRegion("Comm::borders");
 
   // Create host mirrors for integrate loop
-  if (!preprocess && !h_buf_alloc) {
-    h_buf_alloc = true;
-    h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
-    h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
-  }
+  // if (!preprocess && !h_buf_alloc) {
+  //   h_buf_alloc = true;
+  //   h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+  //   h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
+  // }
 
   atom = atom_;
   int ineed, nsend, nrecv, nfirst, nlast;
@@ -909,32 +907,35 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = 0;
 
-      count.view_host()(0) = 0;
-      count.modify<HostType>();
-      count.sync<DeviceType>();
+      // count.view_host()(0) = 0;
+      // count.modify<HostType>();
+      // count.sync<DeviceType>();
+      Kokkos::deep_copy(h2d_instance, count_device, 0);
 
-      send_count = count.view_device();
+      send_count = count_device;
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+      wait(h2d_instance, compute_instance);
 
-      count.modify<DeviceType>();
-      count.sync<HostType>();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
 
-      nsend = count.view_host()(0);
+      Kokkos::deep_copy(compute_instance, count_host, count_device);
+
+      suspend(compute_instance);
+
+      nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {
         // CmiEnforce(preprocess);
-        Kokkos::resize(exc_sendlist , nsend);
+        Kokkos::resize(exc_sendlist, nsend);
 
         growlist(iswap, nsend);
 
-        count.view_host()(0) = 0;
-        count.modify<HostType>();
-        count.sync<DeviceType>();
+        Kokkos::deep_copy(h2d_instance, count_device, 0);
 
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+        wait(h2d_instance, compute_instance);
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance,nfirst,nlast),*this);
 
-        count.modify<DeviceType>();
-        count.sync<HostType>();
+        // count.modify<DeviceType>();
+        // count.sync<HostType>();
       }
 
       if(nsend * 4 > maxsend) {
@@ -942,33 +943,30 @@ void Comm::borders(Atom &atom_, bool preprocess)
         growsend(nsend * 4);
       }
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(0,nsend),*this);
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(compute_instance, 0,nsend),*this);
       // swap atoms with other proc
       // put incoming ghosts at end of my atom arrays
       // if swapping with self, simply copy, no messages
-
-
         if(sendchare[iswap] != index) {
           send1 = static_cast<void*>(&nsend);
           send1_size = sizeof(int);
           send1_chare = sendchare[iswap];
           recv1 = static_cast<void*>(&nrecv);
           block_proxy[thisIndex].borders_1(iswap, CkCallbackResumeThread());
-
+          
           if(nrecv * atom.border_size > maxrecv) {
             // CmiEnforce(preprocess);
             growrecv(nrecv * atom.border_size);
           }
 
-          // Move data on device to host for communication
-          // if (preprocess) {
+          if(h_buf_send.size()<buf_send.size())
             h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+          if(h_buf_recv.size()<buf_recv.size())
             h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
-          // } else {
-          //   CmiEnforce(h_buf_alloc);
-          // }
-          Kokkos::deep_copy(h_buf_send, buf_send);
+
+          Kokkos::deep_copy(compute_instance, h_buf_send, buf_send);
+
+          suspend(compute_instance);
 
           send1 = static_cast<void*>(h_buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
@@ -977,7 +975,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
 
           // Move received data to device
-          Kokkos::deep_copy(buf_recv, h_buf_recv);
+          Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv);
 
           buf = buf_recv;
         } else {
@@ -993,20 +991,19 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       x = atom.x;
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(0,nrecv),*this);
-      Kokkos::fence();
-
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(compute_instance, 0,nrecv),*this);
+      
       // set all pointers & counters
-
-        sendnum[iswap] = nsend;
-        recvnum[iswap] = nrecv;
-        comm_send_size[iswap] = nsend * atom.comm_size;
-        comm_recv_size[iswap] = nrecv * atom.comm_size;
-        reverse_send_size[iswap] = nrecv * atom.reverse_size;
-        reverse_recv_size[iswap] = nsend * atom.reverse_size;
-        firstrecv[iswap] = atom.nlocal + atom.nghost;
-        atom.nghost += nrecv;
-
+      
+      sendnum[iswap] = nsend;
+      recvnum[iswap] = nrecv;
+      comm_send_size[iswap] = nsend * atom.comm_size;
+      comm_recv_size[iswap] = nrecv * atom.comm_size;
+      reverse_send_size[iswap] = nrecv * atom.reverse_size;
+      reverse_recv_size[iswap] = nsend * atom.reverse_size;
+      firstrecv[iswap] = atom.nlocal + atom.nghost;
+      atom.nghost += nrecv;
+      
       iswap++;
     }
   }
@@ -1031,6 +1028,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
     growrecv(max2);
   }
   atom_ = atom;
+  Kokkos::fence();
 
 }
 
@@ -1075,7 +1073,7 @@ void Comm::growrecv(int n)
 
 void Comm::growlist(int iswap, int n)
 {
-  if(n<=maxsendlist[iswap]) return;
+  if(n<=maxsendlist[iswap]) return; 
   int maxswap = sendlist.extent(0);
   Kokkos::resize(sendlist,sendlist.extent(0),BUFFACTOR * n + BUFEXTRA);
   for(int iswaps = 0; iswaps < maxswap; iswaps++) {

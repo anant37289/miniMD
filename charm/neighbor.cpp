@@ -430,6 +430,7 @@ void Neighbor::binatoms(Atom &atom, int count)
 
     if(resize) {
       atoms_per_bin *= 2;
+      ckout<<"mbins "<< mbins<<" atoms_per_bin "<<atoms_per_bin<<endl;
       bins = int_2d_view_type("Neighbor::bins", mbins , atoms_per_bin);
     }
   }
