@@ -679,9 +679,12 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     if(h_exc_sendlist.extent(0)<exc_sendlist.extent(0))
       h_exc_sendlist = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_sendlist);
 
-    Kokkos::deep_copy(compute_instance, h_exc_sendflag,exc_sendflag);
+    auto h_exc_sendflag_sub = Kokkos::subview(h_exc_sendflag, std::make_pair(std::size_t(0),exc_sendflag.size()));
+    auto h_exc_sendlist_sub = Kokkos::subview(h_exc_sendlist, std::make_pair(std::size_t(0),exc_sendlist.size()));
+
+    Kokkos::deep_copy(compute_instance, h_exc_sendflag_sub,exc_sendflag);
     // Kokkos::deep_copy(compute_instance, h_exc_copylist,exc_copylist);
-    Kokkos::deep_copy(compute_instance, h_exc_sendlist,exc_sendlist);
+    Kokkos::deep_copy(compute_instance, h_exc_sendlist_sub,exc_sendlist);
 
     suspend(compute_instance);
 
@@ -697,7 +700,9 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         h_exc_copylist(i) = -1;
     }
     // Kokkos::deep_copy(exc_copylist,h_exc_copylist);
-    Kokkos::deep_copy(compute_instance, exc_copylist,h_exc_copylist);
+    
+    auto h_exc_copylist_sub = Kokkos::subview(h_exc_copylist, std::make_pair(std::size_t(0),exc_copylist.size()));
+    Kokkos::deep_copy(compute_instance, exc_copylist,h_exc_copylist_sub);
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(compute_instance, 0,count_host(0)), *this);
     
     atom.nlocal -= count_host(0);
@@ -748,8 +753,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     //   CmiEnforce(h_buf_alloc);
     // }
     // Kokkos::deep_copy(h_buf_send, buf_send);
-    // auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
-    Kokkos::deep_copy(compute_instance,h_buf_send, buf_send);
+    auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+    Kokkos::deep_copy(compute_instance,h_buf_send_sub, buf_send);
 
     suspend(compute_instance);
 
@@ -764,8 +769,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     block_proxy[thisIndex].exchange_2(idim, CkCallbackResumeThread());
 
     // Move received data to device
-    // auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
-    Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv);
+    auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+    Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
