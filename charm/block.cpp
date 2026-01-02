@@ -244,8 +244,8 @@ void Block::run(){
 
       force->evflag = 1;
       
-      // thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
-      neighbor.build(atom);
+      thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      // neighbor.build(atom);
       thermo.compute(0, atom, neighbor, force, comm);
 
       force->compute(atom, neighbor, comm, thisIndex);
