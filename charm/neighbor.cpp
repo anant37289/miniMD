@@ -416,15 +416,15 @@ void Neighbor::binatoms(Atom &atom, int count)
   /* repeat if running out of space */
 
   while(resize > 0) {
-    Kokkos::fence();
+    // Kokkos::fence();
     resize = 0;
 
-    Kokkos::deep_copy(bincount,0);
-    Kokkos::deep_copy(bin_has_local,0);
+    Kokkos::deep_copy(compute_instance, bincount,0);
+    Kokkos::deep_copy(compute_instance, bin_has_local,0);
 
-    Kokkos::fence();
+    // Kokkos::fence();
     /* count aotms in each bin */
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagNeighborBinning>(0,nall), *this, resize);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,nall), *this, resize);
 
     if(resize) {
       atoms_per_bin *= 2;
@@ -432,8 +432,8 @@ void Neighbor::binatoms(Atom &atom, int count)
     }
   }
 
-  Kokkos::deep_copy(bin_list,-1);
-  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(0,mbins), *this);
+  Kokkos::deep_copy(compute_instance, bin_list,-1);
+  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,mbins), *this);
 }
 
 

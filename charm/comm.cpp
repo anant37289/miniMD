@@ -889,32 +889,30 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = 0;
 
-      count.view_host()(0) = 0;
-      count.modify<HostType>();
-      count.sync<DeviceType>();
+      count_host(0) = 0;
+      Kokkos::deep_copy(compute_instance, count_device, 0);
 
-      send_count = count.view_device();
+    
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
 
-      count.modify<DeviceType>();
-      count.sync<HostType>();
+      Kokkos::deep_copy(compute_instance, count_host, count_device);
 
-      nsend = count.view_host()(0);
+      suspend(compute_instance);
+
+      nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {
+        ckout<<"somewhere here"<<endl;
         
         Kokkos::resize(exc_sendlist , nsend);
 
         growlist(iswap, nsend);
 
-        count.view_host()(0) = 0;
-        count.modify<HostType>();
-        count.sync<DeviceType>();
+        Kokkos::deep_copy(compute_instance, count_device, 0);
 
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
 
-        count.modify<DeviceType>();
-        count.sync<HostType>();
+        Kokkos::deep_copy(compute_instance, count_host, count_device);
       }
 
       if(nsend * 4 > maxsend) {
@@ -922,8 +920,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
         growsend(nsend * 4);
       }
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(0,nsend),*this);
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(compute_instance, 0,nsend),*this);
+      suspend(compute_instance);
       // swap atoms with other proc
       // put incoming ghosts at end of my atom arrays
       // if swapping with self, simply copy, no messages
@@ -1017,7 +1015,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagBorderSendlist, const int& i) const {
   if(x(i,idim) >= lo && x(i,idim) <= hi) {
-    const int nsend = (send_count(0)+=1)-1;
+    const int nsend = Kokkos::atomic_fetch_add(&count_device(0), 1);
     if(nsend < exc_sendlist.extent(0)) {
       exc_sendlist[nsend] = i;
     }
