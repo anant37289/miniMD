@@ -835,8 +835,8 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
 
 void Comm::borders(Atom &atom_, bool preprocess)
 {
-  //NVTXTracer("Comm::borders", NVTXColor::Carrot);
-  // Kokkos::Profiling::pushRegion("Comm::borders");
+  NVTXTracer("Comm::borders", NVTXColor::Carrot);
+  Kokkos::Profiling::pushRegion("Comm::borders");
 
   // Create host mirrors for integrate loop
   // if (!preprocess && !h_buf_alloc) {
@@ -889,32 +889,28 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = 0;
 
-      count.view_host()(0) = 0;
-      count.modify<HostType>();
-      count.sync<DeviceType>();
-
+      Kokkos::deep_copy(compute_instance, count_device, 0);
       send_count = count.view_device();
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
 
-      count.modify<DeviceType>();
-      count.sync<HostType>();
+      Kokkos::deep_copy(compute_instance, count_host, count_device);
 
-      nsend = count.view_host()(0);
+      suspend(compute_instance);
+
+      nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {
         
         Kokkos::resize(exc_sendlist , nsend);
 
         growlist(iswap, nsend);
 
-        count.view_host()(0) = 0;
-        count.modify<HostType>();
-        count.sync<DeviceType>();
+        Kokkos::deep_copy(compute_instance, count_device, 0);
 
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instancem, nfirst,nlast),*this);
 
-        count.modify<DeviceType>();
-        count.sync<HostType>();
+        // count.modify<DeviceType>();
+        // count.sync<HostType>();
       }
 
       if(nsend * 4 > maxsend) {
@@ -922,8 +918,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
         growsend(nsend * 4);
       }
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(0,nsend),*this);
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(compute_instance, 0,nsend),*this);
+      // Kokkos::fence();
       // swap atoms with other proc
       // put incoming ghosts at end of my atom arrays
       // if swapping with self, simply copy, no messages
@@ -943,12 +939,17 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
           // Move data on device to host for communication
           // if (preprocess) {
-          h_buf_send = Kokkos::create_mirror_view(buf_send);
-          h_buf_recv = Kokkos::create_mirror_view(buf_recv);
+          if(h_buf_send.size()<buf_send.size())
+            h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+          if(h_buf_recv.size()<buf_recv.size())
+            h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
           // } else {
           //   CmiEnforce(h_buf_alloc);
           // }
-          Kokkos::deep_copy(h_buf_send, buf_send);
+          auto h_buf_send_sub= Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+          Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+
+          suspend(compute_instance);
 
           send1 = static_cast<void*>(h_buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
@@ -957,7 +958,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
 
           // Move received data to device
-          Kokkos::deep_copy(buf_recv, h_buf_recv);
+          auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+          Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
           buf = buf_recv;
         } else {
@@ -973,8 +975,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       x = atom.x;
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(0,nrecv),*this);
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(compute_instance, 0,nrecv),*this);
+      // Kokkos::fence();
 
       // set all pointers & counters
 
@@ -1012,6 +1014,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
   }
   atom_ = atom;
 
+  Kokkos::fence();
 }
 
 KOKKOS_INLINE_FUNCTION
