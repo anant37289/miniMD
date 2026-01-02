@@ -61,6 +61,8 @@ Comm::Comm()
   do_safeexchange = 0;
   maxnlocal = 0;
   count = Kokkos::DualView<int*>("comm::count",1);
+  count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 1);
+  count_device = Kokkos::View<int*>("comm::count_host", 1);
   h_exc_alloc = false;
   h_buf_alloc = false;
 
@@ -630,35 +632,29 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nlocal = atom.nlocal;
 
     if (exc_sendflag.extent(0)<nlocal) {
-      NVTXTracer("Comm::exchange::resize", NVTXColor::Carrot);
-      Kokkos::resize(exc_sendflag,nlocal);//resize on a stream..
+      Kokkos::resize(exc_sendflag,nlocal);
     }
-
+  
     count_host(0) = exc_sendlist.extent(0);//force entry to the loop
     //count the atoms which are leaving, also keep track of position in the lists
-    while (count.view_host()(0) >= exc_sendlist.extent(0)) {
-      Kokkos::deep_copy(h2d_instance, count_device, 0);
+    while (count_host(0) >= exc_sendlist.extent(0)) {
+      count_host(0) = 0;
+      Kokkos::deep_copy(compute_instance, count_device, count_host);
 
-      wait(h2d_instance, compute_instance);
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist>(compute_instance, 0,nlocal), *this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist> (compute_instance, 0,nlocal), *this);
 
-      wait(compute_instance, d2h_instance);
-      Kokkos::deep_copy(d2h_instance, count_host, count_device);
-
-      suspend(d2h_instance);
-
-      count.modify<DeviceType>();
-      count.sync<HostType>();
-      if ((count.view_host()(0)>=exc_sendlist.extent(0)) ||
-          (count.view_host()(0)>=exc_copylist.extent(0)) ) {
+      Kokkos::deep_copy(compute_instance, count_host, count_device);
+      
+      suspend(compute_instance);
+      
+      if ((count_host(0)>=exc_sendlist.extent(0)) ||
+          (count_host(0)>=exc_copylist.extent(0)) ) {
         
-        Kokkos::resize(exc_sendlist,(count.view_host()(0)+1)*1.1);
-        Kokkos::resize(exc_copylist,(count.view_host()(0)+1)*1.1);
+        Kokkos::resize(exc_sendlist,(count_host(0)+1)*1.1);
+        Kokkos::resize(exc_copylist,(count_host(0)+1)*1.1);
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
-       if (count_host(0)*7>=maxsend) {
-        // CmiEnforce(preprocess);
-        NVTXTracer("Comm::exchange::grow_send", NVTXColor::GreenSea);
+      if (count_host(0)*7>=maxsend) {
         growsend(count_host(0));
       }
     }
@@ -668,15 +664,17 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       h_exc_copylist = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_copylist);
     if(h_exc_sendlist.extent(0)<exc_sendlist.extent(0))
       h_exc_sendlist = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_sendlist);
+    auto h_exc_sendflag_sub = Kokkos::subview(h_exc_sendflag, std::make_pair(std::size_t(0),exc_sendflag.size()));
+    auto h_exc_sendlist_sub = Kokkos::subview(h_exc_sendlist, std::make_pair(std::size_t(0),exc_sendlist.size()));
 
-    Kokkos::deep_copy(compute_instance, h_exc_sendflag,exc_sendflag);
-    // Kokkos::deep_copy(compute_instance, h_exc_copylist,exc_copylist);
-    Kokkos::deep_copy(compute_instance, h_exc_sendlist,exc_sendlist);
-    
+    Kokkos::deep_copy(compute_instance, h_exc_sendflag_sub,exc_sendflag);
+    Kokkos::deep_copy(compute_instance, h_exc_sendlist_sub,exc_sendlist);
+
+    suspend(compute_instance);
+
     int sendpos = nlocal-1;
-    nlocal -= count.view_host()(0);
-    //fill the holes left by the send operation
-    for(int i = 0; i < count.view_host()(0); i++) {
+    nlocal -= count_host(0);
+    for(int i = 0; i < count_host(0); i++) {
       if (h_exc_sendlist(i)<nlocal) {
         while (h_exc_sendflag(sendpos)) sendpos--;
         h_exc_copylist(i) = sendpos;
@@ -684,14 +682,15 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       } else
         h_exc_copylist(i) = -1;
     }
-    Kokkos::deep_copy(exc_copylist,h_exc_copylist);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.view_host()(0)), *this);
+    auto h_exc_copylist_sub = Kokkos::subview(h_exc_copylist, std::make_pair(std::size_t(0),exc_copylist.size()));
+    Kokkos::deep_copy(compute_instance, exc_copylist,h_exc_copylist);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(compute_instance, 0,count_host(0)), *this);
 
-    atom.nlocal -= count.view_host()(0);
-    Kokkos::fence();
 
-    nsend = count.view_host()(0) * 7;
+    atom.nlocal -= count_host(0);
+
+    nsend = count_host(0) * 7;
 
     send1 = static_cast<void*>(&nsend);
     send1_size = sizeof(int);
@@ -721,16 +720,15 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       
       growrecv(nrecv);
     }
-    Kokkos::fence();
+    if(h_buf_send.extent(0)<buf_send.extent(0))
+      h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+    if(h_buf_recv.extent(0)<buf_recv.extent(0))
+      h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
 
-    // Move data on device to host for communication
-    // if (preprocess) {
-      h_buf_send = Kokkos::create_mirror_view(buf_send);
-      h_buf_recv = Kokkos::create_mirror_view(buf_recv);
-    // } else {
-    //   CmiEnforce(h_buf_alloc);
-    // }
-    Kokkos::deep_copy(h_buf_send, buf_send);
+    auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+    Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+
+    suspend(compute_instance);
 
     send1 = static_cast<void*>(h_buf_send.data());
     send1_size = nsend * sizeof(MMD_float);
@@ -743,7 +741,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     block_proxy[thisIndex].exchange_2(idim, CkCallbackResumeThread());
 
     // Move received data to device
-    Kokkos::deep_copy(buf_recv, h_buf_recv);
+    auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+    Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
@@ -765,32 +764,34 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     nrecv = 0;
 
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagExchangeCountRecv>(0,nrecv_atoms), *this, nrecv);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagExchangeCountRecv>(compute_instance, 0,nrecv_atoms), *this, nrecv);
 
     nlocal = atom.nlocal;
 
     if(nrecv_atoms>0)
-    atom.nlocal += nrecv;
+      atom.nlocal += nrecv;
 
-    count.view_host()(0) = nlocal;
-    count.modify<HostType>();
-    count.sync<DeviceType>();
+    count_host(0) = nlocal;
+    Kokkos::deep_copy(compute_instance, count_device, nlocal);
 
     if(atom.nlocal>=atom.nmax)
       atom.growarray();
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(0,nrecv_atoms), *this);
-    Kokkos::fence();
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(compute_instance, 0,nrecv_atoms), *this);
+    // Kokkos::fence();
+
+    ckout<<"all okay>"<<endl;
 
   }
   atom_ = atom;
+  // Kokkos::fence();
   // Kokkos::Profiling::popRegion();
 }
 
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeSendlist, const int& i) const {
   if (x(i,idim) < lo || x(i,idim) >= hi) {
-    const int mysend=Kokkos::atomic_fetch_add(&count.view_device()(0),1);//it's like a ticket and turn lock of sorts
+    const int mysend=Kokkos::atomic_fetch_add(&count_device(0),1);//it's like a ticket and turn lock of sorts
     if(mysend<exc_sendlist.extent(0)) {
       exc_sendlist(mysend) = i;
       exc_sendflag(i) = 1;
@@ -816,7 +817,7 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
   double value = buf_recv[i * 7 + idim];
 
   if(value >= lo && value < hi)
-    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.view_device()(0),1), &buf_recv[i * 7]);
+    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count_device(0),1), &buf_recv[i * 7]);
 }
 
 /* borders:
@@ -1066,12 +1067,4 @@ void Comm::suspend(Kokkos::Cuda instance) {
   resume_cb = new CkCallbackResumeThread();
   hapiAddCallback(instance.cuda_stream(), resume_cb);
   delete resume_cb;
-}
-
-void Comm::wait(Kokkos::Cuda instance_1, Kokkos::Cuda instance_2){
-  //instance 2 waits for instance 1
-  cudaEvent_t dep_event_1;
-  hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
-  hapiCheck(cudaEventRecord(dep_event_1, instance_1.cuda_stream()));
-  hapiCheck(cudaStreamWaitEvent(instance_2.cuda_stream(), dep_event_1, 0));
 }

@@ -112,6 +112,8 @@ class Comm : public CBase_Comm
     int_1d_host_view_type h_exc_sendlist;
     int_1d_host_view_type h_exc_copylist;
     int_1d_dual_view_type count;
+    int_1d_host_view_type count_host;
+    int_1d_view_type count_device;
     bool h_exc_alloc;
 
     float_1d_view_type buf_send;                 // send buffer for all comm
