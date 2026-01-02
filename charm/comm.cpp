@@ -892,8 +892,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
       count_host(0) = 0;
       Kokkos::deep_copy(compute_instance, count_device, 0);
 
-    
-
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
 
       Kokkos::deep_copy(compute_instance, count_host, count_device);
@@ -901,9 +899,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
       suspend(compute_instance);
 
       nsend = count_host(0);
-      if(nsend > exc_sendlist.extent(0)) {
-        ckout<<"somewhere here"<<endl;
-        
+      if(nsend > exc_sendlist.extent(0)) {        
         Kokkos::resize(exc_sendlist , nsend);
 
         growlist(iswap, nsend);
@@ -921,7 +917,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
       }
 
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(compute_instance, 0,nsend),*this);
-      suspend(compute_instance);
       // swap atoms with other proc
       // put incoming ghosts at end of my atom arrays
       // if swapping with self, simply copy, no messages
@@ -941,12 +936,17 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
           // Move data on device to host for communication
           // if (preprocess) {
-          h_buf_send = Kokkos::create_mirror_view(buf_send);
-          h_buf_recv = Kokkos::create_mirror_view(buf_recv);
+          if(h_buf_send.size()<buf_send.size())
+            h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+          if(h_buf_recv.size()<buf_recv.size())
+            h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
           // } else {
           //   CmiEnforce(h_buf_alloc);
           // }
-          Kokkos::deep_copy(h_buf_send, buf_send);
+          auto h_buf_send_sub= Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+          Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+
+          suspend(compute_instance);
 
           send1 = static_cast<void*>(h_buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
@@ -955,7 +955,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
 
           // Move received data to device
-          Kokkos::deep_copy(buf_recv, h_buf_recv);
+          auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+          Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
           buf = buf_recv;
         } else {
@@ -971,8 +972,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       x = atom.x;
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(0,nrecv),*this);
-      Kokkos::fence();
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(compute_instance, 0,nrecv),*this);
 
       // set all pointers & counters
 
@@ -986,6 +986,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
         atom.nghost += nrecv;
 
       iswap++;
+
     }
   }
 
@@ -1009,6 +1010,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
     growrecv(max2);
   }
   atom_ = atom;
+  Kokkos::fence();
 
 }
 
