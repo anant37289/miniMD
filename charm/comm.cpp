@@ -630,19 +630,22 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nlocal = atom.nlocal;
 
     if (exc_sendflag.extent(0)<nlocal) {
-      
-      Kokkos::resize(exc_sendflag,nlocal);
+      NVTXTracer("Comm::exchange::resize", NVTXColor::Carrot);
+      Kokkos::resize(exc_sendflag,nlocal);//resize on a stream..
     }
 
-    count.view_host()(0) = exc_sendlist.extent(0);//force entry to the loop
+    count_host(0) = exc_sendlist.extent(0);//force entry to the loop
     //count the atoms which are leaving, also keep track of position in the lists
     while (count.view_host()(0) >= exc_sendlist.extent(0)) {
-      count.view_host()(0) = 0;
-      count.modify<HostType>();
-      count.sync<DeviceType>();
+      Kokkos::deep_copy(h2d_instance, count_device, 0);
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist>(0,nlocal), *this);
-      Kokkos::fence();
+      wait(h2d_instance, compute_instance);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist>(compute_instance, 0,nlocal), *this);
+
+      wait(compute_instance, d2h_instance);
+      Kokkos::deep_copy(d2h_instance, count_host, count_device);
+
+      suspend(d2h_instance);
 
       count.modify<DeviceType>();
       count.sync<HostType>();
@@ -651,23 +654,25 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         
         Kokkos::resize(exc_sendlist,(count.view_host()(0)+1)*1.1);
         Kokkos::resize(exc_copylist,(count.view_host()(0)+1)*1.1);
-        count.view_host()(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
+        count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
-      if (count.view_host()(0)*7>=maxsend) {
-        
-        growsend(count.view_host()(0));
+       if (count_host(0)*7>=maxsend) {
+        // CmiEnforce(preprocess);
+        NVTXTracer("Comm::exchange::grow_send", NVTXColor::GreenSea);
+        growsend(count_host(0));
       }
     }
-    // if (preprocess) {
-      h_exc_sendflag = Kokkos::create_mirror_view(exc_sendflag);
-      h_exc_copylist = Kokkos::create_mirror_view(exc_copylist);
-      h_exc_sendlist = Kokkos::create_mirror_view(exc_sendlist);
-    // }
+    if(h_exc_sendflag.extent(0)<exc_sendflag.extent(0))
+      h_exc_sendflag = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_sendflag);
+    if(h_exc_copylist.extent(0)<exc_copylist.extent(0))
+      h_exc_copylist = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_copylist);
+    if(h_exc_sendlist.extent(0)<exc_sendlist.extent(0))
+      h_exc_sendlist = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), exc_sendlist);
 
-    Kokkos::deep_copy(h_exc_sendflag,exc_sendflag);
-    Kokkos::deep_copy(h_exc_copylist,exc_copylist);
-    Kokkos::deep_copy(h_exc_sendlist,exc_sendlist);
-
+    Kokkos::deep_copy(compute_instance, h_exc_sendflag,exc_sendflag);
+    // Kokkos::deep_copy(compute_instance, h_exc_copylist,exc_copylist);
+    Kokkos::deep_copy(compute_instance, h_exc_sendlist,exc_sendlist);
+    
     int sendpos = nlocal-1;
     nlocal -= count.view_host()(0);
     //fill the holes left by the send operation
@@ -1061,4 +1066,12 @@ void Comm::suspend(Kokkos::Cuda instance) {
   resume_cb = new CkCallbackResumeThread();
   hapiAddCallback(instance.cuda_stream(), resume_cb);
   delete resume_cb;
+}
+
+void Comm::wait(Kokkos::Cuda instance_1, Kokkos::Cuda instance_2){
+  //instance 2 waits for instance 1
+  cudaEvent_t dep_event_1;
+  hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
+  hapiCheck(cudaEventRecord(dep_event_1, instance_1.cuda_stream()));
+  hapiCheck(cudaStreamWaitEvent(instance_2.cuda_stream(), dep_event_1, 0));
 }
