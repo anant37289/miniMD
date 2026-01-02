@@ -337,8 +337,6 @@ void Block::run(){
           }
           comm->borders(atom, false);
 
-          Kokkos::fence();
-
         // Kokkos::Profiling::pushRegion("neighbor::build");
         thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
         // neighbor.build(atom);

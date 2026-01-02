@@ -395,9 +395,16 @@ void Comm::communicate(Atom &atom, bool preprocess)
       int_1d_view_type list = Kokkos::subview(sendlist,iswap,Kokkos::ALL());
 
       if (sendchare[iswap] != index) {
+        if(buf_comms_send[iswap].size()<buf_send.size()){
+          buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_send.size());
+          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
+        }
+        if(buf_comms_recv[iswap].size()<buf_recv.size()){
+          buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_recv.size());
+          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
+        }
         // Invoke packing kernel
         atom.pack_comm(sendnum[iswap], list, buf_comms_send[iswap], pbc_flags);
-
 #ifdef PACK_UNPACK_COMPUTE
         // Enforce compute -> d2h dependency
         cudaEvent_t dep_event;
@@ -520,6 +527,14 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
 
       // Pack and move buffers to host
       atom.pack_reverse(recvnum[iswap], firstrecv[iswap], buf_comms_send[iswap]);
+      if(buf_comms_send[iswap].size()<buf_send.size()){
+          buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_send.size());
+          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
+        }
+        if(buf_comms_recv[iswap].size()<buf_recv.size()){
+          buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_recv.size());
+          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
+      }
 
 #ifdef PACK_UNPACK_COMPUTE
       // Enforce compute -> d2h dependency
@@ -1010,7 +1025,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
     growrecv(max2);
   }
   atom_ = atom;
-  Kokkos::fence();
+  // Kokkos::fence();
 
 }
 

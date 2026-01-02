@@ -54,7 +54,7 @@ Neighbor::Neighbor(int ntypes_)
 
   cutneighsq = float_1d_view_type("Neighbor::cutneighsq",ntypes*ntypes);
   new_maxneighs = int_1d_view_type("Neighbor::new_maxneighs",1);
-  h_new_maxneighs = Kokkos::create_mirror_view(new_maxneighs);
+  h_new_maxneighs = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), new_maxneighs);
   team_neigh_build = 0;
 
   shared_mem_size = 0;
@@ -100,8 +100,7 @@ void Neighbor::build(Atom &atom)
 
   /* repeat calculations if running out of memory */
   while (resize) {
-    Kokkos::fence();
-    Kokkos::deep_copy(new_maxneighs, maxneighs);
+    Kokkos::deep_copy(compute_instance, new_maxneighs, maxneighs);
     resize = 0;
 
     /* loop over each atom, storing neighbors */
@@ -109,40 +108,42 @@ void Neighbor::build(Atom &atom)
     if(ntypes<MAX_STACK_TYPES) {
       if(!team_neigh_build) {
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(0,nlocal), *this);
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,1> >(compute_instance, 0,nlocal), *this);
         else
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,1> >(0,nlocal), *this);
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,1> >(compute_instance, 0,nlocal), *this);
       } else {
         int team_size = team_neigh_build;
         int vector_length = 32;
         while(vector_length>atoms_per_bin) vector_length/=2;
         shared_mem_size = (2*team_size +2*nextx) * atoms_per_bin * (3*sizeof(float) + 2 * sizeof(int));
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<1,1> >((mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
+          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<1,1> >(compute_instance, (mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
         else
-          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<0,1> >((mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
+          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<0,1> >(compute_instance, (mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
         shared_mem_size = 0;
       }
     } else {
       if(!team_neigh_build) {
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(0,nlocal), *this);
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<1,0> >(compute_instance, 0,nlocal), *this);
         else
-          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,0> >(0,nlocal), *this);
+          Kokkos::parallel_for(Kokkos::RangePolicy<TagNeighborBuild<0,0> >(compute_instance, 0,nlocal), *this);
       } else {
         int team_size = team_neigh_build;
         int vector_length = 32;
         while(vector_length>atoms_per_bin) vector_length/=2;
         shared_mem_size = (2*team_size +2*nextx) * atoms_per_bin * (3*sizeof(float) + 2 * sizeof(int));
         if(halfneigh)
-          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<1,0> >((mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
+          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<1,0> >(compute_instance, (mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
         else
-          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<0,0> >((mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
+          Kokkos::parallel_for(Kokkos::TeamPolicy<TagNeighborBuild<0,0> >(compute_instance, (mbinx-2*nextx)*(mbiny-2*nexty)*(mbinz-2*nextz)/team_size,team_size,vector_length), *this);
         shared_mem_size = 0;
       }
     }
 
-    Kokkos::deep_copy(h_new_maxneighs,new_maxneighs);
+    Kokkos::deep_copy(compute_instance, h_new_maxneighs,new_maxneighs);
+
+    suspend(compute_instance);
     if(h_new_maxneighs(0) > maxneighs) {
       resize = 1;
       maxneighs = h_new_maxneighs(0) * 1.2;
@@ -680,4 +681,10 @@ MMD_float Neighbor::bindist(int i, int j, int k)
     delz = (k + 1) * binsizez;
 
   return (delx * delx + dely * dely + delz * delz);
+}
+
+void Neighbor::suspend(Kokkos::Cuda instance) {
+  resume_cb = new CkCallbackResumeThread();
+  hapiAddCallback(instance.cuda_stream(), resume_cb);
+  delete resume_cb;
 }

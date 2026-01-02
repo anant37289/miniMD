@@ -1,7 +1,22 @@
 #include <Kokkos_Core.hpp>
+#include <cuda_runtime.h>
 #include "test.decl.h"
+#include "../atom.h"
+#include "../neighbor.h"
 
 /* readonly */ CProxy_Main mainProxy;
+
+// // Dummy implementation of hapiAddCallback
+// void CUDART_CB myCallback(cudaStream_t stream, cudaError_t status, void *userData) {
+//     CkCallback* cb = (CkCallback*)userData;
+//     cb->send();
+//     delete cb;
+// }
+//
+// extern "C" void hapiAddCallback(cudaStream_t stream, CkCallback* cb) {
+//     CkCallback* cb_copy = new CkCallback(*cb);
+//     cudaStreamAddCallback(stream, myCallback, cb_copy, 0);
+// }
 
 class Main : public CBase_Main {
 public:
@@ -22,68 +37,116 @@ public:
     CProxy_TestChare array = CProxy_TestChare::ckNew(num_chares);
     array.run();
   }
-
-//   void done() {
-//     CkPrintf("Main: All done, exiting\n");
-//     Kokkos::finalize();
-//     CkExit();
-//   }
-};
-
-class KernelRunner {
-public:
-  void run_kernel(int thisIndex) {
-    CkPrintf("KernelRunner: Starting kernel launch for chare %d\n", thisIndex);
-
-    // 1. Create stream with priority (mimicking KokkosManager)
-    cudaStream_t stream;
-    cudaStreamCreateWithPriority(&stream, cudaStreamDefault, 0);
-
-    // 2. Create Kokkos instance from stream
-    auto instance = Kokkos::Cuda(stream);
-
-    // 3. Simple Kernel Launch using the instance
-    int n = 1000;
-    Kokkos::View<double*> data("data", n);
-    
-    // Create a pinned host view like miniMD does for comms
-    Kokkos::View<double*, Kokkos::CudaHostPinnedSpace> pinned_data("pinned_data", n);
-    
-    CkPrintf("KernelRunner: Launching kernel with explicit stream and pinned memory...\n");
-    Kokkos::parallel_for("test_kernel", 
-        Kokkos::RangePolicy<Kokkos::Cuda>(instance, 0, n), 
-        KOKKOS_LAMBDA(int i) {
-          data(i) = i * 1.5;
-        });
-    
-    // Copy to pinned memory
-    Kokkos::deep_copy(instance, pinned_data, data);
-
-    Kokkos::fence();
-    cudaStreamSynchronize(stream);
-    CkPrintf("KernelRunner: Kernel finished\n");
-    
-    cudaStreamDestroy(stream);
-  }
 };
 
 class TestChare : public CBase_TestChare {
 public:
-  TestChare() {}
-  KernelRunner runner;
+  Atom atom;
+  Neighbor neighbor;
+  cudaStream_t stream;
 
-  void run() {
-    thisProxy[thisIndex].func(CkCallbackResumeThread());
-    CkPrintf("TestChare[%d]: Starting run (threaded)\n", thisIndex);
-    
-    runner.run_kernel(thisIndex);
+  TestChare() : atom(1), neighbor(1) { // 1 type
+      // Create stream
+      cudaStreamCreateWithPriority(&stream, cudaStreamDefault, 0);
+      
+      // Setup Kokkos instances
+      auto instance = Kokkos::Cuda(stream);
+      
+      atom.compute_instance = instance;
+      atom.h2d_instance = instance;
+      atom.d2h_instance = instance;
+      atom.pack_instance = instance;
+      atom.unpack_instance = instance;
 
-    // 2. Trigger reduction to Main to finish
-    //contribute(CkCallback(CkReductionTarget(Main, done), mainProxy));
+      neighbor.compute_instance = instance;
+      neighbor.h2d_instance = instance;
+      neighbor.d2h_instance = instance;
+      neighbor.pack_instance = instance;
+      neighbor.unpack_instance = instance;
+      
+      // Setup Box
+      atom.box.xprd = 10.0;
+      atom.box.yprd = 10.0;
+      atom.box.zprd = 10.0;
+      atom.box.xlo = 0.0;
+      atom.box.xhi = 10.0;
+      atom.box.ylo = 0.0;
+      atom.box.yhi = 10.0;
+      atom.box.zlo = 0.0;
+      atom.box.zhi = 10.0;
+      
+      // Setup Neighbor
+      neighbor.cutneigh = 2.5;
+      neighbor.nbinx = 4;
+      neighbor.nbiny = 4;
+      neighbor.nbinz = 4;
+      
+      // Setup Atom
+      atom.natoms = 100;
+      atom.nlocal = 100;
+      atom.nghost = 0;
+      atom.nmax = 200;
+      
+      // Allocate views
+      atom.x = x_view_type("atom.x", atom.nmax);
+      atom.type = int_1d_view_type("atom.type", atom.nmax);
+      
+      // Initialize atoms
+      auto h_x = Kokkos::create_mirror_view(atom.x);
+      auto h_type = Kokkos::create_mirror_view(atom.type);
+      
+      for(int i=0; i<atom.nlocal; i++) {
+          h_x(i,0) = (i % 10) * 1.0;
+          h_x(i,1) = ((i / 10) % 10) * 1.0;
+          h_x(i,2) = (i / 100) * 1.0;
+          h_type(i) = 0;
+      }
+      Kokkos::deep_copy(atom.x, h_x);
+      Kokkos::deep_copy(atom.type, h_type);
+      
+      neighbor.setup(atom);
   }
 
-  void func(CkCallback cb){
+  void run() {
+    CkPrintf("TestChare[%d]: Starting neighbor build\n", thisIndex);
+    
+    // Mimic comm->borders kernel launch
+    Kokkos::parallel_for("dummy_borders", Kokkos::RangePolicy<Kokkos::Cuda>(atom.compute_instance, 0, 100), KOKKOS_LAMBDA(int i) {
+        double x = i * 1.0;
+    });
+    
+    neighbor.build(atom);
+    
+    // Mimic force->compute kernel launch
+    Kokkos::parallel_for("dummy_force", Kokkos::RangePolicy<Kokkos::Cuda>(atom.compute_instance, 0, 100), KOKKOS_LAMBDA(int i) {
+        double x = i * 2.0;
+    });
+
+    CkPrintf("TestChare[%d]: Neighbor build finished\n", thisIndex);
+    
+    // Verify results
+    int total_neighs = 0;
+    // Need to copy numneigh back to host to check
+    auto h_numneigh = Kokkos::create_mirror_view(neighbor.numneigh);
+    Kokkos::deep_copy(h_numneigh, neighbor.numneigh);
+    
+    for(int i=0; i<atom.nlocal; i++) {
+        total_neighs += h_numneigh(i);
+    }
+    CkPrintf("TestChare[%d]: Total neighbors found: %d\n", thisIndex, total_neighs);
+
+    CkExit();
+  }
+
+  void run_neighbor_build(CkCallback cb){
+    CkPrintf("TestChare[%d]: Inside run_neighbor_build\n", thisIndex);
+    neighbor.build(atom);
+    CkPrintf("TestChare[%d]: neighbor.build returned\n", thisIndex);
     cb.send();
+  }
+  
+  void func(CkCallback cb) {
+      cb.send();
   }
 };
 

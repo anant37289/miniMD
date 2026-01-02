@@ -9,5 +9,6 @@ mainmodule test {
     entry TestChare();
     entry [threaded] void run();
     entry void func(CkCallback cb);
+    entry [threaded] void run_neighbor_build(CkCallback cb);
   };
 };

@@ -33,6 +33,7 @@
 #define NEIGHBOR_H
 
 #include "atom.h"
+#include "hapi.h"
 
 class Neighbor
 {
@@ -57,6 +58,7 @@ class Neighbor
     MMD_float cutneighsq_stack[MAX_STACK_TYPES*MAX_STACK_TYPES];
     int ncalls;                      // # of times build has been called
     int max_totalneigh;              // largest # of neighbors ever stored
+    CkCallbackResumeThread* resume_cb;
 
     int_1d_view_type numneigh;                   // # of neighbors for each atom
     int_2d_view_type neighbors;                  // array of neighbors of each atom
@@ -71,6 +73,7 @@ class Neighbor
     void dealloc();
     int setup(Atom &);               // setup bins based on box and cutoff
     void build(Atom &);              // create neighbor list
+    void suspend(Kokkos::Cuda);
 
     // Atom is going to call binatoms etc for sorting
     void binatoms(Atom & atom, int count = -1);           // bin all atoms
