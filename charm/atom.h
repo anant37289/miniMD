@@ -122,6 +122,17 @@ class Atom
       type_copy = src.type_copy;
       copy_size = src.copy_size;
 
+      h_x = src.h_x;
+      h_v = src.h_v;
+      h_f = src.h_f;
+      h_type = src.h_type;
+
+    compute_instance = src.compute_instance;
+    h2d_instance = src.h2d_instance;
+    d2h_instance = src.d2h_instance;
+    pack_instance = src.pack_instance;
+    unpack_instance = src.unpack_instance;
+
       buf = src.buf;
       list = src.list;
       pbc_flags[0] = src.pbc_flags[0];
