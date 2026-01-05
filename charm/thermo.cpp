@@ -82,9 +82,9 @@ void Thermo::compute(MMD_int iflag, Atom &atom, Neighbor &neighbor, Force* force
 {
   MMD_float t, eng, p;
 
-  if(iflag > 0 && iflag % nstat) return;
+  // if(iflag > 0 && iflag % nstat) return;
 
-  if(iflag == -1 && nstat > 0 && ntimes % nstat == 0) return;
+  // if(iflag == -1 && nstat > 0 && ntimes % nstat == 0) return;
 
   t_act = 0;
   e_act = 0;

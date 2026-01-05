@@ -400,10 +400,6 @@ void Block::run_neighbour_build(CkCallback cb){
   cb.send();
 }
 
-void Block::calc_thermo(CkCallback cb, int iter){
-  thermo.compute(iter, atom, neighbor, force, comm);
-  cb.send();
-}
 
 void Block::contCreateVelocity(double vxtot, double vytot, double vztot) {
   if (in_datafile.empty()) {
