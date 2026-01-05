@@ -316,24 +316,22 @@ void Comm::communicate(Atom &atom, bool preprocess)
   // Kokkos::Profiling::pushRegion("Comm::communicate");
 
   // Create host mirrors for integrate loop
-  if (!preprocess && !h_buf_alloc) {
-    h_buf_alloc = true;
-    buf_comms_send = new float_1d_view_type[nswap];
-    buf_comms_recv = new float_1d_view_type[nswap];
-    h_buf_comms_send = new float_1d_host_view_type[nswap];
-    h_buf_comms_recv = new float_1d_host_view_type[nswap];
-    for (int i = 0; i < nswap; i++) {
-      buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
-      buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
-      h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
-      h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
-    }
-  }
+  // if (!preprocess && !h_buf_alloc) {
+  //   h_buf_alloc = true;
+  //   buf_comms_send = new float_1d_view_type[nswap];
+  //   buf_comms_recv = new float_1d_view_type[nswap];
+  //   h_buf_comms_send = new float_1d_host_view_type[nswap];
+  //   h_buf_comms_recv = new float_1d_host_view_type[nswap];
+  //   for (int i = 0; i < nswap; i++) {
+  //     buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
+  //     buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
+  //     h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
+  //     h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
+  //   }
+  // }
 
   int iswap;
   int pbc_flags[4];
-
-  if (preprocess) {
     // Send and recv one buffer at a time
     for(iswap = 0; iswap < nswap; iswap++) {
       pbc_flags[0] = pbc_any[iswap];
@@ -346,25 +344,26 @@ void Comm::communicate(Atom &atom, bool preprocess)
       // Pack buffer
       if (sendchare[iswap] != index) {
         atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
-        Kokkos::fence();
-
         // Exchange with another proc
         // If self, set recv buffer to send buffer
 
-        // Move data on device to host for communication
-        h_buf_send = Kokkos::create_mirror_view(buf_send);
-        h_buf_recv = Kokkos::create_mirror_view(buf_recv);
-        Kokkos::deep_copy(h_buf_send, buf_send);
+        auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+        Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+
 
         // Send and suspend
         send1 = h_buf_send.data();
         send1_size = comm_send_size[iswap] * sizeof(MMD_float);
         send1_chare = sendchare[iswap];
         recv1 = h_buf_recv.data();
+
+        suspend(compute_instance);
+
         block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
         // Move received data to device
-        Kokkos::deep_copy(buf_recv, h_buf_recv);
+        auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+        Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
         // Unpack received data
         buf = buf_recv;
@@ -373,78 +372,8 @@ void Comm::communicate(Atom &atom, bool preprocess)
         // No need to synchronize for self packing
         atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);
       }
-
-      Kokkos::fence();
     }
-  } else {
-#if !defined PACK_UNPACK_COMPUTE
-    // Enforce compute -> pack dependency
-    cudaEvent_t dep_event_1;
-    hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
-    hapiCheck(cudaEventRecord(dep_event_1, compute_instance.cuda_stream()));
-    hapiCheck(cudaStreamWaitEvent(pack_instance.cuda_stream(), dep_event_1, 0));
-#endif
-
-    // Pack and move buffers to host
-    for (iswap = 0; iswap < nswap; iswap++) {
-      pbc_flags[0] = pbc_any[iswap];
-      pbc_flags[1] = pbc_flagx[iswap];
-      pbc_flags[2] = pbc_flagy[iswap];
-      pbc_flags[3] = pbc_flagz[iswap];
-
-      int_1d_view_type list = Kokkos::subview(sendlist,iswap,Kokkos::ALL());
-
-      if (sendchare[iswap] != index) {
-        if(buf_comms_send[iswap].size()<buf_send.size()){
-          buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_send.size());
-          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
-        }
-        if(buf_comms_recv[iswap].size()<buf_recv.size()){
-          buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_recv.size());
-          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
-        }
-        // Invoke packing kernel
-        atom.pack_comm(sendnum[iswap], list, buf_comms_send[iswap], pbc_flags);
-#ifdef PACK_UNPACK_COMPUTE
-        // Enforce compute -> d2h dependency
-        cudaEvent_t dep_event;
-        hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-        hapiCheck(cudaEventRecord(dep_event, compute_instance.cuda_stream()));
-        hapiCheck(cudaStreamWaitEvent(d2h_instance.cuda_stream(), dep_event, 0));
-#else
-        // Enforce pack -> d2h dependency
-        cudaEvent_t dep_event;
-        hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-        hapiCheck(cudaEventRecord(dep_event, pack_instance.cuda_stream()));
-        hapiCheck(cudaStreamWaitEvent(d2h_instance.cuda_stream(), dep_event, 0));
-#endif
-
-        // Invoke D2H transfer
-        Kokkos::deep_copy(d2h_instance, h_buf_comms_send[iswap], buf_comms_send[iswap]);
-      } else {
-        atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);
-      }
-    }
-
-#ifdef CUDA_SYNC
-    d2h_instance.fence();
-#else
-    suspend(d2h_instance);
-#endif
-
-    // All buffers copied to host, send to neighbors
-    // After receiving, move buffers to device and unpack
-    atom_p = &atom;
-    block_proxy[thisIndex].comm_all(CkCallbackResumeThread());
-
-#if !defined PACK_UNPACK_COMPUTE
-    // Enforce unpack -> compute dependency
-    cudaEvent_t dep_event;
-    hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-    hapiCheck(cudaEventRecord(dep_event, unpack_instance.cuda_stream()));
-    hapiCheck(cudaStreamWaitEvent(compute_instance.cuda_stream(), dep_event, 0));
-#endif
-  }
+    Kokkos::fence();
 
   // Kokkos::Profiling::popRegion();
 }

@@ -119,12 +119,8 @@ void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in,
   buf = buf_in;
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
 
-  Kokkos::Cuda instance;
-#ifdef PACK_UNPACK_COMPUTE
-  instance = compute_instance;
-#else
-  instance = pack_instance;
-#endif
+  Kokkos::Cuda instance = compute_instance;
+
 
   //KOKKOS_ASSERT(compute_instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   if(pbc_flags[0] == 0) {
@@ -144,12 +140,7 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
   first = first_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance;
-#ifdef PACK_UNPACK_COMPUTE
-  instance = compute_instance;
-#else
-  instance = unpack_instance;
-#endif
+  Kokkos::Cuda instance = compute_instance;
 
   //KOKKOS_ASSERT(instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   Kokkos::parallel_for(Kokkos::Experimental::require(

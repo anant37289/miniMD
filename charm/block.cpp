@@ -252,7 +252,7 @@ void Block::run(){
 
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
-
+      Kokkos::fence();
       //Main iteration loop
       // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
       {
@@ -281,6 +281,7 @@ void Block::run(){
           integrate.xold = atom.xold;
           integrate.nlocal = atom.nlocal;
 
+          Kokkos::fence();
           integrate.initialIntegrate();
 
           if((n + 1) % neighbor.every) {
@@ -337,6 +338,8 @@ void Block::run(){
           }
           comm->borders(atom, false);
 
+          Kokkos::fence();
+
         // Kokkos::Profiling::pushRegion("neighbor::build");
         thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
         // neighbor.build(atom);
@@ -358,8 +361,6 @@ void Block::run(){
 
       integrate.finalIntegrate();
 
-      if(thermo.nstat) thermo.compute(n + 1, atom, neighbor, force, comm);
-
       /*
       if (index == 0) {
         CkPrintf("[Block] Iteration %d time: %.6lf\n", n, CkWallTimer() - iter_start_time);
@@ -377,7 +378,6 @@ void Block::run(){
       CkPrintf("[Block] Average time per iteration: %.6lf s\n", total_time / (integrate.ntimes-1));
     }
       }
-
 
       force->evflag = 1;
       force->compute(atom, neighbor, comm, thisIndex);
@@ -397,6 +397,11 @@ void Block::run(){
 
 void Block::run_neighbour_build(CkCallback cb){
   neighbor.build(atom);
+  cb.send();
+}
+
+void Block::calc_thermo(CkCallback cb, int iter){
+  thermo.compute(iter, atom, neighbor, force, comm);
   cb.send();
 }
 
