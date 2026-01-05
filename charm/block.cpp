@@ -281,7 +281,6 @@ void Block::run(){
           integrate.xold = atom.xold;
           integrate.nlocal = atom.nlocal;
 
-          Kokkos::fence();
           integrate.initialIntegrate();
 
           if((n + 1) % neighbor.every) {
@@ -338,7 +337,6 @@ void Block::run(){
           }
           comm->borders(atom, false);
 
-          Kokkos::fence();
 
         // Kokkos::Profiling::pushRegion("neighbor::build");
         thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
