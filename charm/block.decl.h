@@ -29,7 +29,7 @@ void borders_2(int iswap, const CkCallback &cb);
 void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
-void comms_recv(int ref, const char *data, const size_t &size);
+void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);
@@ -641,7 +641,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static int _callmarshall_comms_marshall22(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_comms_marshall22(PUP::er &p,void *msg);
-    /* DECLS: void comms_recv(int ref, const char *data, const size_t &size);
+    /* DECLS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
      */
     // Entry point registration at startup
     
@@ -654,13 +654,13 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     }
 
     
-    inline static int idx_comms_recv(void (Block::*)(int ref, const char *data, const size_t &size) ) {
+    inline static int idx_comms_recv(void (Block::*)(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) ) {
       return idx_comms_recv_marshall23();
     }
 
 
     
-    static int comms_recv(int ref, const char *data, const size_t &size) { return idx_comms_recv_marshall23(); }
+    static int comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) { return idx_comms_recv_marshall23(); }
     
     static void _call_comms_recv_marshall23(void* impl_msg, void* impl_obj);
     
@@ -1004,10 +1004,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void comms(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DECLS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comm_all(const CkCallback &cb);
  */
@@ -1222,10 +1222,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void comms(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DECLS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comm_all(const CkCallback &cb);
  */
@@ -1512,10 +1512,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void comms(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DECLS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comm_all(const CkCallback &cb);
  */
@@ -1728,7 +1728,7 @@ public:                                                                        \
   void borders_recv_2(Closure_Block::borders_recv_2_21_closure* genClosure);   \
   void borders_recv_2(int ref, char *data, size_t size);                       \
   void comms_recv(Closure_Block::comms_recv_23_closure* genClosure);           \
-  void comms_recv(int ref, char *data, size_t size);                           \
+  void comms_recv(int ref, size_t size, CkDeviceBuffer deviceBuffer_data);     \
   void comm_all_recv(Closure_Block::comm_all_recv_25_closure* genClosure);     \
   void comm_all_recv(int ref, char *data, size_t size);                        \
   void comm_rev_all_recv(Closure_Block::comm_rev_all_recv_27_closure* genClosure);\

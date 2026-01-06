@@ -637,8 +637,9 @@
 
     struct Closure_Block::comms_recv_23_closure : public SDAG::Closure {
             int ref;
-            char *data;
             size_t size;
+      int num_device_rdma_fields;
+      CkDeviceBuffer deviceBuffer_data;
 
       CkMarshallMsg* _impl_marshall;
       char* _impl_buf_in;
@@ -657,11 +658,18 @@
         _impl_buf_size = 0;
       }
             int & getP0() { return ref;}
-            char *& getP1() { return data;}
-            size_t & getP2() { return size;}
+            size_t & getP1() { return size;}
+      int & getP2() { return num_device_rdma_fields; }
+      CkDeviceBuffer & getP3() { return deviceBuffer_data; }
       void pup(PUP::er& __p) {
         __p | ref;
         __p | size;
+        char *impl_buf_device = _impl_marshall ? _impl_marshall->msgBuf : _impl_buf_in;
+        __p | num_device_rdma_fields;
+        if (__p.isPacking()) {
+          deviceBuffer_data.ptr = (void *)((char *)(deviceBuffer_data.ptr) - impl_buf_device);
+        }
+        __p | deviceBuffer_data;
         packClosure(__p);
         __p | _impl_buf_size;
         bool hasMsg = (_impl_marshall != 0); __p | hasMsg;
@@ -670,15 +678,16 @@
         if (__p.isUnpacking()) {
           char *impl_buf = _impl_marshall ? _impl_marshall->msgBuf : _impl_buf_in;
           PUP::fromMem implP(impl_buf);
+  deviceBuffer_data.ptr = (void *)(impl_buf + (size_t)(deviceBuffer_data.ptr));
+  implP|num_device_rdma_fields;
+  CkDeviceBuffer deviceBuffer_data;
+  implP|deviceBuffer_data;
+  char *deviceBuffer_data_ptr = nullptr;
   PUP::detail::TemporaryObjectHolder<int> ref;
   implP|ref;
-  int impl_off_data, impl_cnt_data;
-  implP|impl_off_data;
-  implP|impl_cnt_data;
   PUP::detail::TemporaryObjectHolder<size_t> size;
   implP|size;
           impl_buf+=CK_ALIGN(implP.size(),16);
-          data = (char *)(impl_buf+impl_off_data);
         }
       }
       virtual ~comms_recv_23_closure() {
@@ -880,7 +889,7 @@ void borders_2(int iswap, const CkCallback &cb);
 void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
-void comms_recv(int ref, const char *data, const size_t &size);
+void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);
@@ -1538,38 +1547,39 @@ void CProxyElement_Block::comms(int iswap, const CkCallback &cb, const CkEntryOp
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DEFS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
-void CProxyElement_Block::comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts) 
+void CProxyElement_Block::comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts) 
 {
   ckCheck();
-  //Marshall: int ref, const char *data, const size_t &size
+  //Marshall: int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data
   int impl_off=0;
-  int impl_arrstart=0;
-  int impl_off_data, impl_cnt_data;
-  impl_off_data=impl_off=CK_ALIGN(impl_off,sizeof(char));
-  impl_off+=(impl_cnt_data=sizeof(char)*(size));
+  int impl_num_device_rdma_fields = 1;
+  int dest_pe;
+  dest_pe = ckLocalBranch()->lastKnown(ckGetIndex());
+  CkDeviceBuffer* device_buffers[1];
+  deviceBuffer_data.cnt = sizeof(char)*(size);
+  device_buffers[0] = &deviceBuffer_data;
+  CkRdmaDeviceOnSender(dest_pe, impl_num_device_rdma_fields, device_buffers);
   { //Find the size of the PUP'd data
     PUP::sizer implP;
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
-    impl_arrstart=CK_ALIGN(implP.size(),16);
-    impl_off+=impl_arrstart;
+    implP|impl_num_device_rdma_fields;
+    implP|deviceBuffer_data;
+    impl_off+=implP.size();
   }
   CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
   { //Copy over the PUP'd data
     PUP::toMem implP((void *)impl_msg->msgBuf);
+    implP|impl_num_device_rdma_fields;
+    implP|deviceBuffer_data;
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
   }
-  char *impl_buf=impl_msg->msgBuf+impl_arrstart;
-  memcpy(impl_buf+impl_off_data,data,impl_cnt_data);
+  CMI_ZC_MSGTYPE((char *)UsrToEnv(impl_msg)) = CMK_ZC_DEVICE_MSG;
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
@@ -3429,38 +3439,28 @@ PUPable_def(SINGLE_ARG(Closure_Block::comms_22_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DEFS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
-void CProxy_Block::comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts) 
+void CProxy_Block::comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts) 
 {
   ckCheck();
-  //Marshall: int ref, const char *data, const size_t &size
+  //Marshall: int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data
   int impl_off=0;
-  int impl_arrstart=0;
-  int impl_off_data, impl_cnt_data;
-  impl_off_data=impl_off=CK_ALIGN(impl_off,sizeof(char));
-  impl_off+=(impl_cnt_data=sizeof(char)*(size));
+  CkAbort("Broadcast not supported with device buffers");
   { //Find the size of the PUP'd data
     PUP::sizer implP;
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
-    impl_arrstart=CK_ALIGN(implP.size(),16);
-    impl_off+=impl_arrstart;
+    impl_off+=implP.size();
   }
   CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
   { //Copy over the PUP'd data
     PUP::toMem implP((void *)impl_msg->msgBuf);
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
   }
-  char *impl_buf=impl_msg->msgBuf+impl_arrstart;
-  memcpy(impl_buf+impl_off_data,data,impl_cnt_data);
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
@@ -3469,7 +3469,7 @@ void CProxy_Block::comms_recv(int ref, const char *data, const size_t &size, con
 
 // Entry point registration function
 int CkIndex_Block::reg_comms_recv_marshall23() {
-  int epidx = CkRegisterEp("comms_recv(int ref, const char *data, const size_t &size)",
+  int epidx = CkRegisterEp("comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data)",
       reinterpret_cast<CkCallFnPtr>(_call_comms_recv_marshall23), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
   CkRegisterMarshallUnpackFn(epidx, _callmarshall_comms_recv_marshall23);
   CkRegisterMessagePupFn(epidx, _marshallmessagepup_comms_recv_marshall23);
@@ -3485,61 +3485,81 @@ void CkIndex_Block::_call_comms_recv_marshall23(void* impl_msg, void* impl_obj_v
   envelope *env = UsrToEnv(impl_msg_typed);
   PUP::fromMem implP(impl_buf);
   Closure_Block::comms_recv_23_closure* genClosure = new Closure_Block::comms_recv_23_closure();
+  CkDeviceBufferPost devicePost[1];
+  implP|genClosure->num_device_rdma_fields;
+  implP|genClosure->deviceBuffer_data;
+  char *deviceBuffer_data_ptr = nullptr;
   implP|genClosure->ref;
-  int impl_off_data, impl_cnt_data;
-  implP|impl_off_data;
-  implP|impl_cnt_data;
   implP|genClosure->size;
   impl_buf+=CK_ALIGN(implP.size(),16);
-  genClosure->data = (char *)(impl_buf+impl_off_data);
   genClosure->_impl_marshall = impl_msg_typed;
   CkReferenceMsg(genClosure->_impl_marshall);
+  if (CMI_IS_ZC_DEVICE(env)) {
+  impl_obj->comms_recv(genClosure->ref, genClosure->size, deviceBuffer_data_ptr, devicePost);
+    void *buffPtrs[1];
+    int buffSizes[1];
+      if(deviceBuffer_data_ptr == nullptr)
+        CkAbort("Post Entry Method doesn't post the buffer by initializing the reference to the pointer for data ");
+    buffPtrs[0] = (void *)deviceBuffer_data_ptr;
+    buffSizes[0] = sizeof(char) * genClosure->size;
+    CkRdmaDeviceIssueRgets(env, genClosure->num_device_rdma_fields, buffPtrs, buffSizes, devicePost);
+      deviceBuffer_data_ptr = (char *)genClosure->deviceBuffer_data.ptr;
+  } else {
   impl_obj->comms_recv(genClosure);
   genClosure->deref();
+  }
 }
 int CkIndex_Block::_callmarshall_comms_recv_marshall23(char* impl_buf, void* impl_obj_void) {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   envelope *env = UsrToEnv(impl_buf);
   PUP::fromMem implP(impl_buf);
   Closure_Block::comms_recv_23_closure* genClosure = new Closure_Block::comms_recv_23_closure();
+  CkDeviceBufferPost devicePost[1];
+  implP|genClosure->num_device_rdma_fields;
+  implP|genClosure->deviceBuffer_data;
+  char *deviceBuffer_data_ptr = nullptr;
   implP|genClosure->ref;
-  int impl_off_data, impl_cnt_data;
-  implP|impl_off_data;
-  implP|impl_cnt_data;
   implP|genClosure->size;
   impl_buf+=CK_ALIGN(implP.size(),16);
-  genClosure->data = (char *)(impl_buf+impl_off_data);
+  if (CMI_IS_ZC_DEVICE(env)) {
+  impl_obj->comms_recv(genClosure->ref, genClosure->size, deviceBuffer_data_ptr, devicePost);
+    void *buffPtrs[1];
+    int buffSizes[1];
+      if(deviceBuffer_data_ptr == nullptr)
+        CkAbort("Post Entry Method doesn't post the buffer by initializing the reference to the pointer for data ");
+    buffPtrs[0] = (void *)deviceBuffer_data_ptr;
+    buffSizes[0] = sizeof(char) * genClosure->size;
+    CkRdmaDeviceIssueRgets(env, genClosure->num_device_rdma_fields, buffPtrs, buffSizes, devicePost);
+      deviceBuffer_data_ptr = (char *)genClosure->deviceBuffer_data.ptr;
+  } else {
   impl_obj->comms_recv(genClosure);
   genClosure->deref();
+  }
   return implP.size();
 }
 void CkIndex_Block::_marshallmessagepup_comms_recv_marshall23(PUP::er &implDestP,void *impl_msg) {
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
-  /*Unmarshall pup'd fields: int ref, const char *data, const size_t &size*/
+  /*Unmarshall pup'd fields: int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data*/
   PUP::fromMem implP(impl_buf);
+  int impl_num_device_rdma_fields; implP|impl_num_device_rdma_fields;
+  CkDeviceBuffer deviceBuffer_data;
+  implP|deviceBuffer_data;
+  char *deviceBuffer_data_ptr = nullptr;
+  CkDeviceBufferPost devicePost[1];
   PUP::detail::TemporaryObjectHolder<int> ref;
   implP|ref;
-  int impl_off_data, impl_cnt_data;
-  implP|impl_off_data;
-  implP|impl_cnt_data;
   PUP::detail::TemporaryObjectHolder<size_t> size;
   implP|size;
   impl_buf+=CK_ALIGN(implP.size(),16);
   /*Unmarshall arrays:*/
-  char *data=(char *)(impl_buf+impl_off_data);
   if (implDestP.hasComments()) implDestP.comment("ref");
   implDestP|ref;
-  if (implDestP.hasComments()) implDestP.comment("data");
-  implDestP.synchronize(PUP::sync_begin_array);
-  for (int impl_i=0;impl_i*(sizeof(*data))<impl_cnt_data;impl_i++) {
-    implDestP.synchronize(PUP::sync_item);
-    implDestP|data[impl_i];
-  }
-  implDestP.synchronize(PUP::sync_end_array);
   if (implDestP.hasComments()) implDestP.comment("size");
   implDestP|size;
+  if (implDestP.hasComments()) implDestP.comment("data");
+  implDestP|deviceBuffer_data;
 }
 PUPable_def(SINGLE_ARG(Closure_Block::comms_recv_23_closure))
 #endif /* CK_TEMPLATES_ONLY */
@@ -4541,38 +4561,28 @@ void CProxySection_Block::comms(int iswap, const CkCallback &cb, const CkEntryOp
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void comms_recv(int ref, const char *data, const size_t &size);
+/* DEFS: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
-void CProxySection_Block::comms_recv(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts) 
+void CProxySection_Block::comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts) 
 {
   ckCheck();
-  //Marshall: int ref, const char *data, const size_t &size
+  //Marshall: int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data
   int impl_off=0;
-  int impl_arrstart=0;
-  int impl_off_data, impl_cnt_data;
-  impl_off_data=impl_off=CK_ALIGN(impl_off,sizeof(char));
-  impl_off+=(impl_cnt_data=sizeof(char)*(size));
+  CkAbort("Broadcast not supported with device buffers");
   { //Find the size of the PUP'd data
     PUP::sizer implP;
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
-    impl_arrstart=CK_ALIGN(implP.size(),16);
-    impl_off+=impl_arrstart;
+    impl_off+=implP.size();
   }
   CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
   { //Copy over the PUP'd data
     PUP::toMem implP((void *)impl_msg->msgBuf);
     implP|ref;
-    implP|impl_off_data;
-    implP|impl_cnt_data;
     //Have to cast away const-ness to get pup routine
     implP|(typename std::remove_cv<typename std::remove_reference<size_t>::type>::type &)size;
   }
-  char *impl_buf=impl_msg->msgBuf+impl_arrstart;
-  memcpy(impl_buf+impl_off_data,data,impl_cnt_data);
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
@@ -4793,7 +4803,7 @@ void CkIndex_Block::__register(const char *s, size_t size) {
   // REG: void comms(int iswap, const CkCallback &cb);
   idx_comms_marshall22();
 
-  // REG: void comms_recv(int ref, const char *data, const size_t &size);
+  // REG: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
   idx_comms_recv_marshall23();
 
   // REG: void comm_all(const CkCallback &cb);
@@ -4877,7 +4887,7 @@ void Block::_serial_0(Closure_Block::temperature_allreduce_6_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.t_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 4881 "block.def.h"
+#line 4891 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -4947,7 +4957,7 @@ void Block::_serial_1(Closure_Block::temperature_allreduce_6_closure* gen0, CkRe
 
         thermo.t1 = *(MMD_float*)msg->getData();
       
-#line 4951 "block.def.h"
+#line 4961 "block.def.h"
       } // end serial block
     }
   }
@@ -4968,7 +4978,7 @@ void Block::_serial_2(Closure_Block::temperature_allreduce_6_closure* gen0) {
 
         cb.send();
       
-#line 4972 "block.def.h"
+#line 4982 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5038,7 +5048,7 @@ void Block::_serial_3(Closure_Block::energy_allreduce_8_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.e_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 5042 "block.def.h"
+#line 5052 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5108,7 +5118,7 @@ void Block::_serial_4(Closure_Block::energy_allreduce_8_closure* gen0, CkReducti
 
         thermo.eng = *(MMD_float*)msg->getData();
       
-#line 5112 "block.def.h"
+#line 5122 "block.def.h"
       } // end serial block
     }
   }
@@ -5129,7 +5139,7 @@ void Block::_serial_5(Closure_Block::energy_allreduce_8_closure* gen0) {
 
         cb.send();
       
-#line 5133 "block.def.h"
+#line 5143 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5199,7 +5209,7 @@ void Block::_serial_6(Closure_Block::pressure_allreduce_10_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.p_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 5203 "block.def.h"
+#line 5213 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5269,7 +5279,7 @@ void Block::_serial_7(Closure_Block::pressure_allreduce_10_closure* gen0, CkRedu
 
         thermo.virial = *(MMD_float*)msg->getData();
       
-#line 5273 "block.def.h"
+#line 5283 "block.def.h"
       } // end serial block
     }
   }
@@ -5290,7 +5300,7 @@ void Block::_serial_8(Closure_Block::pressure_allreduce_10_closure* gen0) {
 
         cb.send();
       
-#line 5294 "block.def.h"
+#line 5304 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5363,7 +5373,7 @@ void Block::_serial_9(Closure_Block::exchange_1_12_closure* gen0) {
           thisProxy[comm->send2_chare].exchange_1_recv_2(tag, (char*)comm->send2, comm->send2_size);
         }
       
-#line 5367 "block.def.h"
+#line 5377 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5431,7 +5441,7 @@ void Block::_serial_10(Closure_Block::exchange_1_12_closure* gen0, Closure_Block
         memcpy(comm->recv1, data, size);
         comm->nrecv = comm->nrecv1;
       
-#line 5435 "block.def.h"
+#line 5445 "block.def.h"
       } // end serial block
     }
   }
@@ -5536,7 +5546,7 @@ void Block::_serial_11(Closure_Block::exchange_1_12_closure* gen0, Closure_Block
           memcpy(comm->recv2, data, size);
           comm->nrecv += comm->nrecv2;
         
-#line 5540 "block.def.h"
+#line 5550 "block.def.h"
       } // end serial block
     }
   }
@@ -5558,7 +5568,7 @@ void Block::_serial_12(Closure_Block::exchange_1_12_closure* gen0) {
 
         cb.send();
       
-#line 5562 "block.def.h"
+#line 5572 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5631,7 +5641,7 @@ void Block::_serial_13(Closure_Block::exchange_2_13_closure* gen0) {
           thisProxy[comm->send2_chare].exchange_2_recv_2(tag, (char*)comm->send2, comm->send2_size);
         }
       
-#line 5635 "block.def.h"
+#line 5645 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5698,7 +5708,7 @@ void Block::_serial_14(Closure_Block::exchange_2_13_closure* gen0, Closure_Block
 
         memcpy(comm->recv1, data, size);
       
-#line 5702 "block.def.h"
+#line 5712 "block.def.h"
       } // end serial block
     }
   }
@@ -5802,7 +5812,7 @@ void Block::_serial_15(Closure_Block::exchange_2_13_closure* gen0, Closure_Block
 
           memcpy(comm->recv2, data, size);
         
-#line 5806 "block.def.h"
+#line 5816 "block.def.h"
       } // end serial block
     }
   }
@@ -5824,7 +5834,7 @@ void Block::_serial_16(Closure_Block::exchange_2_13_closure* gen0) {
 
         cb.send();
       
-#line 5828 "block.def.h"
+#line 5838 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5894,7 +5904,7 @@ void Block::_serial_17(Closure_Block::borders_1_18_closure* gen0) {
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->send1_chare].borders_recv_1(tag, (char*)comm->send1, comm->send1_size);
       
-#line 5898 "block.def.h"
+#line 5908 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5962,7 +5972,7 @@ void Block::_serial_18(Closure_Block::borders_1_18_closure* gen0, Closure_Block:
         memcpy(comm->recv1, data, size);
         cb.send();
       
-#line 5966 "block.def.h"
+#line 5976 "block.def.h"
       } // end serial block
     }
   }
@@ -6033,7 +6043,7 @@ void Block::_serial_19(Closure_Block::borders_2_19_closure* gen0) {
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->send1_chare].borders_recv_2(tag, (char*)comm->send1, comm->send1_size);
       
-#line 6037 "block.def.h"
+#line 6047 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6101,7 +6111,7 @@ void Block::_serial_20(Closure_Block::borders_2_19_closure* gen0, Closure_Block:
         memcpy(comm->recv1, data, size);
         cb.send();
       
-#line 6105 "block.def.h"
+#line 6115 "block.def.h"
       } // end serial block
     }
   }
@@ -6170,9 +6180,9 @@ void Block::_serial_21(Closure_Block::comms_22_closure* gen0) {
 #line 217 "/u/ajain18/miniMD/charm/ljs.ci"
 
         int tag = comm->nswap*comm->iter + iswap;
-        thisProxy[comm->send1_chare].comms_recv(tag, (char*)comm->send1, comm->send1_size);
+        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1));
       
-#line 6176 "block.def.h"
+#line 6186 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6232,15 +6242,16 @@ void Block::_serial_22(Closure_Block::comms_22_closure* gen0, Closure_Block::com
     CkCallback& cb = gen0->getP1();
     {
       int& ref = gen1->getP0();
-      char*& data = gen1->getP1();
-      size_t& size = gen1->getP2();
+      size_t& size = gen1->getP1();
+      int & num_device_rdma_fields = gen1->getP2();
+      CkDeviceBuffer & deviceBuffer_data = gen1->getP3();
+      char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
 #line 221 "/u/ajain18/miniMD/charm/ljs.ci"
 
-        memcpy(comm->recv1, data, size);
         cb.send();
       
-#line 6244 "block.def.h"
+#line 6255 "block.def.h"
       } // end serial block
     }
   }
@@ -6304,7 +6315,7 @@ void Block::_serial_23(Closure_Block::comm_all_24_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 228 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 227 "/u/ajain18/miniMD/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -6317,7 +6328,7 @@ void Block::_serial_23(Closure_Block::comm_all_24_closure* gen0) {
           }
         }
       
-#line 6321 "block.def.h"
+#line 6332 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6476,7 +6487,7 @@ void Block::_serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClo
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 242 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 241 "/u/ajain18/miniMD/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -6486,7 +6497,7 @@ void Block::_serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClo
             hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
             comm->atom_p->unpack_comm(comm->recvnum[my_iswap], comm->firstrecv[my_iswap], comm->buf_comms_recv[my_iswap]);
           
-#line 6490 "block.def.h"
+#line 6501 "block.def.h"
           } // end serial block
         }
       }
@@ -6505,9 +6516,9 @@ void Block::_serial_25(Closure_Block::comm_all_24_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 253 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 252 "/u/ajain18/miniMD/charm/ljs.ci"
  cb.send(); 
-#line 6511 "block.def.h"
+#line 6522 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6570,7 +6581,7 @@ void Block::_serial_26(Closure_Block::comm_rev_all_26_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 257 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 256 "/u/ajain18/miniMD/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -6583,7 +6594,7 @@ void Block::_serial_26(Closure_Block::comm_rev_all_26_closure* gen0) {
           }
         }
       
-#line 6587 "block.def.h"
+#line 6598 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6742,7 +6753,7 @@ void Block::_serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::Foral
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 271 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 270 "/u/ajain18/miniMD/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -6753,7 +6764,7 @@ void Block::_serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::Foral
             int_1d_view_type list = Kokkos::subview(comm->sendlist,my_iswap,Kokkos::ALL());
             comm->atom_p->unpack_reverse(comm->sendnum[my_iswap], list, comm->buf_comms_recv[my_iswap]);
           
-#line 6757 "block.def.h"
+#line 6768 "block.def.h"
           } // end serial block
         }
       }
@@ -6772,9 +6783,9 @@ void Block::_serial_28(Closure_Block::comm_rev_all_26_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 283 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 282 "/u/ajain18/miniMD/charm/ljs.ci"
  cb.send(); 
-#line 6778 "block.def.h"
+#line 6789 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -7021,11 +7032,12 @@ void Block::borders_recv_2(Closure_Block::borders_recv_2_21_closure* genClosure)
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Block::comms_recv(int ref, char *data, size_t size){
+void Block::comms_recv(int ref, size_t size, CkDeviceBuffer deviceBuffer_data){
   Closure_Block::comms_recv_23_closure* genClosure = new Closure_Block::comms_recv_23_closure();
   genClosure->getP0() = ref;
-  genClosure->getP1() = data;
-  genClosure->getP2() = size;
+  genClosure->getP1() = size;
+  genClosure->getP2() = 1;
+  genClosure->getP3() = deviceBuffer_data;
   comms_recv(genClosure);
   genClosure->deref();
 }
@@ -7853,7 +7865,7 @@ void borders_2(int iswap, const CkCallback &cb);
 void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
-void comms_recv(int ref, const char *data, const size_t &size);
+void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);

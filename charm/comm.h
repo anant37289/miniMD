@@ -83,7 +83,6 @@ class Comm : public CBase_Comm
     void growlist(int, int);
     void suspend(Kokkos::Cuda);
     void wait(Kokkos::Cuda, Kokkos::Cuda);
-
   public:
     void* block;
     int iter;

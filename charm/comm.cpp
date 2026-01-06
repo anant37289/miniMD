@@ -352,24 +352,24 @@ void Comm::communicate(Atom &atom, bool preprocess)
       // Exchange with another proc
       // If self, set recv buffer to send buffer
 
-      auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
-      Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+      // auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+      // Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
 
       // Send and suspend
-      send1 = h_buf_send.data();
+      send1 = buf_send.data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
       send1_chare = sendchare[iswap];
-      recv1 = h_buf_recv.data();
+      recv1 = buf_recv.data();
       suspend(compute_instance);
       block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
       // Move received data to device
-      auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
-      Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
+      // auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+      // Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
       // Unpack received data
       buf = buf_recv;
-      // Kokkos::fence();
+      suspend(compute_instance);
       atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
     } else {
       // No need to synchronize for self packing
