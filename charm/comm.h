@@ -81,6 +81,8 @@ class Comm : public CBase_Comm
     void growsend(int);
     void growrecv(int);
     void growlist(int, int);
+    void growcommrecv(int, int);
+    void growcommsend(int, int);
     void suspend(Kokkos::Cuda);
     void wait(Kokkos::Cuda, Kokkos::Cuda);
   public:
@@ -117,6 +119,8 @@ class Comm : public CBase_Comm
 
     float_1d_view_type buf_send;                 // send buffer for all comm
     float_1d_view_type buf_recv;                 // recv buffer for all comm
+    float_1d_view_type curr_buf_send;                 // send buffer for all comm
+    float_1d_view_type curr_buf_recv;                 // recv buffer for all comm
     float_1d_view_type buf;
     float_1d_host_view_type h_buf_send;
     float_1d_host_view_type h_buf_recv;
@@ -129,6 +133,8 @@ class Comm : public CBase_Comm
 
     bool h_buf_alloc;
     int maxsend;
+    int* maxsendcomm;
+    int* maxrecvcomm;
     int maxrecv;
 
     int chareneigh[3][2];              // my 6 chare neighbors

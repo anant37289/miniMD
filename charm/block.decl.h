@@ -27,7 +27,7 @@ void exchange_2_recv_2(int ref, const char *data, const size_t &size);
 void borders_1(int iswap, const CkCallback &cb);
 void borders_2(int iswap, const CkCallback &cb);
 void borders_recv_1(int ref, const char *data, const size_t &size);
-void borders_recv_2(int ref, const char *data, const size_t &size);
+void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void comms(int iswap, const CkCallback &cb);
 void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void send_done();
@@ -586,7 +586,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static int _callmarshall_borders_recv_1_marshall20(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_borders_recv_1_marshall20(PUP::er &p,void *msg);
-    /* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+    /* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
      */
     // Entry point registration at startup
     
@@ -599,13 +599,13 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     }
 
     
-    inline static int idx_borders_recv_2(void (Block::*)(int ref, const char *data, const size_t &size) ) {
+    inline static int idx_borders_recv_2(void (Block::*)(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) ) {
       return idx_borders_recv_2_marshall21();
     }
 
 
     
-    static int borders_recv_2(int ref, const char *data, const size_t &size) { return idx_borders_recv_2_marshall21(); }
+    static int borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) { return idx_borders_recv_2_marshall21(); }
     
     static void _call_borders_recv_2_marshall21(void* impl_msg, void* impl_obj);
     
@@ -1019,10 +1019,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms(int iswap, const CkCallback &cb);
  */
@@ -1242,10 +1242,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms(int iswap, const CkCallback &cb);
  */
@@ -1537,10 +1537,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms(int iswap, const CkCallback &cb);
  */
@@ -1768,7 +1768,7 @@ public:                                                                        \
   void borders_recv_1(Closure_Block::borders_recv_1_20_closure* genClosure);   \
   void borders_recv_1(int ref, char *data, size_t size);                       \
   void borders_recv_2(Closure_Block::borders_recv_2_21_closure* genClosure);   \
-  void borders_recv_2(int ref, char *data, size_t size);                       \
+  void borders_recv_2(int ref, size_t size, CkDeviceBuffer deviceBuffer_data); \
   void comms_recv(Closure_Block::comms_recv_23_closure* genClosure);           \
   void comms_recv(int ref, size_t size, CkDeviceBuffer deviceBuffer_data);     \
   void send_done(Closure_Block::send_done_24_closure* genClosure);             \

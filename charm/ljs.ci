@@ -244,17 +244,16 @@ module block {
     entry void borders_2(int iswap, CkCallback cb) {
       serial {
         int tag = comm->maxswap_static*comm->iter + iswap;
-        thisProxy[comm->send1_chare].borders_recv_2(tag, (char*)comm->send1, comm->send1_size);
+        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1));
       }
 
-      when borders_recv_2[comm->maxswap_static*comm->iter+iswap](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
+      when borders_recv_2[comm->maxswap_static*comm->iter+iswap](int ref, size_t size, nocopydevice char data[size]) serial {
         cb.send();
       }
     }
 
     entry void borders_recv_1(int ref, char data[size], size_t size);
-    entry void borders_recv_2(int ref, char data[size], size_t size);
+    entry void borders_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
     // Non-blocking communication routines for Comm::communicate and Comm::reverse_communicate
     entry void comms(int iswap, CkCallback cb) {
