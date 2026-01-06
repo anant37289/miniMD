@@ -244,26 +244,27 @@ public:
 
     // Create KokkosManagers on each process
     kokkos_proxy = CProxy_KokkosManager::ckNew();
+    kokkos_proxy.initialize();
 
     // Create block and comm chare arrays
     // Their constructors shouldn't call Kokkos functions
-    block_proxy = CProxy_Block::ckNew(num_chares);
-    CkArrayOptions opts(num_chares);
-    opts.bindTo(block_proxy);
-    comm_proxy = CProxy_Comm::ckNew(opts);
-
     thisProxy.run();
   }
 };
 
 KokkosManager::KokkosManager() {
-  // Initialize Kokkos
-  Kokkos::InitializationSettings args_kokkos;
-  if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
-  // if (teams > 0) args_kokkos.set_num_numa(teams);
-  args_kokkos.set_device_id(0);
-  Kokkos::initialize(args_kokkos);
+}
 
+void KokkosManager::initialize() {
+  if(CmiMyRank()==0){
+    Kokkos::InitializationSettings args_kokkos;
+    if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
+    args_kokkos.set_device_id(0);
+    Kokkos::initialize(args_kokkos);
+  }
+  ckout<<"at barrier"<<endl;
+  CmiNodeBarrier();
+  
   // Create per-GPU streams (only works with 1 process per GPU)
   cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0);
   cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1);
@@ -294,7 +295,9 @@ void KokkosManager::finalize() {
   cudaStreamDestroy(unpack_stream);
 
   // Finalize Kokkos
-  Kokkos::finalize();
+  if(CmiMyRank()==0){
+    Kokkos::finalize();
+  }
 
   contribute(CkCallback(CkReductionTarget(Main, kokkosFinalized), main_proxy));
 }

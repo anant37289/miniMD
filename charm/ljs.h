@@ -24,6 +24,7 @@ public:
 
   KokkosManager();
   void finalize();
+  void initialize();
 };
 
 #endif

@@ -55,6 +55,12 @@ mainmodule miniMD {
     entry void run() {
       when kokkosInitialized() serial {
         CkPrintf("[Main] Kokkos initialized\n");
+        //TODO: this will not be valid for n>2, so make something else for that because readonly are not updated
+        block_proxy = CProxy_Block::ckNew(num_chares);
+        CkArrayOptions opts(num_chares);
+        opts.bindTo(block_proxy);
+        comm_proxy = CProxy_Comm::ckNew(opts);
+
         block_proxy.init();
       }
 
@@ -93,8 +99,9 @@ mainmodule miniMD {
     }
   };
 
-  nodegroup KokkosManager {
+  group KokkosManager {
     entry KokkosManager();
+    entry void initialize();
     entry void finalize();
   };
 };
@@ -109,7 +116,7 @@ module block {
 
     // Main code flow
     entry [threaded] void run(); 
-    entry void run_neighbour_build(CkCallback cb);
+    entry [threaded] void run_neighbour_build(CkCallback cb);
 
     // Allreduce routines for Thermo
     entry void temperature_allreduce(CkCallback cb) {

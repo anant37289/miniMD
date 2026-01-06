@@ -509,8 +509,9 @@ public:                                                                        \
 
 typedef CBaseT1<Chare, CProxy_Main>CBase_Main;
 
-/* DECLS: nodegroup KokkosManager: NodeGroup{
+/* DECLS: group KokkosManager: IrrGroup{
 KokkosManager();
+void initialize();
 void finalize();
 };
  */
@@ -520,7 +521,7 @@ void finalize();
  class CProxyElement_KokkosManager;
  class CProxySection_KokkosManager;
 /* --------------- index object ------------------ */
-class CkIndex_KokkosManager:public CkIndex_NodeGroup{
+class CkIndex_KokkosManager:public CkIndex_IrrGroup{
   public:
     typedef KokkosManager local_t;
     typedef CkIndex_KokkosManager index_t;
@@ -548,6 +549,30 @@ class CkIndex_KokkosManager:public CkIndex_NodeGroup{
     static void _call_KokkosManager_void(void* impl_msg, void* impl_obj);
     
     static void _call_sdag_KokkosManager_void(void* impl_msg, void* impl_obj);
+    /* DECLS: void initialize();
+     */
+    // Entry point registration at startup
+    
+    static int reg_initialize_void();
+    // Entry point index lookup
+    
+    inline static int idx_initialize_void() {
+      static int epidx = reg_initialize_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_initialize(void (KokkosManager::*)() ) {
+      return idx_initialize_void();
+    }
+
+
+    
+    static int initialize() { return idx_initialize_void(); }
+    
+    static void _call_initialize_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_initialize_void(void* impl_msg, void* impl_obj);
     /* DECLS: void finalize();
      */
     // Entry point registration at startup
@@ -574,7 +599,7 @@ class CkIndex_KokkosManager:public CkIndex_NodeGroup{
     static void _call_sdag_finalize_void(void* impl_msg, void* impl_obj);
 };
 /* --------------- element proxy ------------------ */
-class CProxyElement_KokkosManager: public CProxyElement_NodeGroup{
+class CProxyElement_KokkosManager: public CProxyElement_IrrGroup{
   public:
     typedef KokkosManager local_t;
     typedef CkIndex_KokkosManager index_t;
@@ -587,56 +612,61 @@ class CProxyElement_KokkosManager: public CProxyElement_NodeGroup{
 
     CProxyElement_KokkosManager(void) {
     }
-    CProxyElement_KokkosManager(const IrrGroup *g) : CProxyElement_NodeGroup(g){
+    CProxyElement_KokkosManager(const IrrGroup *g) : CProxyElement_IrrGroup(g){
     }
-    CProxyElement_KokkosManager(CkGroupID _gid,int _onPE,CK_DELCTOR_PARAM) : CProxyElement_NodeGroup(_gid,_onPE,CK_DELCTOR_ARGS){
+    CProxyElement_KokkosManager(CkGroupID _gid,int _onPE,CK_DELCTOR_PARAM) : CProxyElement_IrrGroup(_gid,_onPE,CK_DELCTOR_ARGS){
     }
-    CProxyElement_KokkosManager(CkGroupID _gid,int _onPE) : CProxyElement_NodeGroup(_gid,_onPE){
+    CProxyElement_KokkosManager(CkGroupID _gid,int _onPE) : CProxyElement_IrrGroup(_gid,_onPE){
     }
 
     int ckIsDelegated(void) const
-    { return CProxyElement_NodeGroup::ckIsDelegated(); }
+    { return CProxyElement_IrrGroup::ckIsDelegated(); }
     inline CkDelegateMgr *ckDelegatedTo(void) const
-    { return CProxyElement_NodeGroup::ckDelegatedTo(); }
+    { return CProxyElement_IrrGroup::ckDelegatedTo(); }
     inline CkDelegateData *ckDelegatedPtr(void) const
-    { return CProxyElement_NodeGroup::ckDelegatedPtr(); }
+    { return CProxyElement_IrrGroup::ckDelegatedPtr(); }
     CkGroupID ckDelegatedIdx(void) const
-    { return CProxyElement_NodeGroup::ckDelegatedIdx(); }
-inline void ckCheck(void) const {CProxyElement_NodeGroup::ckCheck();}
+    { return CProxyElement_IrrGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxyElement_IrrGroup::ckCheck();}
 CkChareID ckGetChareID(void) const
-   {return CProxyElement_NodeGroup::ckGetChareID();}
+   {return CProxyElement_IrrGroup::ckGetChareID();}
 CkGroupID ckGetGroupID(void) const
-   {return CProxyElement_NodeGroup::ckGetGroupID();}
+   {return CProxyElement_IrrGroup::ckGetGroupID();}
 operator CkGroupID () const { return ckGetGroupID(); }
 
     inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxyElement_NodeGroup::setReductionClient(fn,param); }
+    { CProxyElement_IrrGroup::setReductionClient(fn,param); }
     inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxyElement_NodeGroup::ckSetReductionClient(fn,param); }
+    { CProxyElement_IrrGroup::ckSetReductionClient(fn,param); }
     inline void ckSetReductionClient(CkCallback *cb) const
-    { CProxyElement_NodeGroup::ckSetReductionClient(cb); }
+    { CProxyElement_IrrGroup::ckSetReductionClient(cb); }
 int ckGetGroupPe(void) const
-{return CProxyElement_NodeGroup::ckGetGroupPe();}
+{return CProxyElement_IrrGroup::ckGetGroupPe();}
 
     void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
-    {       CProxyElement_NodeGroup::ckDelegate(dTo,dPtr); }
+    {       CProxyElement_IrrGroup::ckDelegate(dTo,dPtr); }
     void ckUndelegate(void)
-    {       CProxyElement_NodeGroup::ckUndelegate(); }
+    {       CProxyElement_IrrGroup::ckUndelegate(); }
     void pup(PUP::er &p)
-    {       CProxyElement_NodeGroup::pup(p);
+    {       CProxyElement_IrrGroup::pup(p);
     }
     void ckSetGroupID(CkGroupID g) {
-      CProxyElement_NodeGroup::ckSetGroupID(g);
+      CProxyElement_IrrGroup::ckSetGroupID(g);
     }
     KokkosManager* ckLocalBranch(void) const {
       return ckLocalBranch(ckGetGroupID());
     }
     static KokkosManager* ckLocalBranch(CkGroupID gID) {
-      return (KokkosManager*)CkLocalNodeBranch(gID);
+      return (KokkosManager*)CkLocalBranch(gID);
     }
 /* DECLS: KokkosManager();
  */
     
+
+/* DECLS: void initialize();
+ */
+    
+    void initialize(const CkEntryOptions *impl_e_opts=NULL);
 
 /* DECLS: void finalize();
  */
@@ -645,7 +675,7 @@ int ckGetGroupPe(void) const
 
 };
 /* ---------------- collective proxy -------------- */
-class CProxy_KokkosManager: public CProxy_NodeGroup{
+class CProxy_KokkosManager: public CProxy_IrrGroup{
   public:
     typedef KokkosManager local_t;
     typedef CkIndex_KokkosManager index_t;
@@ -655,64 +685,77 @@ class CProxy_KokkosManager: public CProxy_NodeGroup{
 
     CProxy_KokkosManager(void) {
     }
-    CProxy_KokkosManager(const IrrGroup *g) : CProxy_NodeGroup(g){
+    CProxy_KokkosManager(const IrrGroup *g) : CProxy_IrrGroup(g){
     }
-    CProxy_KokkosManager(CkGroupID _gid,CK_DELCTOR_PARAM) : CProxy_NodeGroup(_gid,CK_DELCTOR_ARGS){  }
-    CProxy_KokkosManager(CkGroupID _gid) : CProxy_NodeGroup(_gid){  }
+    CProxy_KokkosManager(CkGroupID _gid,CK_DELCTOR_PARAM) : CProxy_IrrGroup(_gid,CK_DELCTOR_ARGS){  }
+    CProxy_KokkosManager(CkGroupID _gid) : CProxy_IrrGroup(_gid){  }
     CProxyElement_KokkosManager operator[](int onPE) const
       {return CProxyElement_KokkosManager(ckGetGroupID(),onPE,CK_DELCTOR_CALL);}
 
     int ckIsDelegated(void) const
-    { return CProxy_NodeGroup::ckIsDelegated(); }
+    { return CProxy_IrrGroup::ckIsDelegated(); }
     inline CkDelegateMgr *ckDelegatedTo(void) const
-    { return CProxy_NodeGroup::ckDelegatedTo(); }
+    { return CProxy_IrrGroup::ckDelegatedTo(); }
     inline CkDelegateData *ckDelegatedPtr(void) const
-    { return CProxy_NodeGroup::ckDelegatedPtr(); }
+    { return CProxy_IrrGroup::ckDelegatedPtr(); }
     CkGroupID ckDelegatedIdx(void) const
-    { return CProxy_NodeGroup::ckDelegatedIdx(); }
-inline void ckCheck(void) const {CProxy_NodeGroup::ckCheck();}
+    { return CProxy_IrrGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxy_IrrGroup::ckCheck();}
 CkChareID ckGetChareID(void) const
-   {return CProxy_NodeGroup::ckGetChareID();}
+   {return CProxy_IrrGroup::ckGetChareID();}
 CkGroupID ckGetGroupID(void) const
-   {return CProxy_NodeGroup::ckGetGroupID();}
+   {return CProxy_IrrGroup::ckGetGroupID();}
 operator CkGroupID () const { return ckGetGroupID(); }
 
     inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxy_NodeGroup::setReductionClient(fn,param); }
+    { CProxy_IrrGroup::setReductionClient(fn,param); }
     inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxy_NodeGroup::ckSetReductionClient(fn,param); }
+    { CProxy_IrrGroup::ckSetReductionClient(fn,param); }
     inline void ckSetReductionClient(CkCallback *cb) const
-    { CProxy_NodeGroup::ckSetReductionClient(cb); }
+    { CProxy_IrrGroup::ckSetReductionClient(cb); }
 
     void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
-    {       CProxy_NodeGroup::ckDelegate(dTo,dPtr); }
+    {       CProxy_IrrGroup::ckDelegate(dTo,dPtr); }
     void ckUndelegate(void)
-    {       CProxy_NodeGroup::ckUndelegate(); }
+    {       CProxy_IrrGroup::ckUndelegate(); }
     void pup(PUP::er &p)
-    {       CProxy_NodeGroup::pup(p);
+    {       CProxy_IrrGroup::pup(p);
     }
     void ckSetGroupID(CkGroupID g) {
-      CProxy_NodeGroup::ckSetGroupID(g);
+      CProxy_IrrGroup::ckSetGroupID(g);
     }
     KokkosManager* ckLocalBranch(void) const {
       return ckLocalBranch(ckGetGroupID());
     }
     static KokkosManager* ckLocalBranch(CkGroupID gID) {
-      return (KokkosManager*)CkLocalNodeBranch(gID);
+      return (KokkosManager*)CkLocalBranch(gID);
     }
 /* DECLS: KokkosManager();
  */
     
     static CkGroupID ckNew(const CkEntryOptions *impl_e_opts=NULL);
 
+/* DECLS: void initialize();
+ */
+    
+    void initialize(const CkEntryOptions *impl_e_opts=NULL);
+    
+    void initialize(int npes, int *pes, const CkEntryOptions *impl_e_opts=NULL);
+    
+    void initialize(CmiGroup &grp, const CkEntryOptions *impl_e_opts=NULL);
+
 /* DECLS: void finalize();
  */
     
     void finalize(const CkEntryOptions *impl_e_opts=NULL);
+    
+    void finalize(int npes, int *pes, const CkEntryOptions *impl_e_opts=NULL);
+    
+    void finalize(CmiGroup &grp, const CkEntryOptions *impl_e_opts=NULL);
 
 };
 /* ---------------- section proxy -------------- */
-class CProxySection_KokkosManager: public CProxySection_NodeGroup{
+class CProxySection_KokkosManager: public CProxySection_IrrGroup{
   public:
     typedef KokkosManager local_t;
     typedef CkIndex_KokkosManager index_t;
@@ -722,74 +765,79 @@ class CProxySection_KokkosManager: public CProxySection_NodeGroup{
 
     CProxySection_KokkosManager(void) {
     }
-    CProxySection_KokkosManager(const IrrGroup *g) : CProxySection_NodeGroup(g){
+    CProxySection_KokkosManager(const IrrGroup *g) : CProxySection_IrrGroup(g){
     }
-    CProxySection_KokkosManager(const CkGroupID &_gid,const int *_pelist,int _npes, CK_DELCTOR_PARAM) : CProxySection_NodeGroup(_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
-    CProxySection_KokkosManager(const CkGroupID &_gid,const int *_pelist,int _npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_NodeGroup(_gid,_pelist,_npes,factor){  }
-    CProxySection_KokkosManager(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_NodeGroup(n,_gid,_pelist,_npes,factor){  }
-    CProxySection_KokkosManager(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, CK_DELCTOR_PARAM) : CProxySection_NodeGroup(n,_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
+    CProxySection_KokkosManager(const CkGroupID &_gid,const int *_pelist,int _npes, CK_DELCTOR_PARAM) : CProxySection_IrrGroup(_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
+    CProxySection_KokkosManager(const CkGroupID &_gid,const int *_pelist,int _npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_IrrGroup(_gid,_pelist,_npes,factor){  }
+    CProxySection_KokkosManager(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_IrrGroup(n,_gid,_pelist,_npes,factor){  }
+    CProxySection_KokkosManager(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, CK_DELCTOR_PARAM) : CProxySection_IrrGroup(n,_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
 
     int ckIsDelegated(void) const
-    { return CProxySection_NodeGroup::ckIsDelegated(); }
+    { return CProxySection_IrrGroup::ckIsDelegated(); }
     inline CkDelegateMgr *ckDelegatedTo(void) const
-    { return CProxySection_NodeGroup::ckDelegatedTo(); }
+    { return CProxySection_IrrGroup::ckDelegatedTo(); }
     inline CkDelegateData *ckDelegatedPtr(void) const
-    { return CProxySection_NodeGroup::ckDelegatedPtr(); }
+    { return CProxySection_IrrGroup::ckDelegatedPtr(); }
     CkGroupID ckDelegatedIdx(void) const
-    { return CProxySection_NodeGroup::ckDelegatedIdx(); }
-inline void ckCheck(void) const {CProxySection_NodeGroup::ckCheck();}
+    { return CProxySection_IrrGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxySection_IrrGroup::ckCheck();}
 CkChareID ckGetChareID(void) const
-   {return CProxySection_NodeGroup::ckGetChareID();}
+   {return CProxySection_IrrGroup::ckGetChareID();}
 CkGroupID ckGetGroupID(void) const
-   {return CProxySection_NodeGroup::ckGetGroupID();}
+   {return CProxySection_IrrGroup::ckGetGroupID();}
 operator CkGroupID () const { return ckGetGroupID(); }
 
     inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxySection_NodeGroup::setReductionClient(fn,param); }
+    { CProxySection_IrrGroup::setReductionClient(fn,param); }
     inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
-    { CProxySection_NodeGroup::ckSetReductionClient(fn,param); }
+    { CProxySection_IrrGroup::ckSetReductionClient(fn,param); }
     inline void ckSetReductionClient(CkCallback *cb) const
-    { CProxySection_NodeGroup::ckSetReductionClient(cb); }
+    { CProxySection_IrrGroup::ckSetReductionClient(cb); }
 inline int ckGetNumSections() const
-{ return CProxySection_NodeGroup::ckGetNumSections(); }
+{ return CProxySection_IrrGroup::ckGetNumSections(); }
 inline CkSectionInfo &ckGetSectionInfo()
-{ return CProxySection_NodeGroup::ckGetSectionInfo(); }
+{ return CProxySection_IrrGroup::ckGetSectionInfo(); }
 inline CkSectionID *ckGetSectionIDs()
-{ return CProxySection_NodeGroup::ckGetSectionIDs(); }
+{ return CProxySection_IrrGroup::ckGetSectionIDs(); }
 inline CkSectionID &ckGetSectionID()
-{ return CProxySection_NodeGroup::ckGetSectionID(); }
+{ return CProxySection_IrrGroup::ckGetSectionID(); }
 inline CkSectionID &ckGetSectionID(int i)
-{ return CProxySection_NodeGroup::ckGetSectionID(i); }
+{ return CProxySection_IrrGroup::ckGetSectionID(i); }
 inline CkGroupID ckGetGroupIDn(int i) const
-{ return CProxySection_NodeGroup::ckGetGroupIDn(i); }
+{ return CProxySection_IrrGroup::ckGetGroupIDn(i); }
 inline const int *ckGetElements() const
-{ return CProxySection_NodeGroup::ckGetElements(); }
+{ return CProxySection_IrrGroup::ckGetElements(); }
 inline const int *ckGetElements(int i) const
-{ return CProxySection_NodeGroup::ckGetElements(i); }
+{ return CProxySection_IrrGroup::ckGetElements(i); }
 inline int ckGetNumElements() const
-{ return CProxySection_NodeGroup::ckGetNumElements(); } 
+{ return CProxySection_IrrGroup::ckGetNumElements(); } 
 inline int ckGetNumElements(int i) const
-{ return CProxySection_NodeGroup::ckGetNumElements(i); }
+{ return CProxySection_IrrGroup::ckGetNumElements(i); }
 
     void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
-    {       CProxySection_NodeGroup::ckDelegate(dTo,dPtr); }
+    {       CProxySection_IrrGroup::ckDelegate(dTo,dPtr); }
     void ckUndelegate(void)
-    {       CProxySection_NodeGroup::ckUndelegate(); }
+    {       CProxySection_IrrGroup::ckUndelegate(); }
     void pup(PUP::er &p)
-    {       CProxySection_NodeGroup::pup(p);
+    {       CProxySection_IrrGroup::pup(p);
     }
     void ckSetGroupID(CkGroupID g) {
-      CProxySection_NodeGroup::ckSetGroupID(g);
+      CProxySection_IrrGroup::ckSetGroupID(g);
     }
     KokkosManager* ckLocalBranch(void) const {
       return ckLocalBranch(ckGetGroupID());
     }
     static KokkosManager* ckLocalBranch(CkGroupID gID) {
-      return (KokkosManager*)CkLocalNodeBranch(gID);
+      return (KokkosManager*)CkLocalBranch(gID);
     }
 /* DECLS: KokkosManager();
  */
     
+
+/* DECLS: void initialize();
+ */
+    
+    void initialize(const CkEntryOptions *impl_e_opts=NULL);
 
 /* DECLS: void finalize();
  */
@@ -798,7 +846,7 @@ inline int ckGetNumElements(int i) const
 
 };
 #define KokkosManager_SDAG_CODE 
-typedef CBaseT1<NodeGroup, CProxy_KokkosManager>CBase_KokkosManager;
+typedef CBaseT1<Group, CProxy_KokkosManager>CBase_KokkosManager;
 
 
 
@@ -869,7 +917,10 @@ class Closure_KokkosManager {
   public:
 
 
-    struct finalize_2_closure;
+    struct initialize_2_closure;
+
+
+    struct finalize_3_closure;
 
 };
 

@@ -11,7 +11,7 @@ Block();
 void init();
 threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
 threaded void run();
-void run_neighbour_build(const CkCallback &cb);
+threaded void run_neighbour_build(const CkCallback &cb);
 void temperature_allreduce(const CkCallback &cb);
 void temperature_recv(CkReductionMsg* impl_msg);
 void energy_allreduce(const CkCallback &cb);
@@ -149,7 +149,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static void _call_sdag_run_void(void* impl_msg, void* impl_obj);
     
     static void _callthr_run_void(CkThrCallArg *);
-    /* DECLS: void run_neighbour_build(const CkCallback &cb);
+    /* DECLS: threaded void run_neighbour_build(const CkCallback &cb);
      */
     // Entry point registration at startup
     
@@ -174,7 +174,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     static void _call_sdag_run_neighbour_build_marshall5(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_run_neighbour_build_marshall5(char* impl_buf, void* impl_obj_void);
+    static void _callthr_run_neighbour_build_marshall5(CkThrCallArg *);
     
     static void _marshallmessagepup_run_neighbour_build_marshall5(PUP::er &p,void *msg);
     /* DECLS: void temperature_allreduce(const CkCallback &cb);
@@ -914,7 +914,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void run(const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void run_neighbour_build(const CkCallback &cb);
+/* DECLS: threaded void run_neighbour_build(const CkCallback &cb);
  */
     
     void run_neighbour_build(const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
@@ -1132,7 +1132,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void run(const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void run_neighbour_build(const CkCallback &cb);
+/* DECLS: threaded void run_neighbour_build(const CkCallback &cb);
  */
     
     void run_neighbour_build(const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
@@ -1422,7 +1422,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void run(const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void run_neighbour_build(const CkCallback &cb);
+/* DECLS: threaded void run_neighbour_build(const CkCallback &cb);
  */
     
     void run_neighbour_build(const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;

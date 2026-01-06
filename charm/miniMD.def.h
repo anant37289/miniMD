@@ -154,21 +154,41 @@
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_KokkosManager::finalize_2_closure : public SDAG::Closure {
+    struct Closure_KokkosManager::initialize_2_closure : public SDAG::Closure {
       
 
-      finalize_2_closure() {
+      initialize_2_closure() {
         init();
       }
-      finalize_2_closure(CkMigrateMessage*) {
+      initialize_2_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~finalize_2_closure() {
+      virtual ~initialize_2_closure() {
       }
-      PUPable_decl(SINGLE_ARG(finalize_2_closure));
+      PUPable_decl(SINGLE_ARG(initialize_2_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_KokkosManager::finalize_3_closure : public SDAG::Closure {
+      
+
+      finalize_3_closure() {
+        init();
+      }
+      finalize_3_closure(CkMigrateMessage*) {
+        init();
+      }
+            void pup(PUP::er& __p) {
+        packClosure(__p);
+      }
+      virtual ~finalize_3_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(finalize_3_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -1001,9 +1021,13 @@ void Main::_serial_0() {
 #line 52 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos initialized\n");
+        block_proxy = CProxy_Block::ckNew(num_chares);
+        CkArrayOptions opts(num_chares);
+        opts.bindTo(block_proxy);
+        comm_proxy = CProxy_Comm::ckNew(opts);
         block_proxy.init();
       
-#line 1007 "miniMD.def.h"
+#line 1031 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_0_end();
@@ -1046,7 +1070,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
   {
     CkReductionMsg*& msg = gen0;
     { // begin serial block
-#line 56 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 60 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Reducing velocities...\n");
         double vxtot = 0;
@@ -1062,7 +1086,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
         }
         block_proxy.contCreateVelocity(vxtot, vytot, vztot);
       
-#line 1066 "miniMD.def.h"
+#line 1090 "miniMD.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -1100,12 +1124,12 @@ void Main::_when_2_end() {
 void Main::_serial_2() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_2()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 71 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 75 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Blocks initialized\n");
         block_proxy.run();
       
-#line 1109 "miniMD.def.h"
+#line 1133 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_2_end();
@@ -1142,12 +1166,12 @@ void Main::_when_3_end() {
 void Main::_serial_3() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_3()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 75 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 79 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Blocks complete\n");
         kokkos_proxy.finalize();
       
-#line 1151 "miniMD.def.h"
+#line 1175 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_3_end();
@@ -1184,12 +1208,12 @@ void Main::_when_4_end() {
 void Main::_serial_4() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_4()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 79 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 83 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos finalized\n");
         CkExit();
       
-#line 1193 "miniMD.def.h"
+#line 1217 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_4_end();
@@ -1425,8 +1449,9 @@ int Main::_sdag_reg_Main_serial_4() { // Potentially missing Main_SDAG_CODE in y
 
 
 
-/* DEFS: nodegroup KokkosManager: NodeGroup{
+/* DEFS: group KokkosManager: IrrGroup{
 KokkosManager();
+void initialize();
 void finalize();
 };
  */
@@ -1441,6 +1466,22 @@ void finalize();
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void initialize();
+ */
+void CProxyElement_KokkosManager::initialize(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkGroupMsgPrep(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->GroupSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+  } else {
+    CkSendMsgBranch(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void finalize();
  */
 void CProxyElement_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
@@ -1448,10 +1489,10 @@ void CProxyElement_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     CkNodeGroupMsgPrep(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
-     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+     CkGroupMsgPrep(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->GroupSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
   } else {
-    CkSendMsgNodeBranch(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+    CkSendMsgBranch(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
   }
 }
 #endif /* CK_TEMPLATES_ONLY */
@@ -1462,8 +1503,8 @@ void CProxyElement_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
 CkGroupID CProxy_KokkosManager::ckNew(const CkEntryOptions *impl_e_opts)
 {
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
-  UsrToEnv(impl_msg)->setMsgtype(NodeBocInitMsg);
-  CkGroupID gId = CkCreateNodeGroup(CkIndex_KokkosManager::__idx, CkIndex_KokkosManager::idx_KokkosManager_void(), impl_msg);
+  UsrToEnv(impl_msg)->setMsgtype(BocInitMsg);
+  CkGroupID gId = CkCreateGroup(CkIndex_KokkosManager::__idx, CkIndex_KokkosManager::idx_KokkosManager_void(), impl_msg);
   return gId;
 }
 
@@ -1484,6 +1525,44 @@ void CkIndex_KokkosManager::_call_KokkosManager_void(void* impl_msg, void* impl_
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void initialize();
+ */
+void CProxy_KokkosManager::initialize(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkGroupMsgPrep(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->GroupBroadcast(ckDelegatedPtr(),CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgBranch(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID(),0);
+}
+void CProxy_KokkosManager::initialize(int npes, int *pes, const CkEntryOptions *impl_e_opts) {
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  CkSendMsgBranchMulti(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID(), npes, pes,0);
+}
+void CProxy_KokkosManager::initialize(CmiGroup &grp, const CkEntryOptions *impl_e_opts) {
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  CkSendMsgBranchGroup(CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetGroupID(), grp,0);
+}
+
+// Entry point registration function
+int CkIndex_KokkosManager::reg_initialize_void() {
+  int epidx = CkRegisterEp("initialize()",
+      reinterpret_cast<CkCallFnPtr>(_call_initialize_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_KokkosManager::_call_initialize_void(void* impl_msg, void* impl_obj_void)
+{
+  KokkosManager* impl_obj = static_cast<KokkosManager*>(impl_obj_void);
+  impl_obj->initialize();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+PUPable_def(SINGLE_ARG(Closure_KokkosManager::initialize_2_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void finalize();
  */
 void CProxy_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
@@ -1491,9 +1570,17 @@ void CProxy_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     CkNodeGroupMsgPrep(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
-     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
-  } else CkBroadcastMsgNodeBranch(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID(),0);
+     CkGroupMsgPrep(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->GroupBroadcast(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgBranch(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID(),0);
+}
+void CProxy_KokkosManager::finalize(int npes, int *pes, const CkEntryOptions *impl_e_opts) {
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  CkSendMsgBranchMulti(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID(), npes, pes,0);
+}
+void CProxy_KokkosManager::finalize(CmiGroup &grp, const CkEntryOptions *impl_e_opts) {
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  CkSendMsgBranchGroup(CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetGroupID(), grp,0);
 }
 
 // Entry point registration function
@@ -1510,12 +1597,31 @@ void CkIndex_KokkosManager::_call_finalize_void(void* impl_msg, void* impl_obj_v
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_KokkosManager::finalize_2_closure))
+PUPable_def(SINGLE_ARG(Closure_KokkosManager::finalize_3_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 /* DEFS: KokkosManager();
  */
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void initialize();
+ */
+void CProxySection_KokkosManager::initialize(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     ckDelegatedTo()->GroupSectionSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_initialize_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+  } else {
+    void *impl_msg_tmp;
+    for (int i=0; i<ckGetNumSections(); ++i) {
+       impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
+       CkSendMsgBranchMulti(CkIndex_KokkosManager::idx_initialize_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+    }
+  }
+}
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -1526,12 +1632,12 @@ void CProxySection_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+     ckDelegatedTo()->GroupSectionSend(ckDelegatedPtr(),CkIndex_KokkosManager::idx_finalize_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
   } else {
     void *impl_msg_tmp;
     for (int i=0; i<ckGetNumSections(); ++i) {
        impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
-       CkSendMsgNodeBranchMulti(CkIndex_KokkosManager::idx_finalize_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+       CkSendMsgBranchMulti(CkIndex_KokkosManager::idx_finalize_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
     }
   }
 }
@@ -1542,11 +1648,14 @@ void CProxySection_KokkosManager::finalize(const CkEntryOptions *impl_e_opts)
 #ifndef CK_TEMPLATES_ONLY
 void CkIndex_KokkosManager::__register(const char *s, size_t size) {
   __idx = CkRegisterChare(s, size, TypeGroup);
-  CkRegisterBase(__idx, CkIndex_NodeGroup::__idx);
+  CkRegisterBase(__idx, CkIndex_IrrGroup::__idx);
    CkRegisterGroupIrr(__idx,KokkosManager::isIrreducible());
   // REG: KokkosManager();
   idx_KokkosManager_void();
   CkRegisterDefaultCtor(__idx, idx_KokkosManager_void());
+
+  // REG: void initialize();
+  idx_initialize_void();
 
   // REG: void finalize();
   idx_finalize_void();
@@ -1653,8 +1762,9 @@ void run();
 */
   CkIndex_Main::__register("Main", sizeof(Main));
 
-/* REG: nodegroup KokkosManager: NodeGroup{
+/* REG: group KokkosManager: IrrGroup{
 KokkosManager();
+void initialize();
 void finalize();
 };
 */
