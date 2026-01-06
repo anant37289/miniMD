@@ -51,8 +51,11 @@ public:
   void run();
   void printConfig();
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+      //Problem: Have to use multiple buffers here in order for different incoming comm not to overwrite the same buffer--can we not make it also SDAGable
       postInfo[0].hapi_stream = compute_instance.cuda_stream();
-      data = (char*)(comm->recv1);
+      // Extract iswap from the tag (ref = nswap*iter + iswap)
+      int iswap = ref % comm->nswap;
+      data = (char*)(comm->buf_comms_recv[iswap].data());
   }
 
   ~Block() {}

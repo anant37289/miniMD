@@ -699,14 +699,34 @@
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Block::comm_all_24_closure : public SDAG::Closure {
+    struct Closure_Block::send_done_24_closure : public SDAG::Closure {
+      
+
+      send_done_24_closure() {
+        init();
+      }
+      send_done_24_closure(CkMigrateMessage*) {
+        init();
+      }
+            void pup(PUP::er& __p) {
+        packClosure(__p);
+      }
+      virtual ~send_done_24_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(send_done_24_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_Block::comm_all_25_closure : public SDAG::Closure {
             CkCallback cb;
 
 
-      comm_all_24_closure() {
+      comm_all_25_closure() {
         init();
       }
-      comm_all_24_closure(CkMigrateMessage*) {
+      comm_all_25_closure(CkMigrateMessage*) {
         init();
       }
             CkCallback & getP0() { return cb;}
@@ -714,15 +734,15 @@
         __p | cb;
         packClosure(__p);
       }
-      virtual ~comm_all_24_closure() {
+      virtual ~comm_all_25_closure() {
       }
-      PUPable_decl(SINGLE_ARG(comm_all_24_closure));
+      PUPable_decl(SINGLE_ARG(comm_all_25_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Block::comm_all_recv_25_closure : public SDAG::Closure {
+    struct Closure_Block::comm_all_recv_26_closure : public SDAG::Closure {
             int ref;
             char *data;
             size_t size;
@@ -731,13 +751,13 @@
       char* _impl_buf_in;
       int _impl_buf_size;
 
-      comm_all_recv_25_closure() {
+      comm_all_recv_26_closure() {
         init();
         _impl_marshall = 0;
         _impl_buf_in = 0;
         _impl_buf_size = 0;
       }
-      comm_all_recv_25_closure(CkMigrateMessage*) {
+      comm_all_recv_26_closure(CkMigrateMessage*) {
         init();
         _impl_marshall = 0;
         _impl_buf_in = 0;
@@ -768,23 +788,23 @@
           data = (char *)(impl_buf+impl_off_data);
         }
       }
-      virtual ~comm_all_recv_25_closure() {
+      virtual ~comm_all_recv_26_closure() {
         if (_impl_marshall) CmiFree(UsrToEnv(_impl_marshall));
       }
-      PUPable_decl(SINGLE_ARG(comm_all_recv_25_closure));
+      PUPable_decl(SINGLE_ARG(comm_all_recv_26_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Block::comm_rev_all_26_closure : public SDAG::Closure {
+    struct Closure_Block::comm_rev_all_27_closure : public SDAG::Closure {
             CkCallback cb;
 
 
-      comm_rev_all_26_closure() {
+      comm_rev_all_27_closure() {
         init();
       }
-      comm_rev_all_26_closure(CkMigrateMessage*) {
+      comm_rev_all_27_closure(CkMigrateMessage*) {
         init();
       }
             CkCallback & getP0() { return cb;}
@@ -792,15 +812,15 @@
         __p | cb;
         packClosure(__p);
       }
-      virtual ~comm_rev_all_26_closure() {
+      virtual ~comm_rev_all_27_closure() {
       }
-      PUPable_decl(SINGLE_ARG(comm_rev_all_26_closure));
+      PUPable_decl(SINGLE_ARG(comm_rev_all_27_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Block::comm_rev_all_recv_27_closure : public SDAG::Closure {
+    struct Closure_Block::comm_rev_all_recv_28_closure : public SDAG::Closure {
             int ref;
             char *data;
             size_t size;
@@ -809,13 +829,13 @@
       char* _impl_buf_in;
       int _impl_buf_size;
 
-      comm_rev_all_recv_27_closure() {
+      comm_rev_all_recv_28_closure() {
         init();
         _impl_marshall = 0;
         _impl_buf_in = 0;
         _impl_buf_size = 0;
       }
-      comm_rev_all_recv_27_closure(CkMigrateMessage*) {
+      comm_rev_all_recv_28_closure(CkMigrateMessage*) {
         init();
         _impl_marshall = 0;
         _impl_buf_in = 0;
@@ -846,10 +866,10 @@
           data = (char *)(impl_buf+impl_off_data);
         }
       }
-      virtual ~comm_rev_all_recv_27_closure() {
+      virtual ~comm_rev_all_recv_28_closure() {
         if (_impl_marshall) CmiFree(UsrToEnv(_impl_marshall));
       }
-      PUPable_decl(SINGLE_ARG(comm_rev_all_recv_27_closure));
+      PUPable_decl(SINGLE_ARG(comm_rev_all_recv_28_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -890,6 +910,7 @@ void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
 void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
+void send_done();
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);
@@ -1588,6 +1609,20 @@ void CProxyElement_Block::comms_recv(int ref, const size_t &size, CkDeviceBuffer
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void send_done();
+ */
+void CProxyElement_Block::send_done(const CkEntryOptions *impl_e_opts) 
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
+  CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
+  impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
+  ckSend(impl_amsg, CkIndex_Block::idx_send_done_void(),0);
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void comm_all(const CkCallback &cb);
  */
 void CProxyElement_Block::comm_all(const CkCallback &cb, const CkEntryOptions *impl_e_opts) 
@@ -1610,7 +1645,7 @@ void CProxyElement_Block::comm_all(const CkCallback &cb, const CkEntryOptions *i
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_marshall24(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_marshall25(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -1650,7 +1685,7 @@ void CProxyElement_Block::comm_all_recv(int ref, const char *data, const size_t 
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall25(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall26(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -1677,7 +1712,7 @@ void CProxyElement_Block::comm_rev_all(const CkCallback &cb, const CkEntryOption
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall26(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall27(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -1717,7 +1752,7 @@ void CProxyElement_Block::comm_rev_all_recv(int ref, const char *data, const siz
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall27(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall28(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -3565,6 +3600,36 @@ PUPable_def(SINGLE_ARG(Closure_Block::comms_recv_23_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void send_done();
+ */
+void CProxy_Block::send_done(const CkEntryOptions *impl_e_opts) 
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
+  CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
+  impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
+  ckBroadcast(impl_amsg, CkIndex_Block::idx_send_done_void(),0);
+}
+
+// Entry point registration function
+int CkIndex_Block::reg_send_done_void() {
+  int epidx = CkRegisterEp("send_done()",
+      reinterpret_cast<CkCallFnPtr>(_call_send_done_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_Block::_call_send_done_void(void* impl_msg, void* impl_obj_void)
+{
+  Block* impl_obj = static_cast<Block*>(impl_obj_void);
+  impl_obj->send_done();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+PUPable_def(SINGLE_ARG(Closure_Block::send_done_24_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void comm_all(const CkCallback &cb);
  */
 void CProxy_Block::comm_all(const CkCallback &cb, const CkEntryOptions *impl_e_opts) 
@@ -3587,44 +3652,44 @@ void CProxy_Block::comm_all(const CkCallback &cb, const CkEntryOptions *impl_e_o
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_all_marshall24(),0);
+  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_all_marshall25(),0);
 }
 
 // Entry point registration function
-int CkIndex_Block::reg_comm_all_marshall24() {
+int CkIndex_Block::reg_comm_all_marshall25() {
   int epidx = CkRegisterEp("comm_all(const CkCallback &cb)",
-      reinterpret_cast<CkCallFnPtr>(_call_comm_all_marshall24), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
-  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_all_marshall24);
-  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_all_marshall24);
+      reinterpret_cast<CkCallFnPtr>(_call_comm_all_marshall25), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_all_marshall25);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_all_marshall25);
 
   return epidx;
 }
 
-void CkIndex_Block::_call_comm_all_marshall24(void* impl_msg, void* impl_obj_void)
+void CkIndex_Block::_call_comm_all_marshall25(void* impl_msg, void* impl_obj_void)
 {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_all_24_closure* genClosure = new Closure_Block::comm_all_24_closure();
+  Closure_Block::comm_all_25_closure* genClosure = new Closure_Block::comm_all_25_closure();
   implP|genClosure->cb;
   impl_buf+=CK_ALIGN(implP.size(),16);
   impl_obj->_sdag_fnc_comm_all(genClosure);
   genClosure->deref();
 }
-int CkIndex_Block::_callmarshall_comm_all_marshall24(char* impl_buf, void* impl_obj_void) {
+int CkIndex_Block::_callmarshall_comm_all_marshall25(char* impl_buf, void* impl_obj_void) {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   envelope *env = UsrToEnv(impl_buf);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_all_24_closure* genClosure = new Closure_Block::comm_all_24_closure();
+  Closure_Block::comm_all_25_closure* genClosure = new Closure_Block::comm_all_25_closure();
   implP|genClosure->cb;
   impl_buf+=CK_ALIGN(implP.size(),16);
   impl_obj->_sdag_fnc_comm_all(genClosure);
   genClosure->deref();
   return implP.size();
 }
-void CkIndex_Block::_marshallmessagepup_comm_all_marshall24(PUP::er &implDestP,void *impl_msg) {
+void CkIndex_Block::_marshallmessagepup_comm_all_marshall25(PUP::er &implDestP,void *impl_msg) {
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
@@ -3637,7 +3702,7 @@ void CkIndex_Block::_marshallmessagepup_comm_all_marshall24(PUP::er &implDestP,v
   if (implDestP.hasComments()) implDestP.comment("cb");
   implDestP|cb;
 }
-PUPable_def(SINGLE_ARG(Closure_Block::comm_all_24_closure))
+PUPable_def(SINGLE_ARG(Closure_Block::comm_all_25_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -3676,27 +3741,27 @@ void CProxy_Block::comm_all_recv(int ref, const char *data, const size_t &size, 
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall25(),0);
+  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall26(),0);
 }
 
 // Entry point registration function
-int CkIndex_Block::reg_comm_all_recv_marshall25() {
+int CkIndex_Block::reg_comm_all_recv_marshall26() {
   int epidx = CkRegisterEp("comm_all_recv(int ref, const char *data, const size_t &size)",
-      reinterpret_cast<CkCallFnPtr>(_call_comm_all_recv_marshall25), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
-  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_all_recv_marshall25);
-  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_all_recv_marshall25);
+      reinterpret_cast<CkCallFnPtr>(_call_comm_all_recv_marshall26), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_all_recv_marshall26);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_all_recv_marshall26);
 
   return epidx;
 }
 
-void CkIndex_Block::_call_comm_all_recv_marshall25(void* impl_msg, void* impl_obj_void)
+void CkIndex_Block::_call_comm_all_recv_marshall26(void* impl_msg, void* impl_obj_void)
 {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_all_recv_25_closure* genClosure = new Closure_Block::comm_all_recv_25_closure();
+  Closure_Block::comm_all_recv_26_closure* genClosure = new Closure_Block::comm_all_recv_26_closure();
   implP|genClosure->ref;
   int impl_off_data, impl_cnt_data;
   implP|impl_off_data;
@@ -3709,11 +3774,11 @@ void CkIndex_Block::_call_comm_all_recv_marshall25(void* impl_msg, void* impl_ob
   impl_obj->comm_all_recv(genClosure);
   genClosure->deref();
 }
-int CkIndex_Block::_callmarshall_comm_all_recv_marshall25(char* impl_buf, void* impl_obj_void) {
+int CkIndex_Block::_callmarshall_comm_all_recv_marshall26(char* impl_buf, void* impl_obj_void) {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   envelope *env = UsrToEnv(impl_buf);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_all_recv_25_closure* genClosure = new Closure_Block::comm_all_recv_25_closure();
+  Closure_Block::comm_all_recv_26_closure* genClosure = new Closure_Block::comm_all_recv_26_closure();
   implP|genClosure->ref;
   int impl_off_data, impl_cnt_data;
   implP|impl_off_data;
@@ -3725,7 +3790,7 @@ int CkIndex_Block::_callmarshall_comm_all_recv_marshall25(char* impl_buf, void* 
   genClosure->deref();
   return implP.size();
 }
-void CkIndex_Block::_marshallmessagepup_comm_all_recv_marshall25(PUP::er &implDestP,void *impl_msg) {
+void CkIndex_Block::_marshallmessagepup_comm_all_recv_marshall26(PUP::er &implDestP,void *impl_msg) {
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
@@ -3753,7 +3818,7 @@ void CkIndex_Block::_marshallmessagepup_comm_all_recv_marshall25(PUP::er &implDe
   if (implDestP.hasComments()) implDestP.comment("size");
   implDestP|size;
 }
-PUPable_def(SINGLE_ARG(Closure_Block::comm_all_recv_25_closure))
+PUPable_def(SINGLE_ARG(Closure_Block::comm_all_recv_26_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -3779,44 +3844,44 @@ void CProxy_Block::comm_rev_all(const CkCallback &cb, const CkEntryOptions *impl
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall26(),0);
+  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall27(),0);
 }
 
 // Entry point registration function
-int CkIndex_Block::reg_comm_rev_all_marshall26() {
+int CkIndex_Block::reg_comm_rev_all_marshall27() {
   int epidx = CkRegisterEp("comm_rev_all(const CkCallback &cb)",
-      reinterpret_cast<CkCallFnPtr>(_call_comm_rev_all_marshall26), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
-  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_rev_all_marshall26);
-  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_rev_all_marshall26);
+      reinterpret_cast<CkCallFnPtr>(_call_comm_rev_all_marshall27), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_rev_all_marshall27);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_rev_all_marshall27);
 
   return epidx;
 }
 
-void CkIndex_Block::_call_comm_rev_all_marshall26(void* impl_msg, void* impl_obj_void)
+void CkIndex_Block::_call_comm_rev_all_marshall27(void* impl_msg, void* impl_obj_void)
 {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_rev_all_26_closure* genClosure = new Closure_Block::comm_rev_all_26_closure();
+  Closure_Block::comm_rev_all_27_closure* genClosure = new Closure_Block::comm_rev_all_27_closure();
   implP|genClosure->cb;
   impl_buf+=CK_ALIGN(implP.size(),16);
   impl_obj->_sdag_fnc_comm_rev_all(genClosure);
   genClosure->deref();
 }
-int CkIndex_Block::_callmarshall_comm_rev_all_marshall26(char* impl_buf, void* impl_obj_void) {
+int CkIndex_Block::_callmarshall_comm_rev_all_marshall27(char* impl_buf, void* impl_obj_void) {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   envelope *env = UsrToEnv(impl_buf);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_rev_all_26_closure* genClosure = new Closure_Block::comm_rev_all_26_closure();
+  Closure_Block::comm_rev_all_27_closure* genClosure = new Closure_Block::comm_rev_all_27_closure();
   implP|genClosure->cb;
   impl_buf+=CK_ALIGN(implP.size(),16);
   impl_obj->_sdag_fnc_comm_rev_all(genClosure);
   genClosure->deref();
   return implP.size();
 }
-void CkIndex_Block::_marshallmessagepup_comm_rev_all_marshall26(PUP::er &implDestP,void *impl_msg) {
+void CkIndex_Block::_marshallmessagepup_comm_rev_all_marshall27(PUP::er &implDestP,void *impl_msg) {
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
@@ -3829,7 +3894,7 @@ void CkIndex_Block::_marshallmessagepup_comm_rev_all_marshall26(PUP::er &implDes
   if (implDestP.hasComments()) implDestP.comment("cb");
   implDestP|cb;
 }
-PUPable_def(SINGLE_ARG(Closure_Block::comm_rev_all_26_closure))
+PUPable_def(SINGLE_ARG(Closure_Block::comm_rev_all_27_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -3868,27 +3933,27 @@ void CProxy_Block::comm_rev_all_recv(int ref, const char *data, const size_t &si
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall27(),0);
+  ckBroadcast(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall28(),0);
 }
 
 // Entry point registration function
-int CkIndex_Block::reg_comm_rev_all_recv_marshall27() {
+int CkIndex_Block::reg_comm_rev_all_recv_marshall28() {
   int epidx = CkRegisterEp("comm_rev_all_recv(int ref, const char *data, const size_t &size)",
-      reinterpret_cast<CkCallFnPtr>(_call_comm_rev_all_recv_marshall27), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
-  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_rev_all_recv_marshall27);
-  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_rev_all_recv_marshall27);
+      reinterpret_cast<CkCallFnPtr>(_call_comm_rev_all_recv_marshall28), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_comm_rev_all_recv_marshall28);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_comm_rev_all_recv_marshall28);
 
   return epidx;
 }
 
-void CkIndex_Block::_call_comm_rev_all_recv_marshall27(void* impl_msg, void* impl_obj_void)
+void CkIndex_Block::_call_comm_rev_all_recv_marshall28(void* impl_msg, void* impl_obj_void)
 {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_rev_all_recv_27_closure* genClosure = new Closure_Block::comm_rev_all_recv_27_closure();
+  Closure_Block::comm_rev_all_recv_28_closure* genClosure = new Closure_Block::comm_rev_all_recv_28_closure();
   implP|genClosure->ref;
   int impl_off_data, impl_cnt_data;
   implP|impl_off_data;
@@ -3901,11 +3966,11 @@ void CkIndex_Block::_call_comm_rev_all_recv_marshall27(void* impl_msg, void* imp
   impl_obj->comm_rev_all_recv(genClosure);
   genClosure->deref();
 }
-int CkIndex_Block::_callmarshall_comm_rev_all_recv_marshall27(char* impl_buf, void* impl_obj_void) {
+int CkIndex_Block::_callmarshall_comm_rev_all_recv_marshall28(char* impl_buf, void* impl_obj_void) {
   Block* impl_obj = static_cast<Block*>(impl_obj_void);
   envelope *env = UsrToEnv(impl_buf);
   PUP::fromMem implP(impl_buf);
-  Closure_Block::comm_rev_all_recv_27_closure* genClosure = new Closure_Block::comm_rev_all_recv_27_closure();
+  Closure_Block::comm_rev_all_recv_28_closure* genClosure = new Closure_Block::comm_rev_all_recv_28_closure();
   implP|genClosure->ref;
   int impl_off_data, impl_cnt_data;
   implP|impl_off_data;
@@ -3917,7 +3982,7 @@ int CkIndex_Block::_callmarshall_comm_rev_all_recv_marshall27(char* impl_buf, vo
   genClosure->deref();
   return implP.size();
 }
-void CkIndex_Block::_marshallmessagepup_comm_rev_all_recv_marshall27(PUP::er &implDestP,void *impl_msg) {
+void CkIndex_Block::_marshallmessagepup_comm_rev_all_recv_marshall28(PUP::er &implDestP,void *impl_msg) {
   CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
   char *impl_buf=impl_msg_typed->msgBuf;
   envelope *env = UsrToEnv(impl_msg_typed);
@@ -3945,7 +4010,7 @@ void CkIndex_Block::_marshallmessagepup_comm_rev_all_recv_marshall27(PUP::er &im
   if (implDestP.hasComments()) implDestP.comment("size");
   implDestP|size;
 }
-PUPable_def(SINGLE_ARG(Closure_Block::comm_rev_all_recv_27_closure))
+PUPable_def(SINGLE_ARG(Closure_Block::comm_rev_all_recv_28_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -4591,6 +4656,20 @@ void CProxySection_Block::comms_recv(int ref, const size_t &size, CkDeviceBuffer
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void send_done();
+ */
+void CProxySection_Block::send_done(const CkEntryOptions *impl_e_opts) 
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
+  CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
+  impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
+  ckSend(impl_amsg, CkIndex_Block::idx_send_done_void(),0);
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void comm_all(const CkCallback &cb);
  */
 void CProxySection_Block::comm_all(const CkCallback &cb, const CkEntryOptions *impl_e_opts) 
@@ -4613,7 +4692,7 @@ void CProxySection_Block::comm_all(const CkCallback &cb, const CkEntryOptions *i
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_marshall24(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_marshall25(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -4653,7 +4732,7 @@ void CProxySection_Block::comm_all_recv(int ref, const char *data, const size_t 
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall25(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_all_recv_marshall26(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -4680,7 +4759,7 @@ void CProxySection_Block::comm_rev_all(const CkCallback &cb, const CkEntryOption
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall26(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_marshall27(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -4720,7 +4799,7 @@ void CProxySection_Block::comm_rev_all_recv(int ref, const char *data, const siz
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);
-  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall27(),0);
+  ckSend(impl_amsg, CkIndex_Block::idx_comm_rev_all_recv_marshall28(),0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -4806,17 +4885,20 @@ void CkIndex_Block::__register(const char *s, size_t size) {
   // REG: void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
   idx_comms_recv_marshall23();
 
+  // REG: void send_done();
+  idx_send_done_void();
+
   // REG: void comm_all(const CkCallback &cb);
-  idx_comm_all_marshall24();
+  idx_comm_all_marshall25();
 
   // REG: void comm_all_recv(int ref, const char *data, const size_t &size);
-  idx_comm_all_recv_marshall25();
+  idx_comm_all_recv_marshall26();
 
   // REG: void comm_rev_all(const CkCallback &cb);
-  idx_comm_rev_all_marshall26();
+  idx_comm_rev_all_marshall27();
 
   // REG: void comm_rev_all_recv(int ref, const char *data, const size_t &size);
-  idx_comm_rev_all_recv_marshall27();
+  idx_comm_rev_all_recv_marshall28();
 
   // REG: Block(CkMigrateMessage* impl_msg);
   idx_Block_CkMigrateMessage();
@@ -4887,7 +4969,7 @@ void Block::_serial_0(Closure_Block::temperature_allreduce_6_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.t_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 4891 "block.def.h"
+#line 4973 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -4957,7 +5039,7 @@ void Block::_serial_1(Closure_Block::temperature_allreduce_6_closure* gen0, CkRe
 
         thermo.t1 = *(MMD_float*)msg->getData();
       
-#line 4961 "block.def.h"
+#line 5043 "block.def.h"
       } // end serial block
     }
   }
@@ -4978,7 +5060,7 @@ void Block::_serial_2(Closure_Block::temperature_allreduce_6_closure* gen0) {
 
         cb.send();
       
-#line 4982 "block.def.h"
+#line 5064 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5048,7 +5130,7 @@ void Block::_serial_3(Closure_Block::energy_allreduce_8_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.e_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 5052 "block.def.h"
+#line 5134 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5118,7 +5200,7 @@ void Block::_serial_4(Closure_Block::energy_allreduce_8_closure* gen0, CkReducti
 
         thermo.eng = *(MMD_float*)msg->getData();
       
-#line 5122 "block.def.h"
+#line 5204 "block.def.h"
       } // end serial block
     }
   }
@@ -5139,7 +5221,7 @@ void Block::_serial_5(Closure_Block::energy_allreduce_8_closure* gen0) {
 
         cb.send();
       
-#line 5143 "block.def.h"
+#line 5225 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5209,7 +5291,7 @@ void Block::_serial_6(Closure_Block::pressure_allreduce_10_closure* gen0) {
         allreduce_cb.setRefnum(tag);
         contribute(sizeof(MMD_float), &(thermo.p_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
       
-#line 5213 "block.def.h"
+#line 5295 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5279,7 +5361,7 @@ void Block::_serial_7(Closure_Block::pressure_allreduce_10_closure* gen0, CkRedu
 
         thermo.virial = *(MMD_float*)msg->getData();
       
-#line 5283 "block.def.h"
+#line 5365 "block.def.h"
       } // end serial block
     }
   }
@@ -5300,7 +5382,7 @@ void Block::_serial_8(Closure_Block::pressure_allreduce_10_closure* gen0) {
 
         cb.send();
       
-#line 5304 "block.def.h"
+#line 5386 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5373,7 +5455,7 @@ void Block::_serial_9(Closure_Block::exchange_1_12_closure* gen0) {
           thisProxy[comm->send2_chare].exchange_1_recv_2(tag, (char*)comm->send2, comm->send2_size);
         }
       
-#line 5377 "block.def.h"
+#line 5459 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5441,7 +5523,7 @@ void Block::_serial_10(Closure_Block::exchange_1_12_closure* gen0, Closure_Block
         memcpy(comm->recv1, data, size);
         comm->nrecv = comm->nrecv1;
       
-#line 5445 "block.def.h"
+#line 5527 "block.def.h"
       } // end serial block
     }
   }
@@ -5546,7 +5628,7 @@ void Block::_serial_11(Closure_Block::exchange_1_12_closure* gen0, Closure_Block
           memcpy(comm->recv2, data, size);
           comm->nrecv += comm->nrecv2;
         
-#line 5550 "block.def.h"
+#line 5632 "block.def.h"
       } // end serial block
     }
   }
@@ -5568,7 +5650,7 @@ void Block::_serial_12(Closure_Block::exchange_1_12_closure* gen0) {
 
         cb.send();
       
-#line 5572 "block.def.h"
+#line 5654 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5641,7 +5723,7 @@ void Block::_serial_13(Closure_Block::exchange_2_13_closure* gen0) {
           thisProxy[comm->send2_chare].exchange_2_recv_2(tag, (char*)comm->send2, comm->send2_size);
         }
       
-#line 5645 "block.def.h"
+#line 5727 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5708,7 +5790,7 @@ void Block::_serial_14(Closure_Block::exchange_2_13_closure* gen0, Closure_Block
 
         memcpy(comm->recv1, data, size);
       
-#line 5712 "block.def.h"
+#line 5794 "block.def.h"
       } // end serial block
     }
   }
@@ -5812,7 +5894,7 @@ void Block::_serial_15(Closure_Block::exchange_2_13_closure* gen0, Closure_Block
 
           memcpy(comm->recv2, data, size);
         
-#line 5816 "block.def.h"
+#line 5898 "block.def.h"
       } // end serial block
     }
   }
@@ -5834,7 +5916,7 @@ void Block::_serial_16(Closure_Block::exchange_2_13_closure* gen0) {
 
         cb.send();
       
-#line 5838 "block.def.h"
+#line 5920 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5904,7 +5986,7 @@ void Block::_serial_17(Closure_Block::borders_1_18_closure* gen0) {
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->send1_chare].borders_recv_1(tag, (char*)comm->send1, comm->send1_size);
       
-#line 5908 "block.def.h"
+#line 5990 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -5972,7 +6054,7 @@ void Block::_serial_18(Closure_Block::borders_1_18_closure* gen0, Closure_Block:
         memcpy(comm->recv1, data, size);
         cb.send();
       
-#line 5976 "block.def.h"
+#line 6058 "block.def.h"
       } // end serial block
     }
   }
@@ -6043,7 +6125,7 @@ void Block::_serial_19(Closure_Block::borders_2_19_closure* gen0) {
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->send1_chare].borders_recv_2(tag, (char*)comm->send1, comm->send1_size);
       
-#line 6047 "block.def.h"
+#line 6129 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6111,7 +6193,7 @@ void Block::_serial_20(Closure_Block::borders_2_19_closure* gen0, Closure_Block:
         memcpy(comm->recv1, data, size);
         cb.send();
       
-#line 6115 "block.def.h"
+#line 6197 "block.def.h"
       } // end serial block
     }
   }
@@ -6180,9 +6262,11 @@ void Block::_serial_21(Closure_Block::comms_22_closure* gen0) {
 #line 217 "/u/ajain18/miniMD/charm/ljs.ci"
 
         int tag = comm->nswap*comm->iter + iswap;
-        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1));
+        CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+        CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
       
-#line 6186 "block.def.h"
+#line 6270 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6211,7 +6295,7 @@ SDAG::Continuation* Block::_when_9(Closure_Block::comms_22_closure* gen0, int re
   SDAG::Buffer* buf0 = __dep->tryFindMessage(9, true, refnum_0, 0);
   if (buf0) {
     __dep->removeMessage(buf0);
-    _serial_22(gen0, static_cast<Closure_Block::comms_recv_23_closure*>(buf0->cl));
+    _when_10(gen0, static_cast<Closure_Block::comms_recv_23_closure*>(buf0->cl));
     delete buf0;
     return 0;
   } else {
@@ -6234,6 +6318,33 @@ void Block::_when_9_end(Closure_Block::comms_22_closure* gen0, Closure_Block::co
 
 
 #ifndef CK_TEMPLATES_ONLY
+SDAG::Continuation* Block::_when_10(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1) {
+  SDAG::Buffer* buf0 = __dep->tryFindMessage(10, false, 0, 0);
+  if (buf0) {
+    __dep->removeMessage(buf0);
+    _serial_22(gen0, gen1);
+    delete buf0;
+    return 0;
+  } else {
+    SDAG::Continuation* c = new SDAG::Continuation(10);
+    c->addClosure(gen0);
+    c->addClosure(gen1);
+    c->anyEntries.push_back(10);
+    __dep->reg(c);
+    return c;
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+
+#ifndef CK_TEMPLATES_ONLY
+void Block::_when_10_end(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1) {
+  _when_9_end(gen0, gen1);
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+
+#ifndef CK_TEMPLATES_ONLY
 void Block::_serial_22(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_22()), CkMyPe(), 0, &projID, this); 
@@ -6247,16 +6358,16 @@ void Block::_serial_22(Closure_Block::comms_22_closure* gen0, Closure_Block::com
       CkDeviceBuffer & deviceBuffer_data = gen1->getP3();
       char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
-#line 221 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 224 "/u/ajain18/miniMD/charm/ljs.ci"
 
-        cb.send();
-      
-#line 6255 "block.def.h"
+            cb.send();
+        
+#line 6366 "block.def.h"
       } // end serial block
     }
   }
   _TRACE_END_EXECUTE(); 
-  _when_9_end(gen0, gen1);
+  _when_10_end(gen0, gen1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -6270,7 +6381,7 @@ void Block::comm_all(CkCallback cb){
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Block::_sdag_fnc_comm_all(CkCallback cb){
-  Closure_Block::comm_all_24_closure* genClosure = new Closure_Block::comm_all_24_closure();
+  Closure_Block::comm_all_25_closure* genClosure = new Closure_Block::comm_all_25_closure();
   genClosure->getP0() = cb;
   _sdag_fnc_comm_all(genClosure);
   genClosure->deref();
@@ -6278,7 +6389,7 @@ void Block::_sdag_fnc_comm_all(CkCallback cb){
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Block::_sdag_fnc_comm_all(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_sdag_fnc_comm_all(Closure_Block::comm_all_25_closure* gen0) {
   _TRACE_END_EXECUTE(); 
   if (!__dep.get()) _sdag_init();
   _slist_10(gen0);
@@ -6289,33 +6400,33 @@ void Block::_sdag_fnc_comm_all(Closure_Block::comm_all_24_closure* gen0) {
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::comm_all_end(Closure_Block::comm_all_24_closure* gen0) {
+void Block::comm_all_end(Closure_Block::comm_all_25_closure* gen0) {
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_10(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_slist_10(Closure_Block::comm_all_25_closure* gen0) {
   _serial_23(gen0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_10_end(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_slist_10_end(Closure_Block::comm_all_25_closure* gen0) {
   comm_all_end(gen0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_23(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_serial_23(Closure_Block::comm_all_25_closure* gen0) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_23()), CkMyPe(), 0, &projID, this); 
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 227 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 231 "/u/ajain18/miniMD/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -6328,7 +6439,7 @@ void Block::_serial_23(Closure_Block::comm_all_24_closure* gen0) {
           }
         }
       
-#line 6332 "block.def.h"
+#line 6443 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6338,7 +6449,7 @@ void Block::_serial_23(Closure_Block::comm_all_24_closure* gen0) {
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_forall_0(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_forall_0(Closure_Block::comm_all_25_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
   int __first = (0), __last = (my_nswap-1), __stride = (1);
@@ -6360,7 +6471,7 @@ void Block::_forall_0(Closure_Block::comm_all_24_closure* gen0) {
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_forall_0_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_forall_0_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   _cf0->decrement(); /* DECREMENT 1 */ 
   my_iswap_cl->deref();
   if (_cf0->isDone()) {
@@ -6372,21 +6483,21 @@ void Block::_forall_0_end(Closure_Block::comm_all_24_closure* gen0, SDAG::Forall
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_11(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_slist_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   _if_2(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_11_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_slist_11_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   _forall_0_end(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_if_2(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_if_2(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   {
     CkCallback& cb = gen0->getP0();
     {
@@ -6405,28 +6516,28 @@ void Block::_if_2(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure*
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_if_2_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_if_2_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   _slist_11_end(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_12(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
-  _when_10(gen0, my_iswap_cl, _cf0);
+void Block::_slist_12(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+  _when_11(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_12_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+void Block::_slist_12_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   _if_2_end(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-SDAG::Continuation* Block::_when_10(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
+SDAG::Continuation* Block::_when_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0) {
   CMK_REFNUM_TYPE refnum_0;
   {
     CkCallback& cb = gen0->getP0();
@@ -6439,25 +6550,25 @@ SDAG::Continuation* Block::_when_10(Closure_Block::comm_all_24_closure* gen0, SD
       }
     }
   }
-  return _when_10(gen0, my_iswap_cl, _cf0, refnum_0);
+  return _when_11(gen0, my_iswap_cl, _cf0, refnum_0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-SDAG::Continuation* Block::_when_10(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0) {
-  SDAG::Buffer* buf0 = __dep->tryFindMessage(10, true, refnum_0, 0);
+SDAG::Continuation* Block::_when_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0) {
+  SDAG::Buffer* buf0 = __dep->tryFindMessage(11, true, refnum_0, 0);
   if (buf0) {
     __dep->removeMessage(buf0);
-    _serial_24(gen0, my_iswap_cl, _cf0, static_cast<Closure_Block::comm_all_recv_25_closure*>(buf0->cl));
+    _serial_24(gen0, my_iswap_cl, _cf0, static_cast<Closure_Block::comm_all_recv_26_closure*>(buf0->cl));
     delete buf0;
     return 0;
   } else {
-    SDAG::Continuation* c = new SDAG::Continuation(10);
+    SDAG::Continuation* c = new SDAG::Continuation(11);
     c->addClosure(gen0);
     c->addClosure(my_iswap_cl);
     c->addClosure(_cf0);
-    c->entries.push_back(10);
+    c->entries.push_back(11);
     c->refnums.push_back(refnum_0);
     __dep->reg(c);
     return c;
@@ -6467,14 +6578,14 @@ SDAG::Continuation* Block::_when_10(Closure_Block::comm_all_24_closure* gen0, SD
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_when_10_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_25_closure* gen3) {
+void Block::_when_11_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_26_closure* gen3) {
   _slist_12_end(gen0, my_iswap_cl, _cf0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_25_closure* gen3) {
+void Block::_serial_24(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_26_closure* gen3) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_24()), CkMyPe(), 0, &projID, this); 
   {
@@ -6487,7 +6598,7 @@ void Block::_serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClo
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 241 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 245 "/u/ajain18/miniMD/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -6497,28 +6608,28 @@ void Block::_serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClo
             hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
             comm->atom_p->unpack_comm(comm->recvnum[my_iswap], comm->firstrecv[my_iswap], comm->buf_comms_recv[my_iswap]);
           
-#line 6501 "block.def.h"
+#line 6612 "block.def.h"
           } // end serial block
         }
       }
     }
   }
   _TRACE_END_EXECUTE(); 
-  _when_10_end(gen0, my_iswap_cl, _cf0, gen3);
+  _when_11_end(gen0, my_iswap_cl, _cf0, gen3);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_25(Closure_Block::comm_all_24_closure* gen0) {
+void Block::_serial_25(Closure_Block::comm_all_25_closure* gen0) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_25()), CkMyPe(), 0, &projID, this); 
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 252 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 256 "/u/ajain18/miniMD/charm/ljs.ci"
  cb.send(); 
-#line 6522 "block.def.h"
+#line 6633 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6536,7 +6647,7 @@ void Block::comm_rev_all(CkCallback cb){
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Block::_sdag_fnc_comm_rev_all(CkCallback cb){
-  Closure_Block::comm_rev_all_26_closure* genClosure = new Closure_Block::comm_rev_all_26_closure();
+  Closure_Block::comm_rev_all_27_closure* genClosure = new Closure_Block::comm_rev_all_27_closure();
   genClosure->getP0() = cb;
   _sdag_fnc_comm_rev_all(genClosure);
   genClosure->deref();
@@ -6544,7 +6655,7 @@ void Block::_sdag_fnc_comm_rev_all(CkCallback cb){
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Block::_sdag_fnc_comm_rev_all(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_sdag_fnc_comm_rev_all(Closure_Block::comm_rev_all_27_closure* gen0) {
   _TRACE_END_EXECUTE(); 
   if (!__dep.get()) _sdag_init();
   _slist_13(gen0);
@@ -6555,33 +6666,33 @@ void Block::_sdag_fnc_comm_rev_all(Closure_Block::comm_rev_all_26_closure* gen0)
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::comm_rev_all_end(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::comm_rev_all_end(Closure_Block::comm_rev_all_27_closure* gen0) {
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_13(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_slist_13(Closure_Block::comm_rev_all_27_closure* gen0) {
   _serial_26(gen0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_13_end(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_slist_13_end(Closure_Block::comm_rev_all_27_closure* gen0) {
   comm_rev_all_end(gen0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_26(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_serial_26(Closure_Block::comm_rev_all_27_closure* gen0) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_26()), CkMyPe(), 0, &projID, this); 
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 256 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 260 "/u/ajain18/miniMD/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -6594,7 +6705,7 @@ void Block::_serial_26(Closure_Block::comm_rev_all_26_closure* gen0) {
           }
         }
       
-#line 6598 "block.def.h"
+#line 6709 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -6604,7 +6715,7 @@ void Block::_serial_26(Closure_Block::comm_rev_all_26_closure* gen0) {
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_forall_1(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_forall_1(Closure_Block::comm_rev_all_27_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
   int __first = (0), __last = (my_nswap-1), __stride = (1);
@@ -6626,7 +6737,7 @@ void Block::_forall_1(Closure_Block::comm_rev_all_26_closure* gen0) {
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_forall_1_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_forall_1_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   _cf1->decrement(); /* DECREMENT 1 */ 
   my_iswap_cl->deref();
   if (_cf1->isDone()) {
@@ -6638,21 +6749,21 @@ void Block::_forall_1_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::Fo
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_14(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_slist_14(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   _if_3(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_14_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_slist_14_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   _forall_1_end(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_if_3(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_if_3(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   {
     CkCallback& cb = gen0->getP0();
     {
@@ -6671,28 +6782,28 @@ void Block::_if_3(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClos
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_if_3_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_if_3_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   _slist_14_end(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_15(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
-  _when_11(gen0, my_iswap_cl, _cf1);
+void Block::_slist_15(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+  _when_12(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_slist_15_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+void Block::_slist_15_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   _if_3_end(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-SDAG::Continuation* Block::_when_11(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
+SDAG::Continuation* Block::_when_12(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1) {
   CMK_REFNUM_TYPE refnum_0;
   {
     CkCallback& cb = gen0->getP0();
@@ -6705,25 +6816,25 @@ SDAG::Continuation* Block::_when_11(Closure_Block::comm_rev_all_26_closure* gen0
       }
     }
   }
-  return _when_11(gen0, my_iswap_cl, _cf1, refnum_0);
+  return _when_12(gen0, my_iswap_cl, _cf1, refnum_0);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-SDAG::Continuation* Block::_when_11(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0) {
-  SDAG::Buffer* buf0 = __dep->tryFindMessage(11, true, refnum_0, 0);
+SDAG::Continuation* Block::_when_12(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0) {
+  SDAG::Buffer* buf0 = __dep->tryFindMessage(12, true, refnum_0, 0);
   if (buf0) {
     __dep->removeMessage(buf0);
-    _serial_27(gen0, my_iswap_cl, _cf1, static_cast<Closure_Block::comm_rev_all_recv_27_closure*>(buf0->cl));
+    _serial_27(gen0, my_iswap_cl, _cf1, static_cast<Closure_Block::comm_rev_all_recv_28_closure*>(buf0->cl));
     delete buf0;
     return 0;
   } else {
-    SDAG::Continuation* c = new SDAG::Continuation(11);
+    SDAG::Continuation* c = new SDAG::Continuation(12);
     c->addClosure(gen0);
     c->addClosure(my_iswap_cl);
     c->addClosure(_cf1);
-    c->entries.push_back(11);
+    c->entries.push_back(12);
     c->refnums.push_back(refnum_0);
     __dep->reg(c);
     return c;
@@ -6733,14 +6844,14 @@ SDAG::Continuation* Block::_when_11(Closure_Block::comm_rev_all_26_closure* gen0
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_when_11_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_27_closure* gen3) {
+void Block::_when_12_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_28_closure* gen3) {
   _slist_15_end(gen0, my_iswap_cl, _cf1);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_27_closure* gen3) {
+void Block::_serial_27(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_28_closure* gen3) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_27()), CkMyPe(), 0, &projID, this); 
   {
@@ -6753,7 +6864,7 @@ void Block::_serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::Foral
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 270 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 274 "/u/ajain18/miniMD/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -6764,28 +6875,28 @@ void Block::_serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::Foral
             int_1d_view_type list = Kokkos::subview(comm->sendlist,my_iswap,Kokkos::ALL());
             comm->atom_p->unpack_reverse(comm->sendnum[my_iswap], list, comm->buf_comms_recv[my_iswap]);
           
-#line 6768 "block.def.h"
+#line 6879 "block.def.h"
           } // end serial block
         }
       }
     }
   }
   _TRACE_END_EXECUTE(); 
-  _when_11_end(gen0, my_iswap_cl, _cf1, gen3);
+  _when_12_end(gen0, my_iswap_cl, _cf1, gen3);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
 
 #ifndef CK_TEMPLATES_ONLY
-void Block::_serial_28(Closure_Block::comm_rev_all_26_closure* gen0) {
+void Block::_serial_28(Closure_Block::comm_rev_all_27_closure* gen0) {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_28()), CkMyPe(), 0, &projID, this); 
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 282 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 286 "/u/ajain18/miniMD/charm/ljs.ci"
  cb.send(); 
-#line 6789 "block.def.h"
+#line 6900 "block.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -7063,8 +7174,34 @@ void Block::comms_recv(Closure_Block::comms_recv_23_closure* genClosure){
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
+void Block::send_done(){
+  Closure_Block::send_done_24_closure* genClosure = new Closure_Block::send_done_24_closure();
+  send_done(genClosure);
+  genClosure->deref();
+}
+
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
+void Block::send_done(Closure_Block::send_done_24_closure* genClosure){
+  if (!__dep.get()) _sdag_init();
+  __dep->pushBuffer(10, genClosure);
+  SDAG::Continuation* c = __dep->tryFindContinuation(10);
+  if (c) {
+    _TRACE_END_EXECUTE(); 
+    _when_10(
+      static_cast<Closure_Block::comms_22_closure*>(c->closure[0]), 
+      static_cast<Closure_Block::comms_recv_23_closure*>(c->closure[1])
+    );
+    CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
+    _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, _sdagEP, CkMyPe(), 0, &projID, this); 
+    delete c;
+  }
+}
+
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
 void Block::comm_all_recv(int ref, char *data, size_t size){
-  Closure_Block::comm_all_recv_25_closure* genClosure = new Closure_Block::comm_all_recv_25_closure();
+  Closure_Block::comm_all_recv_26_closure* genClosure = new Closure_Block::comm_all_recv_26_closure();
   genClosure->getP0() = ref;
   genClosure->getP1() = data;
   genClosure->getP2() = size;
@@ -7074,15 +7211,15 @@ void Block::comm_all_recv(int ref, char *data, size_t size){
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Block::comm_all_recv(Closure_Block::comm_all_recv_25_closure* genClosure){
+void Block::comm_all_recv(Closure_Block::comm_all_recv_26_closure* genClosure){
   if (!__dep.get()) _sdag_init();
   if (!genClosure->hasRefnum) genClosure->setRefnum(genClosure->getP0());
-  __dep->pushBuffer(10, genClosure);
-  SDAG::Continuation* c = __dep->tryFindContinuation(10);
+  __dep->pushBuffer(11, genClosure);
+  SDAG::Continuation* c = __dep->tryFindContinuation(11);
   if (c) {
     _TRACE_END_EXECUTE(); 
-    _when_10(
-      static_cast<Closure_Block::comm_all_24_closure*>(c->closure[0]), 
+    _when_11(
+      static_cast<Closure_Block::comm_all_25_closure*>(c->closure[0]), 
       static_cast<SDAG::ForallClosure*>(c->closure[1]), 
       static_cast<SDAG::CCounter*>(c->closure[2]), 
       c->refnums[0]
@@ -7096,7 +7233,7 @@ void Block::comm_all_recv(Closure_Block::comm_all_recv_25_closure* genClosure){
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Block::comm_rev_all_recv(int ref, char *data, size_t size){
-  Closure_Block::comm_rev_all_recv_27_closure* genClosure = new Closure_Block::comm_rev_all_recv_27_closure();
+  Closure_Block::comm_rev_all_recv_28_closure* genClosure = new Closure_Block::comm_rev_all_recv_28_closure();
   genClosure->getP0() = ref;
   genClosure->getP1() = data;
   genClosure->getP2() = size;
@@ -7106,15 +7243,15 @@ void Block::comm_rev_all_recv(int ref, char *data, size_t size){
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Block::comm_rev_all_recv(Closure_Block::comm_rev_all_recv_27_closure* genClosure){
+void Block::comm_rev_all_recv(Closure_Block::comm_rev_all_recv_28_closure* genClosure){
   if (!__dep.get()) _sdag_init();
   if (!genClosure->hasRefnum) genClosure->setRefnum(genClosure->getP0());
-  __dep->pushBuffer(11, genClosure);
-  SDAG::Continuation* c = __dep->tryFindContinuation(11);
+  __dep->pushBuffer(12, genClosure);
+  SDAG::Continuation* c = __dep->tryFindContinuation(12);
   if (c) {
     _TRACE_END_EXECUTE(); 
-    _when_11(
-      static_cast<Closure_Block::comm_rev_all_26_closure*>(c->closure[0]), 
+    _when_12(
+      static_cast<Closure_Block::comm_rev_all_27_closure*>(c->closure[0]), 
       static_cast<SDAG::ForallClosure*>(c->closure[1]), 
       static_cast<SDAG::CCounter*>(c->closure[2]), 
       c->refnums[0]
@@ -7128,7 +7265,7 @@ void Block::comm_rev_all_recv(Closure_Block::comm_rev_all_recv_27_closure* genCl
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Block::_sdag_init() { // Potentially missing Block_SDAG_CODE in your class definition?
-  __dep.reset(new SDAG::Dependency(12,12));
+  __dep.reset(new SDAG::Dependency(13,13));
   __dep->addDepends(0,0);
   __dep->addDepends(1,1);
   __dep->addDepends(2,2);
@@ -7141,6 +7278,7 @@ void Block::_sdag_init() { // Potentially missing Block_SDAG_CODE in your class 
   __dep->addDepends(9,9);
   __dep->addDepends(10,10);
   __dep->addDepends(11,11);
+  __dep->addDepends(12,12);
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -7206,10 +7344,11 @@ void Block::__sdag_register() { // Potentially missing Block_SDAG_CODE in your c
   PUPable_reg(SINGLE_ARG(Closure_Block::borders_recv_2_21_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::comms_22_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::comms_recv_23_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_24_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_recv_25_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_26_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_recv_27_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::send_done_24_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_25_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_recv_26_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_27_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_recv_28_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::init_2_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::contCreateVelocity_3_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::run_4_closure));
@@ -7229,10 +7368,11 @@ void Block::__sdag_register() { // Potentially missing Block_SDAG_CODE in your c
   PUPable_reg(SINGLE_ARG(Closure_Block::borders_recv_2_21_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::comms_22_closure));
   PUPable_reg(SINGLE_ARG(Closure_Block::comms_recv_23_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_24_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_recv_25_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_26_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_recv_27_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::send_done_24_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_25_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_all_recv_26_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_27_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Block::comm_rev_all_recv_28_closure));
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -7866,6 +8006,7 @@ void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
 void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
+void send_done();
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);

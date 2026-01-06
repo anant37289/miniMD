@@ -30,6 +30,7 @@ void borders_recv_1(int ref, const char *data, const size_t &size);
 void borders_recv_2(int ref, const char *data, const size_t &size);
 void comms(int iswap, const CkCallback &cb);
 void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
+void send_done();
 void comm_all(const CkCallback &cb);
 void comm_all_recv(int ref, const char *data, const size_t &size);
 void comm_rev_all(const CkCallback &cb);
@@ -669,118 +670,142 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static int _callmarshall_comms_recv_marshall23(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_comms_recv_marshall23(PUP::er &p,void *msg);
+    /* DECLS: void send_done();
+     */
+    // Entry point registration at startup
+    
+    static int reg_send_done_void();
+    // Entry point index lookup
+    
+    inline static int idx_send_done_void() {
+      static int epidx = reg_send_done_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_send_done(void (Block::*)() ) {
+      return idx_send_done_void();
+    }
+
+
+    
+    static int send_done() { return idx_send_done_void(); }
+    
+    static void _call_send_done_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_send_done_void(void* impl_msg, void* impl_obj);
     /* DECLS: void comm_all(const CkCallback &cb);
      */
     // Entry point registration at startup
     
-    static int reg_comm_all_marshall24();
+    static int reg_comm_all_marshall25();
     // Entry point index lookup
     
-    inline static int idx_comm_all_marshall24() {
-      static int epidx = reg_comm_all_marshall24();
+    inline static int idx_comm_all_marshall25() {
+      static int epidx = reg_comm_all_marshall25();
       return epidx;
     }
 
     
     inline static int idx_comm_all(void (Block::*)(const CkCallback &cb) ) {
-      return idx_comm_all_marshall24();
+      return idx_comm_all_marshall25();
     }
 
 
     
-    static int comm_all(const CkCallback &cb) { return idx_comm_all_marshall24(); }
+    static int comm_all(const CkCallback &cb) { return idx_comm_all_marshall25(); }
     
-    static void _call_comm_all_marshall24(void* impl_msg, void* impl_obj);
+    static void _call_comm_all_marshall25(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_comm_all_marshall24(void* impl_msg, void* impl_obj);
+    static void _call_sdag_comm_all_marshall25(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_comm_all_marshall24(char* impl_buf, void* impl_obj_void);
+    static int _callmarshall_comm_all_marshall25(char* impl_buf, void* impl_obj_void);
     
-    static void _marshallmessagepup_comm_all_marshall24(PUP::er &p,void *msg);
+    static void _marshallmessagepup_comm_all_marshall25(PUP::er &p,void *msg);
     /* DECLS: void comm_all_recv(int ref, const char *data, const size_t &size);
      */
     // Entry point registration at startup
     
-    static int reg_comm_all_recv_marshall25();
+    static int reg_comm_all_recv_marshall26();
     // Entry point index lookup
     
-    inline static int idx_comm_all_recv_marshall25() {
-      static int epidx = reg_comm_all_recv_marshall25();
+    inline static int idx_comm_all_recv_marshall26() {
+      static int epidx = reg_comm_all_recv_marshall26();
       return epidx;
     }
 
     
     inline static int idx_comm_all_recv(void (Block::*)(int ref, const char *data, const size_t &size) ) {
-      return idx_comm_all_recv_marshall25();
+      return idx_comm_all_recv_marshall26();
     }
 
 
     
-    static int comm_all_recv(int ref, const char *data, const size_t &size) { return idx_comm_all_recv_marshall25(); }
+    static int comm_all_recv(int ref, const char *data, const size_t &size) { return idx_comm_all_recv_marshall26(); }
     
-    static void _call_comm_all_recv_marshall25(void* impl_msg, void* impl_obj);
+    static void _call_comm_all_recv_marshall26(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_comm_all_recv_marshall25(void* impl_msg, void* impl_obj);
+    static void _call_sdag_comm_all_recv_marshall26(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_comm_all_recv_marshall25(char* impl_buf, void* impl_obj_void);
+    static int _callmarshall_comm_all_recv_marshall26(char* impl_buf, void* impl_obj_void);
     
-    static void _marshallmessagepup_comm_all_recv_marshall25(PUP::er &p,void *msg);
+    static void _marshallmessagepup_comm_all_recv_marshall26(PUP::er &p,void *msg);
     /* DECLS: void comm_rev_all(const CkCallback &cb);
      */
     // Entry point registration at startup
     
-    static int reg_comm_rev_all_marshall26();
+    static int reg_comm_rev_all_marshall27();
     // Entry point index lookup
     
-    inline static int idx_comm_rev_all_marshall26() {
-      static int epidx = reg_comm_rev_all_marshall26();
+    inline static int idx_comm_rev_all_marshall27() {
+      static int epidx = reg_comm_rev_all_marshall27();
       return epidx;
     }
 
     
     inline static int idx_comm_rev_all(void (Block::*)(const CkCallback &cb) ) {
-      return idx_comm_rev_all_marshall26();
+      return idx_comm_rev_all_marshall27();
     }
 
 
     
-    static int comm_rev_all(const CkCallback &cb) { return idx_comm_rev_all_marshall26(); }
+    static int comm_rev_all(const CkCallback &cb) { return idx_comm_rev_all_marshall27(); }
     
-    static void _call_comm_rev_all_marshall26(void* impl_msg, void* impl_obj);
+    static void _call_comm_rev_all_marshall27(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_comm_rev_all_marshall26(void* impl_msg, void* impl_obj);
+    static void _call_sdag_comm_rev_all_marshall27(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_comm_rev_all_marshall26(char* impl_buf, void* impl_obj_void);
+    static int _callmarshall_comm_rev_all_marshall27(char* impl_buf, void* impl_obj_void);
     
-    static void _marshallmessagepup_comm_rev_all_marshall26(PUP::er &p,void *msg);
+    static void _marshallmessagepup_comm_rev_all_marshall27(PUP::er &p,void *msg);
     /* DECLS: void comm_rev_all_recv(int ref, const char *data, const size_t &size);
      */
     // Entry point registration at startup
     
-    static int reg_comm_rev_all_recv_marshall27();
+    static int reg_comm_rev_all_recv_marshall28();
     // Entry point index lookup
     
-    inline static int idx_comm_rev_all_recv_marshall27() {
-      static int epidx = reg_comm_rev_all_recv_marshall27();
+    inline static int idx_comm_rev_all_recv_marshall28() {
+      static int epidx = reg_comm_rev_all_recv_marshall28();
       return epidx;
     }
 
     
     inline static int idx_comm_rev_all_recv(void (Block::*)(int ref, const char *data, const size_t &size) ) {
-      return idx_comm_rev_all_recv_marshall27();
+      return idx_comm_rev_all_recv_marshall28();
     }
 
 
     
-    static int comm_rev_all_recv(int ref, const char *data, const size_t &size) { return idx_comm_rev_all_recv_marshall27(); }
+    static int comm_rev_all_recv(int ref, const char *data, const size_t &size) { return idx_comm_rev_all_recv_marshall28(); }
     
-    static void _call_comm_rev_all_recv_marshall27(void* impl_msg, void* impl_obj);
+    static void _call_comm_rev_all_recv_marshall28(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_comm_rev_all_recv_marshall27(void* impl_msg, void* impl_obj);
+    static void _call_sdag_comm_rev_all_recv_marshall28(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_comm_rev_all_recv_marshall27(char* impl_buf, void* impl_obj_void);
+    static int _callmarshall_comm_rev_all_recv_marshall28(char* impl_buf, void* impl_obj_void);
     
-    static void _marshallmessagepup_comm_rev_all_recv_marshall27(PUP::er &p,void *msg);
+    static void _marshallmessagepup_comm_rev_all_recv_marshall28(PUP::er &p,void *msg);
     /* DECLS: Block(CkMigrateMessage* impl_msg);
      */
     // Entry point registration at startup
@@ -1009,6 +1034,11 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
+/* DECLS: void send_done();
+ */
+    
+    void send_done(const CkEntryOptions *impl_e_opts=NULL) ;
+
 /* DECLS: void comm_all(const CkCallback &cb);
  */
     
@@ -1226,6 +1256,11 @@ class CkIndex_Block:public CkIndex_ArrayElement{
  */
     
     void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
+
+/* DECLS: void send_done();
+ */
+    
+    void send_done(const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comm_all(const CkCallback &cb);
  */
@@ -1517,6 +1552,11 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void comms_recv(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
+/* DECLS: void send_done();
+ */
+    
+    void send_done(const CkEntryOptions *impl_e_opts=NULL) ;
+
 /* DECLS: void comm_all(const CkCallback &cb);
  */
     
@@ -1666,51 +1706,53 @@ private:                                                                       \
   SDAG::Continuation* _when_9(Closure_Block::comms_22_closure* gen0);          \
   SDAG::Continuation* _when_9(Closure_Block::comms_22_closure* gen0, int refnum_0);\
   void _when_9_end(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1);\
+  SDAG::Continuation* _when_10(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1);\
+  void _when_10_end(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1);\
   void _serial_22(Closure_Block::comms_22_closure* gen0, Closure_Block::comms_recv_23_closure* gen1);\
 public:                                                                        \
   void comm_all(CkCallback cb);                                                \
   void _sdag_fnc_comm_all(CkCallback cb);                                      \
-  void _sdag_fnc_comm_all(Closure_Block::comm_all_24_closure* gen0);           \
+  void _sdag_fnc_comm_all(Closure_Block::comm_all_25_closure* gen0);           \
 private:                                                                       \
-  void comm_all_end(Closure_Block::comm_all_24_closure* gen0);                 \
-  void _slist_10(Closure_Block::comm_all_24_closure* gen0);                    \
-  void _slist_10_end(Closure_Block::comm_all_24_closure* gen0);                \
-  void _serial_23(Closure_Block::comm_all_24_closure* gen0);                   \
-  void _forall_0(Closure_Block::comm_all_24_closure* gen0);                    \
-  void _forall_0_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _slist_11(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _slist_11_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _if_2(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _if_2_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _slist_12(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  void _slist_12_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  SDAG::Continuation* _when_10(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  SDAG::Continuation* _when_10(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0);\
-  void _when_10_end(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_25_closure* gen3);\
-  void _serial_24(Closure_Block::comm_all_24_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_25_closure* gen3);\
-  void _serial_25(Closure_Block::comm_all_24_closure* gen0);                   \
+  void comm_all_end(Closure_Block::comm_all_25_closure* gen0);                 \
+  void _slist_10(Closure_Block::comm_all_25_closure* gen0);                    \
+  void _slist_10_end(Closure_Block::comm_all_25_closure* gen0);                \
+  void _serial_23(Closure_Block::comm_all_25_closure* gen0);                   \
+  void _forall_0(Closure_Block::comm_all_25_closure* gen0);                    \
+  void _forall_0_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _slist_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _slist_11_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _if_2(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _if_2_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _slist_12(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  void _slist_12_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  SDAG::Continuation* _when_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  SDAG::Continuation* _when_11(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0);\
+  void _when_11_end(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_26_closure* gen3);\
+  void _serial_24(Closure_Block::comm_all_25_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_26_closure* gen3);\
+  void _serial_25(Closure_Block::comm_all_25_closure* gen0);                   \
 public:                                                                        \
   void comm_rev_all(CkCallback cb);                                            \
   void _sdag_fnc_comm_rev_all(CkCallback cb);                                  \
-  void _sdag_fnc_comm_rev_all(Closure_Block::comm_rev_all_26_closure* gen0);   \
+  void _sdag_fnc_comm_rev_all(Closure_Block::comm_rev_all_27_closure* gen0);   \
 private:                                                                       \
-  void comm_rev_all_end(Closure_Block::comm_rev_all_26_closure* gen0);         \
-  void _slist_13(Closure_Block::comm_rev_all_26_closure* gen0);                \
-  void _slist_13_end(Closure_Block::comm_rev_all_26_closure* gen0);            \
-  void _serial_26(Closure_Block::comm_rev_all_26_closure* gen0);               \
-  void _forall_1(Closure_Block::comm_rev_all_26_closure* gen0);                \
-  void _forall_1_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _slist_14(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _slist_14_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _if_3(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _if_3_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _slist_15(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  void _slist_15_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  SDAG::Continuation* _when_11(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  SDAG::Continuation* _when_11(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0);\
-  void _when_11_end(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_27_closure* gen3);\
-  void _serial_27(Closure_Block::comm_rev_all_26_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_27_closure* gen3);\
-  void _serial_28(Closure_Block::comm_rev_all_26_closure* gen0);               \
+  void comm_rev_all_end(Closure_Block::comm_rev_all_27_closure* gen0);         \
+  void _slist_13(Closure_Block::comm_rev_all_27_closure* gen0);                \
+  void _slist_13_end(Closure_Block::comm_rev_all_27_closure* gen0);            \
+  void _serial_26(Closure_Block::comm_rev_all_27_closure* gen0);               \
+  void _forall_1(Closure_Block::comm_rev_all_27_closure* gen0);                \
+  void _forall_1_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _slist_14(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _slist_14_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _if_3(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _if_3_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _slist_15(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  void _slist_15_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  SDAG::Continuation* _when_12(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  SDAG::Continuation* _when_12(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0);\
+  void _when_12_end(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_28_closure* gen3);\
+  void _serial_27(Closure_Block::comm_rev_all_27_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_28_closure* gen3);\
+  void _serial_28(Closure_Block::comm_rev_all_27_closure* gen0);               \
 public:                                                                        \
   void temperature_recv(CkReductionMsg* msg_msg);                              \
   void energy_recv(CkReductionMsg* msg_msg);                                   \
@@ -1729,9 +1771,11 @@ public:                                                                        \
   void borders_recv_2(int ref, char *data, size_t size);                       \
   void comms_recv(Closure_Block::comms_recv_23_closure* genClosure);           \
   void comms_recv(int ref, size_t size, CkDeviceBuffer deviceBuffer_data);     \
-  void comm_all_recv(Closure_Block::comm_all_recv_25_closure* genClosure);     \
+  void send_done(Closure_Block::send_done_24_closure* genClosure);             \
+  void send_done();                                                            \
+  void comm_all_recv(Closure_Block::comm_all_recv_26_closure* genClosure);     \
   void comm_all_recv(int ref, char *data, size_t size);                        \
-  void comm_rev_all_recv(Closure_Block::comm_rev_all_recv_27_closure* genClosure);\
+  void comm_rev_all_recv(Closure_Block::comm_rev_all_recv_28_closure* genClosure);\
   void comm_rev_all_recv(int ref, char *data, size_t size);                    \
 public:                                                                        \
   SDAG::dep_ptr __dep;                                                         \
@@ -2280,16 +2324,19 @@ class Closure_Block {
     struct comms_recv_23_closure;
 
 
-    struct comm_all_24_closure;
+    struct send_done_24_closure;
 
 
-    struct comm_all_recv_25_closure;
+    struct comm_all_25_closure;
 
 
-    struct comm_rev_all_26_closure;
+    struct comm_all_recv_26_closure;
 
 
-    struct comm_rev_all_recv_27_closure;
+    struct comm_rev_all_27_closure;
+
+
+    struct comm_rev_all_recv_28_closure;
 
 
 };

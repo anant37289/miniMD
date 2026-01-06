@@ -260,15 +260,19 @@ module block {
     entry void comms(int iswap, CkCallback cb) {
       serial {
         int tag = comm->nswap*comm->iter + iswap;
-        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1));
+        CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+        CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
       }
 
-      when comms_recv[comm->nswap*comm->iter+iswap](int ref, size_t size, nocopydevice char data[size]) serial {
-        cb.send();
-      }
+      when comms_recv[comm->nswap*comm->iter+iswap](int ref, size_t size, nocopydevice char data[size])
+        when send_done() serial {
+            cb.send();
+        }
     }
 
     entry void comms_recv(int ref, size_t size, nocopydevice char data[size]);
+    entry void send_done();
 
     // Non-blocking communication routines for Comm::communicate
     entry void comm_all(CkCallback cb) {

@@ -314,22 +314,16 @@ void Comm::communicate(Atom &atom, bool preprocess)
   NVTXTracer(os.str(), NVTXColor::PeterRiver);
   */
   // Kokkos::Profiling::pushRegion("Comm::communicate");
-
-  // Create host mirrors for integrate loop
-  // if (!preprocess && !h_buf_alloc) {
-  //   h_buf_alloc = true;
-  //   buf_comms_send = new float_1d_view_type[nswap];
-  //   buf_comms_recv = new float_1d_view_type[nswap];
-  //   h_buf_comms_send = new float_1d_host_view_type[nswap];
-  //   h_buf_comms_recv = new float_1d_host_view_type[nswap];
-  //   for (int i = 0; i < nswap; i++) {
-  //     buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
-  //     buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
-  //     h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
-  //     h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
-  //   }
-  // }
-  // Kokkos::fence();
+  if (!preprocess && !h_buf_alloc) {
+    h_buf_alloc = true;
+    buf_comms_send = new float_1d_view_type[nswap];
+    buf_comms_recv = new float_1d_view_type[nswap];
+    for (int i = 0; i < nswap; i++) {
+      buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
+      buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv + BUFEXTRA);
+    }
+    Kokkos::fence();
+  }
 
   int iswap;
   int pbc_flags[4];
@@ -346,7 +340,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
     // Pack buffer
     if (sendchare[iswap] != index) {
-      atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
+      atom.pack_comm(sendnum[iswap], list, buf_comms_send[iswap], pbc_flags);
       // Kokkos::fence();
 
       // Exchange with another proc
@@ -356,10 +350,10 @@ void Comm::communicate(Atom &atom, bool preprocess)
       // Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
 
       // Send and suspend
-      send1 = buf_send.data();
+      send1 = buf_comms_send[iswap].data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
       send1_chare = sendchare[iswap];
-      recv1 = buf_recv.data();
+      recv1 = buf_comms_recv[iswap].data();
       suspend(compute_instance);
       block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
@@ -368,8 +362,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       // Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
       // Unpack received data
-      buf = buf_recv;
-      suspend(compute_instance);
+      buf = buf_comms_recv[iswap];
       atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
     } else {
       // No need to synchronize for self packing
@@ -389,6 +382,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
 void Comm::reverse_communicate(Atom &atom, bool preprocess)
 {
+  //TODO: fix this - comm -> unpack -> comm -> unpack because next comm should use all of it
   /*
   std::ostringstream os;
   os << "Comm::reverse_communicate " << index;
@@ -668,7 +662,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     */
 
     if (nrecv > maxrecv) {
-      
       growrecv(nrecv);
     }
     if(h_buf_send.extent(0)<buf_send.extent(0))
@@ -796,6 +789,16 @@ void Comm::borders(Atom &atom_, bool preprocess)
     // h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
   // }
 
+  if (preprocess) {
+    buf_comms_send = new float_1d_view_type[nswap];
+    buf_comms_recv = new float_1d_view_type[nswap];
+    for (int i = 0; i < nswap; i++) {
+      buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
+      buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv + BUFEXTRA);
+    }
+    Kokkos::fence();
+  }
+
   atom = atom_;
   int ineed, nsend, nrecv, nfirst, nlast;
 
@@ -830,6 +833,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
       pbc_flags[1] = pbc_flagx[iswap];
       pbc_flags[2] = pbc_flagy[iswap];
       pbc_flags[3] = pbc_flagz[iswap];
+      auto curr_buf_send = buf_comms_send[i];
 
       x = atom.x;
 
