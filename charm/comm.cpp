@@ -287,18 +287,6 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
   }
 
   //info
-  nswap=0;
-  ckout<<"for chare "<<thisIndex<<"\n";
-  for(idim = 0; idim < 3; idim++) {
-    ckout<<"share index along "<<idim<<"\n";
-    for(ineed = 0; ineed < 2 * need[idim]; ineed++) {
-      ckout<<sendchare[nswap]<<" ";
-      ckout<<recvchare[nswap]<<": ";
-      nswap++;
-    }
-    ckout<<"\n";
-  }
-  ckout<<endl;
   //info
 
   return 0;
@@ -731,7 +719,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(compute_instance, 0,nrecv_atoms), *this);
     // Kokkos::fence();
 
-    ckout<<"all okay>"<<endl;
+    // ckout<<"all okay>"<<endl;
 
   }
   atom_ = atom;

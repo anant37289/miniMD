@@ -262,7 +262,6 @@ void KokkosManager::initialize() {
     args_kokkos.set_device_id(0);
     Kokkos::initialize(args_kokkos);
   }
-  ckout<<"at barrier"<<endl;
   CmiNodeBarrier();
   
   // Create per-GPU streams (only works with 1 process per GPU)

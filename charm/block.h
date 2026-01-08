@@ -24,6 +24,8 @@ public:
   Thermo thermo;
   Comm* comm;
   Force* force;
+  int reductionCount=0;
+  MMD_float reductionSum=0;
 
   // For thermo communication
   int i;

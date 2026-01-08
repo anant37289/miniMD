@@ -306,10 +306,9 @@ int main(int argc, char** argv)
     }
   }
 
-  Kokkos::InitArguments args_kokkos;
-  args_kokkos.num_threads = num_threads;
-  args_kokkos.num_numa = teams;
-  args_kokkos.device_id = device;
+  Kokkos::InitializationSettings args_kokkos;
+  if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
+  args_kokkos.set_device_id(0);
   Kokkos::initialize(args_kokkos);
   // Scope Guard
   {
@@ -476,6 +475,9 @@ int main(int argc, char** argv)
   if(me == 0)
     printf("# Done .... \n");
 
+  // printf("==deets==\n");
+  // printf("num atoms %i\n", atom.nlocal);
+
   if(me == 0) {
     fprintf(stdout, "# " VARIANT_STRING " output ...\n");
     fprintf(stdout, "# Run Settings: \n");
@@ -506,6 +508,8 @@ int main(int argc, char** argv)
     fprintf(stdout, "\t# Do safe exchange: %i\n", comm.do_safeexchange);
     fprintf(stdout, "\t# Size of float: %i\n\n", (int) sizeof(MMD_float));
   }
+
+  // thermo.compute(0, atom, neighbor, force, timer, comm);
 
   comm.exchange(atom);
   if(sort>0)

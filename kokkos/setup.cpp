@@ -392,6 +392,8 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
 
         vz = random(&n);
 
+        // printf("%f %f %f %f %f %f %d\n", xtmp, ytmp, ztmp, vx, vy, vz, n);
+
         atom.addatom(xtmp, ytmp, ztmp, vx, vy, vz);
       }
     }
@@ -493,12 +495,15 @@ void create_velocity(double t_request, Atom &atom, Thermo &thermo)
   Kokkos::deep_copy(atom.v,atom.h_v);
   double t = thermo.temperature(atom);
   double factor = sqrt(t_request / t);
+  // printf("%f %f %f\n ", vxtot, vytot, vztot);
+  // printf("%f %f %f\n", factor, t, t_request);
   Kokkos::deep_copy(atom.h_v,atom.v);
 
   for(i = 0; i < atom.nlocal; i++) {
     atom.h_v(i,0) *= factor;
     atom.h_v(i,1) *= factor;
     atom.h_v(i,2) *= factor;
+    // printf("h_v(i, 0), %f, %f, %f\n", atom.h_v(i,0), atom.h_v(i,1), atom.h_v(i,2));
   }
   Kokkos::deep_copy(atom.v,atom.h_v);
 }

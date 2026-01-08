@@ -392,6 +392,7 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
         for(m = 0; m < 5; m++) random(&n);
 
         vz = random(&n);
+        // ckout<<"["<<CkMyPe()<<"]"<<xtmp<<" "<<ytmp<<" "<<ztmp<<" "<<vx<<" "<<vy<<" "<<vz<<" "<<n<<endl;
 
         atom.addatom(xtmp, ytmp, ztmp, vx, vy, vz);
       }
@@ -456,6 +457,7 @@ void create_velocity_1(Atom &atom, double& vxtot, double& vytot, double& vztot)
 void create_velocity_2(double t_request, Atom &atom, Thermo &thermo,
     double vxtot, double vytot, double vztot)
 {
+  
   vxtot /= atom.natoms;
   vytot /= atom.natoms;
   vztot /= atom.natoms;
@@ -470,14 +472,21 @@ void create_velocity_2(double t_request, Atom &atom, Thermo &thermo,
   thermo.t_act = 0;
 
   Kokkos::deep_copy(atom.v,atom.h_v);
+  Kokkos::fence();
   double t = thermo.temperature(atom);
   double factor = sqrt(t_request / t);
+  if(CkMyPe()==0){
+    // ckout<<"velocity v2"<<"\n";
+    // ckout<<vxtot<<" "<<vytot<<" "<<vztot<<"\n ";
+    // ckout<<factor<<" "<<t<<" "<<t_request<<endl;
+  }
   Kokkos::deep_copy(atom.h_v,atom.v);
 
   for(int i = 0; i < atom.nlocal; i++) {
     atom.h_v(i,0) *= factor;
     atom.h_v(i,1) *= factor;
     atom.h_v(i,2) *= factor;
+    // ckout<<"h_v(i, 0)"<<atom.h_v(i,0) <<" "<<atom.h_v(i,1)<<" "<<atom.h_v(i,2)<<endl;
   }
   Kokkos::deep_copy(atom.v,atom.h_v);
 }

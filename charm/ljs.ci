@@ -119,23 +119,33 @@ module block {
     entry [threaded] void run_neighbour_build(CkCallback cb);
 
     // Allreduce routines for Thermo
+
+    entry void reducesum(int iter, MMD_float temp){
+      serial {
+        reductionSum+=temp;
+        if(++reductionCount==num_chares){
+          thisProxy.temperature_recv(iter, reductionSum);
+          //ckout<<reductionSum<<endl;
+          reductionCount = 0;
+          reductionSum = 0;
+        }
+      }
+    }
     entry void temperature_allreduce(CkCallback cb) {
       serial {
         int tag = comm->iter;
-        CkCallback allreduce_cb = CkCallback(CkIndex_Block::temperature_recv(NULL), thisProxy);
-        allreduce_cb.setRefnum(tag);
-        contribute(sizeof(MMD_float), &(thermo.t_act), (sizeof(MMD_float) == sizeof(float)) ? CkReduction::sum_float : CkReduction::sum_double, allreduce_cb);
+        thisProxy[0].reducesum(tag, thermo.t_act);
       }
 
-      when temperature_recv[comm->iter](CkReductionMsg* msg) serial {
-        thermo.t1 = *(MMD_float*)msg->getData();
+      when temperature_recv[comm->iter](int iter, double t1) serial {
+        thermo.t1 = t1;
       }
 
       serial {
         cb.send();
       }
     }
-    entry void temperature_recv(CkReductionMsg* msg);
+    entry void temperature_recv(int iter, double t1);
 
     entry void energy_allreduce(CkCallback cb) {
       serial {

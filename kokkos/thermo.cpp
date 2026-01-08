@@ -111,7 +111,7 @@ void Thermo::compute(MMD_int iflag, Atom &atom, Neighbor &neighbor, Force* force
     timer.barrier_stop(TIME_TOTAL);
 
     if(comm.me == 0) {
-      fprintf(stdout, "%i %e %e %e %6.3lf\n", istep, t, eng, p, istep == 0 ? 0.0 : timer.array[TIME_TOTAL]);
+  fprintf(stdout, "%i %e %e %e %6.3lf\n", istep, t, eng, p, istep == 0 ? 0.0 : timer.array[TIME_TOTAL]);
     }
 
     timer.array[TIME_TOTAL] = oldtime;
@@ -148,15 +148,30 @@ MMD_float Thermo::temperature(Atom &atom)
   v = atom.v;
   mass = atom.mass;
 
+  //should be enough 
+  // auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
+  // printf("size of v %i\n", v_h.extent(0));
+  // for(int ii=0;ii<10;ii++){
+  //   printf("%f, ", v_h(ii, 0));
+  //   printf("%f, ", v_h(ii, 1));
+  //   printf("%f, ", v_h(ii, 2));
+  //   printf("    ");
+  // }
+  // printf("\n");
+
   Kokkos::parallel_reduce(atom.nlocal, *this, t);
 
   t_act += t;
+  // printf("t_act %f\n", t_act);
 
   MMD_float t1;
   if(sizeof(MMD_float) == 4)
     MPI_Allreduce(&t_act, &t1, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
   else
     MPI_Allreduce(&t_act, &t1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+  // printf("t1 %f\n", t1);
+  // printf("t %f\n", t1 * t_scale);
 
   return t1 * t_scale;
 }
@@ -176,7 +191,7 @@ void Thermo::operator() (const int& i, MMD_float& mv) const {
 
 MMD_float Thermo::pressure(MMD_float t, Force* force)
 {
-  p_act = force->virial;
+  p_act = force->virial;//does this make sense?
 
   MMD_float virial = 0;
 

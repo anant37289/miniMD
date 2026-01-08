@@ -224,7 +224,6 @@ void Block::init() {
 
      if (in_forcetype == FORCEEAM) atom.mass = force->mass;
 
-     ckout<<"creating atoms"<<endl;
      create_atoms(atom, in_nx, in_ny, in_nz, in_rho);
 
      thermo.setup(in_rho, integrate, atom, in_units);
@@ -237,21 +236,25 @@ void Block::init() {
 }
 
 void Block::run(){
+      thermo.compute(0, atom, neighbor, force, comm);
       comm->exchange(atom, true);
+      // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
-        atom.sort(neighbor);
+        {
+          atom.sort(neighbor);}
       comm->borders(atom, true);
 
       force->evflag = 1;
       
       thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      Kokkos::fence();
       // neighbor.build(atom);
-      thermo.compute(0, atom, neighbor, force, comm);
-
       force->compute(atom, neighbor, comm, thisIndex);
-
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
+      
+      thermo.compute(0, atom, neighbor, force, comm);
+
       Kokkos::fence();
       //Main iteration loop
       // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);

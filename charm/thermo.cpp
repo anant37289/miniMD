@@ -174,9 +174,28 @@ MMD_float Thermo::temperature(Atom &atom)
   v = atom.v;
   mass = atom.mass;
 
-  Kokkos::parallel_reduce(atom.nlocal, *this, t);
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(compute_instance, 0 , atom.nlocal), *this, t);
+  // t_act+=t;
+  compute_instance.fence();
+  // ckout<<"["<<index<<"] "<<atom.nlocal<<" "<<t<<"\n";
+
+  // auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
+  // ckout<<v_h
+  // ckout<<"size of v "<<v_h.extent(0)<<"\n";
+  // for(int ii=0;ii<min(10,static_cast<int>(v_h.extent(0))) ;ii++){
+//   if(v_h.extent(0)>0){
+// ckout<<v_h(0, 0)<<" ";
+//     ckout<<v_h(0, 1)<<" ";
+//     ckout<<v_h(0, 2)<<" ";
+//     ckout<<"   ";
+//     ckout<<"\n";
+//   }
+    
+  // }
+  
 
   t_act += t;
+  // ckout<<"t_act "<<t_act<<"\n";
 
   t1 = 0;
   block_proxy[index].temperature_allreduce(CkCallbackResumeThread());
@@ -186,6 +205,9 @@ MMD_float Thermo::temperature(Atom &atom)
   else
     MPI_Allreduce(&t_act, &t1, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     */
+  // ckout<<"["<<index<<"]"<<"\n";
+  // ckout<<"t1 "<<t1<<"\n";
+  // ckout<<"t "<<t1 * t_scale<<endl;
 
   return t1 * t_scale;
 }
