@@ -83,6 +83,8 @@ class Comm : public CBase_Comm
     void growlist(int, int);
     void suspend(Kokkos::Cuda);
     void wait(Kokkos::Cuda, Kokkos::Cuda);
+    void growcommrecv(int, int);
+    void growcommsend(int, int);
 
   public:
     void* block;
@@ -118,6 +120,7 @@ class Comm : public CBase_Comm
 
     float_1d_view_type buf_send;                 // send buffer for all comm
     float_1d_view_type buf_recv;                 // recv buffer for all comm
+    float_1d_view_type curr_buf_send;
     float_1d_view_type buf;
     float_1d_host_view_type h_buf_send;
     float_1d_host_view_type h_buf_recv;
@@ -131,6 +134,8 @@ class Comm : public CBase_Comm
     bool h_buf_alloc;
     int maxsend;
     int maxrecv;
+    int* maxsendcomm;
+    int* maxrecvcomm;
 
     int chareneigh[3][2];              // my 6 chare neighbors
     int charegrid[3];                  // # of chares in each dim

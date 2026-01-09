@@ -76,11 +76,11 @@ void Block::init() {
 
   // Store CUDA execution instances
   kokkos_manager = kokkos_proxy.ckLocalBranch();
-  Kokkos::Cuda& compute_instance = kokkos_manager->instances->compute_instance;
-  Kokkos::Cuda& h2d_instance = kokkos_manager->instances->h2d_instance;
-  Kokkos::Cuda& d2h_instance = kokkos_manager->instances->d2h_instance;
-  Kokkos::Cuda& pack_instance = kokkos_manager->instances->pack_instance;
-  Kokkos::Cuda& unpack_instance = kokkos_manager->instances->unpack_instance;
+  compute_instance = kokkos_manager->instances->compute_instance;
+  h2d_instance = kokkos_manager->instances->h2d_instance;
+  d2h_instance = kokkos_manager->instances->d2h_instance;
+  pack_instance = kokkos_manager->instances->pack_instance;
+  unpack_instance = kokkos_manager->instances->unpack_instance;
 
   atom.compute_instance = compute_instance;
   atom.h2d_instance = h2d_instance;
@@ -247,7 +247,6 @@ void Block::run(){
       force->evflag = 1;
       
       thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
-      Kokkos::fence();
       // neighbor.build(atom);
       force->compute(atom, neighbor, comm, thisIndex);
       if (neighbor.halfneigh && neighbor.ghost_newton)
@@ -295,6 +294,7 @@ void Block::run(){
             comm->communicate(atom, false);
 
           } else {
+            ckout<<"start to reneighnor"<<endl;
             // TODO: Reneighboring not supported (not converted to async)
             if(check_safeexchange) {
               double d_max = 0;

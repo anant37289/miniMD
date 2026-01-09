@@ -1,0 +1,30 @@
+mainmodule test {
+  readonly CProxy_Main mainProxy;
+
+  mainchare Main {
+    entry Main(CkArgMsg *m);
+    entry [reductiontarget] void done(int cnt);
+  };
+
+  array [1D] TestChare {
+    entry TestChare();
+    entry [threaded] void run();
+    entry void pressure_allreduce(CkCallback cb) {
+      serial {
+        int tag = iter;
+        CkCallback allreduce_cb = CkCallback(CkIndex_TestChare::pressure_recv(NULL), thisProxy);
+        allreduce_cb.setRefnum(tag);
+        contribute(sizeof(double), &(val), CkReduction::sum_double, allreduce_cb);
+      }
+
+      when pressure_recv[iter](CkReductionMsg* msg) serial {
+        res = *(double*)msg->getData();
+      }
+
+      serial {
+        cb.send();
+      }
+    }
+    entry void pressure_recv(CkReductionMsg* msg);
+  };
+};

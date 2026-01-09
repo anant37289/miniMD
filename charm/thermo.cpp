@@ -176,7 +176,7 @@ MMD_float Thermo::temperature(Atom &atom)
 
   Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(compute_instance, 0 , atom.nlocal), *this, t);
   // t_act+=t;
-  compute_instance.fence();
+  // compute_instance.fence();
   // ckout<<"["<<index<<"] "<<atom.nlocal<<" "<<t<<"\n";
 
   // auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), v);
