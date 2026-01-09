@@ -35,7 +35,7 @@
 #include "hapi_nvtx.h"
 
 #define BUFFACTOR 1.5
-#define BUFMIN 1000
+#define BUFMIN 50000
 #define BUFEXTRA 100
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -203,6 +203,8 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
   maxsendlist = int_1d_host_view_type("Comm::maxsendlist",maxswap);
   maxsendcomm = new int[maxswap];
   maxrecvcomm = new int[maxswap];
+  maxsendexchange = new int[3];
+  maxrecvexchange = new int[6];
 
   // XXX: No equivalents to sendproc_exc and recvproc_exc as they were not used
   // in the original code
@@ -213,12 +215,26 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
     maxrecvcomm[i] = BUFMIN;
   } 
 
+  for(i=0;i<3;i++){
+    maxsendexchange[i] = BUFMIN;
+    maxrecvexchange[2*i] = BUFMIN;
+    maxrecvexchange[2*i+1] = BUFMIN;
+  }
+
   sendlist = int_2d_lr_view_type("Comm::sendlist",maxswap,BUFMIN);
   buf_comms_send = new float_1d_view_type[maxswap];
   buf_comms_recv = new float_1d_view_type[maxswap];
   for (int i = 0; i < maxswap; i++) {
     buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsendcomm[i] + BUFEXTRA);
     buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecvcomm[i]);
+  }
+  buf_exchange_send = new float_1d_view_type[3];
+  buf_exchange_recv = new float_1d_view_type[6];
+
+  for(int i=0;i<3;i++){
+    buf_exchange_send[i] = float_1d_view_type("Comm::buf_exchange_send", maxsendexchange[i] + BUFEXTRA);
+    buf_exchange_recv[2*i] = float_1d_view_type("Comm::buf_exchange_recv", maxrecvexchange[2*i]);
+    buf_exchange_recv[2*i+1] = float_1d_view_type("Comm::buf_exchange_recv", maxrecvexchange[2*i+1]);
   }
 
   /* setup 4 parameters for each exchange: (spart,rpart,slablo,slabhi)
@@ -540,6 +556,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
   /* enforce PBC */
 
+  // compute_instance.fence();
   atom.pbc();//wrap around atoms going out of boundry
 
   // Create host mirrors for integrate loop
@@ -607,8 +624,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         Kokkos::resize(exc_copylist,(count_host(0)+1)*1.1);
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
-      if (count_host(0)*7>=maxsendcomm[idim]) {
-        growcommsend(idim, count_host(0)*7);
+      if (count_host(0)*7>=maxsendexchange[idim]) {
+        growexchangesend(idim, count_host(0)*7);
       }
     }
     if(h_exc_sendflag.extent(0)<exc_sendflag.extent(0))
@@ -638,7 +655,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     auto h_exc_copylist_sub = Kokkos::subview(h_exc_copylist, std::make_pair(std::size_t(0),exc_copylist.size()));
     Kokkos::deep_copy(compute_instance, exc_copylist,h_exc_copylist);
-    curr_buf_send = buf_comms_send[idim];
+    curr_buf_send = buf_exchange_send[idim];
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(compute_instance, 0,count_host(0)), *this);
 
@@ -675,7 +692,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     if (nrecv > maxrecv) {
       growrecv(nrecv);
-      Kokkos::fence();
+      // Kokkos::fence();
     }
     // if(h_buf_send.extent(0)<buf_send.extent(0))
     //   h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
@@ -687,14 +704,15 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     
 
-    send1 = static_cast<void*>(buf_comms_send[idim].data());
+    send1 = static_cast<void*>(curr_buf_send.data());
     send1_size = nsend * sizeof(MMD_float);
     send1_chare = chareneigh[idim][0];
-    send2 = static_cast<void*>(buf_comms_send[idim].data());
+    send2 = static_cast<void*>(curr_buf_send.data());
     send2_size = nsend * sizeof(MMD_float);
     send2_chare = chareneigh[idim][1];
     // recv1 = h_buf_recv.data();
     // recv2 = h_buf_recv.data() + nrecv1;
+    // suspend(compute_instance);
     block_proxy[thisIndex].exchange_2(idim, CkCallbackResumeThread());
 
     // Move received data to device
@@ -719,12 +737,12 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     /* check incoming atoms to see if they are in my box
        if they are, add to my list, otherwise lost which is fine */
     //copy nrecv1 from buf_comms_recv[2*idim] and nrecv2 from buf_comms_recv[2*idim + 1] into buf_recv
-    ckout<<nrecv1<<"\n";
-    ckout<<nrecv2<<"\n";
-    ckout<<nrecv<<endl;
-    Kokkos::deep_copy(compute_instance,Kokkos::subview(buf_recv, std::make_pair(0, nrecv1)) , Kokkos::subview(buf_comms_recv[2*idim], std::make_pair(0, nrecv1)));
+    // ckout<<nrecv1<<"\n";
+    // ckout<<nrecv2<<"\n";
+    // ckout<<nrecv<<endl;
+    Kokkos::deep_copy(compute_instance,Kokkos::subview(buf_recv, std::make_pair(0, nrecv1)) , Kokkos::subview(buf_exchange_recv[2*idim], std::make_pair(0, nrecv1)));
     if(charegrid[idim] > 2)
-      Kokkos::deep_copy(compute_instance, Kokkos::subview(buf_recv, std::make_pair(nrecv1, nrecv)), Kokkos::subview(buf_comms_recv[2*idim + 1], std::make_pair(0, nrecv2)));
+      Kokkos::deep_copy(compute_instance, Kokkos::subview(buf_recv, std::make_pair(nrecv1, nrecv)), Kokkos::subview(buf_exchange_recv[2*idim + 1], std::make_pair(0, nrecv2)));
 
     nrecv = 0;
 
@@ -997,13 +1015,27 @@ void Comm::operator() (TagBorderUnpack, const int& i) const {
 
 
 void Comm::growcommsend(int iswap, int n){
+  ckout<<"need to comm exchange send"<<endl;
   buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send",static_cast<int>(BUFFACTOR * n) + BUFEXTRA);
   maxsendcomm[iswap] = static_cast<int>(BUFFACTOR * n);
 }
 
 void Comm::growcommrecv(int iswap, int n){
+  ckout<<"need to resize comm recv"<<endl;
   maxrecvcomm[iswap] = static_cast<int>(BUFFACTOR * n);
   buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_recv",maxrecvcomm[iswap]);
+}
+
+void Comm::growexchangesend(int idim, int n){
+  ckout<<"need to resize exchange send"<<endl;
+  buf_exchange_send[idim] = float_1d_view_type("Comm::buf_exchange_send",static_cast<int>(BUFFACTOR * n) + BUFEXTRA);
+  maxsendexchange[idim] = static_cast<int>(BUFFACTOR * n);
+}
+
+void Comm::growexchangerecv(int idim, int n){
+  ckout<<"need to resize exchange recv"<<endl;
+  maxrecvexchange[idim] = static_cast<int>(BUFFACTOR * n);
+  buf_exchange_recv[idim] = float_1d_view_type("Comm::buf_exchange_recv",maxrecvexchange[idim]);
 }
 
 /* realloc the size of the send buffer as needed with BUFFACTOR & BUFEXTRA */

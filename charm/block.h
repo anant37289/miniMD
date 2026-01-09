@@ -61,6 +61,7 @@ void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postI
     int recv_iswap = ref % comm->maxswap_static;
     //In case it comes before resizing -- makes me think just do it here
     if (size / sizeof(MMD_float) > comm->maxrecvcomm[recv_iswap]) {
+
       comm->growcommrecv(recv_iswap, size / sizeof(MMD_float));
       Kokkos::fence();
     }
@@ -69,22 +70,22 @@ void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postI
   }
 void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
   int recv_idim = ref % 3;
-  if(size / sizeof(MMD_float) > comm->maxrecvcomm[2*recv_idim]){
-    comm->growcommrecv(2*recv_idim, size / sizeof(MMD_float));
+  if(size / sizeof(MMD_float) > comm->maxrecvexchange[2*recv_idim]){
+    comm->growexchangerecv(2*recv_idim, size / sizeof(MMD_float));
     Kokkos::fence();
   }
   postInfo[0].hapi_stream = compute_instance.cuda_stream();
-  data = (char*)(comm->buf_comms_recv[2*recv_idim].data());
+  data = (char*)(comm->buf_exchange_recv[2*recv_idim].data());
 }
 
 void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
   int recv_idim = ref % 3;
-  if(size / sizeof(MMD_float) > comm->maxrecvcomm[2*recv_idim+1]){
-    comm->growcommrecv(2*recv_idim+1, size / sizeof(MMD_float));
+  if(size / sizeof(MMD_float) > comm->maxrecvexchange[2*recv_idim+1]){
+    comm->growexchangerecv(2*recv_idim+1, size / sizeof(MMD_float));
     Kokkos::fence();
   }
   postInfo[0].hapi_stream = compute_instance.cuda_stream();
-  data = (char*)(comm->buf_comms_recv[2*recv_idim+1].data());
+  data = (char*)(comm->buf_exchange_recv[2*recv_idim+1].data());
 }
 
   ~Block() {}
