@@ -76,11 +76,11 @@ void Block::init() {
 
   // Store CUDA execution instances
   kokkos_manager = kokkos_proxy.ckLocalBranch();
-  Kokkos::Cuda& compute_instance = kokkos_manager->instances->compute_instance;
-  Kokkos::Cuda& h2d_instance = kokkos_manager->instances->h2d_instance;
-  Kokkos::Cuda& d2h_instance = kokkos_manager->instances->d2h_instance;
-  Kokkos::Cuda& pack_instance = kokkos_manager->instances->pack_instance;
-  Kokkos::Cuda& unpack_instance = kokkos_manager->instances->unpack_instance;
+  compute_instance = kokkos_manager->instances->compute_instance;
+  h2d_instance = kokkos_manager->instances->h2d_instance;
+  d2h_instance = kokkos_manager->instances->d2h_instance;
+  pack_instance = kokkos_manager->instances->pack_instance;
+  unpack_instance = kokkos_manager->instances->unpack_instance;
 
   atom.compute_instance = compute_instance;
   atom.h2d_instance = h2d_instance;

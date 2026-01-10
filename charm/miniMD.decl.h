@@ -848,6 +848,425 @@ inline int ckGetNumElements(int i) const
 #define KokkosManager_SDAG_CODE 
 typedef CBaseT1<Group, CProxy_KokkosManager>CBase_KokkosManager;
 
+/* DECLS: nodegroup blockCommProxy: NodeGroup{
+blockCommProxy();
+void setblock(const CProxy_Block &block);
+void setblockdone();
+void setcomm(const CProxy_Comm &comm);
+void setcommdone();
+};
+ */
+ class blockCommProxy;
+ class CkIndex_blockCommProxy;
+ class CProxy_blockCommProxy;
+ class CProxyElement_blockCommProxy;
+ class CProxySection_blockCommProxy;
+/* --------------- index object ------------------ */
+class CkIndex_blockCommProxy:public CkIndex_NodeGroup{
+  public:
+    typedef blockCommProxy local_t;
+    typedef CkIndex_blockCommProxy index_t;
+    typedef CProxy_blockCommProxy proxy_t;
+    typedef CProxyElement_blockCommProxy element_t;
+    typedef CProxySection_blockCommProxy section_t;
+
+    static int __idx;
+    static void __register(const char *s, size_t size);
+    /* DECLS: blockCommProxy();
+     */
+    // Entry point registration at startup
+    
+    static int reg_blockCommProxy_void();
+    // Entry point index lookup
+    
+    inline static int idx_blockCommProxy_void() {
+      static int epidx = reg_blockCommProxy_void();
+      return epidx;
+    }
+
+    
+    static int ckNew() { return idx_blockCommProxy_void(); }
+    
+    static void _call_blockCommProxy_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_blockCommProxy_void(void* impl_msg, void* impl_obj);
+    /* DECLS: void setblock(const CProxy_Block &block);
+     */
+    // Entry point registration at startup
+    
+    static int reg_setblock_marshall2();
+    // Entry point index lookup
+    
+    inline static int idx_setblock_marshall2() {
+      static int epidx = reg_setblock_marshall2();
+      return epidx;
+    }
+
+    
+    inline static int idx_setblock(void (blockCommProxy::*)(const CProxy_Block &block) ) {
+      return idx_setblock_marshall2();
+    }
+
+
+    
+    static int setblock(const CProxy_Block &block) { return idx_setblock_marshall2(); }
+    
+    static void _call_setblock_marshall2(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_setblock_marshall2(void* impl_msg, void* impl_obj);
+    
+    static int _callmarshall_setblock_marshall2(char* impl_buf, void* impl_obj_void);
+    
+    static void _marshallmessagepup_setblock_marshall2(PUP::er &p,void *msg);
+    /* DECLS: void setblockdone();
+     */
+    // Entry point registration at startup
+    
+    static int reg_setblockdone_void();
+    // Entry point index lookup
+    
+    inline static int idx_setblockdone_void() {
+      static int epidx = reg_setblockdone_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_setblockdone(void (blockCommProxy::*)() ) {
+      return idx_setblockdone_void();
+    }
+
+
+    
+    static int setblockdone() { return idx_setblockdone_void(); }
+    
+    static void _call_setblockdone_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_setblockdone_void(void* impl_msg, void* impl_obj);
+    /* DECLS: void setcomm(const CProxy_Comm &comm);
+     */
+    // Entry point registration at startup
+    
+    static int reg_setcomm_marshall4();
+    // Entry point index lookup
+    
+    inline static int idx_setcomm_marshall4() {
+      static int epidx = reg_setcomm_marshall4();
+      return epidx;
+    }
+
+    
+    inline static int idx_setcomm(void (blockCommProxy::*)(const CProxy_Comm &comm) ) {
+      return idx_setcomm_marshall4();
+    }
+
+
+    
+    static int setcomm(const CProxy_Comm &comm) { return idx_setcomm_marshall4(); }
+    
+    static void _call_setcomm_marshall4(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_setcomm_marshall4(void* impl_msg, void* impl_obj);
+    
+    static int _callmarshall_setcomm_marshall4(char* impl_buf, void* impl_obj_void);
+    
+    static void _marshallmessagepup_setcomm_marshall4(PUP::er &p,void *msg);
+    /* DECLS: void setcommdone();
+     */
+    // Entry point registration at startup
+    
+    static int reg_setcommdone_void();
+    // Entry point index lookup
+    
+    inline static int idx_setcommdone_void() {
+      static int epidx = reg_setcommdone_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_setcommdone(void (blockCommProxy::*)() ) {
+      return idx_setcommdone_void();
+    }
+
+
+    
+    static int setcommdone() { return idx_setcommdone_void(); }
+    
+    static void _call_setcommdone_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_setcommdone_void(void* impl_msg, void* impl_obj);
+};
+/* --------------- element proxy ------------------ */
+class CProxyElement_blockCommProxy: public CProxyElement_NodeGroup{
+  public:
+    typedef blockCommProxy local_t;
+    typedef CkIndex_blockCommProxy index_t;
+    typedef CProxy_blockCommProxy proxy_t;
+    typedef CProxyElement_blockCommProxy element_t;
+    typedef CProxySection_blockCommProxy section_t;
+
+
+    /* TRAM aggregators */
+
+    CProxyElement_blockCommProxy(void) {
+    }
+    CProxyElement_blockCommProxy(const IrrGroup *g) : CProxyElement_NodeGroup(g){
+    }
+    CProxyElement_blockCommProxy(CkGroupID _gid,int _onPE,CK_DELCTOR_PARAM) : CProxyElement_NodeGroup(_gid,_onPE,CK_DELCTOR_ARGS){
+    }
+    CProxyElement_blockCommProxy(CkGroupID _gid,int _onPE) : CProxyElement_NodeGroup(_gid,_onPE){
+    }
+
+    int ckIsDelegated(void) const
+    { return CProxyElement_NodeGroup::ckIsDelegated(); }
+    inline CkDelegateMgr *ckDelegatedTo(void) const
+    { return CProxyElement_NodeGroup::ckDelegatedTo(); }
+    inline CkDelegateData *ckDelegatedPtr(void) const
+    { return CProxyElement_NodeGroup::ckDelegatedPtr(); }
+    CkGroupID ckDelegatedIdx(void) const
+    { return CProxyElement_NodeGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxyElement_NodeGroup::ckCheck();}
+CkChareID ckGetChareID(void) const
+   {return CProxyElement_NodeGroup::ckGetChareID();}
+CkGroupID ckGetGroupID(void) const
+   {return CProxyElement_NodeGroup::ckGetGroupID();}
+operator CkGroupID () const { return ckGetGroupID(); }
+
+    inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxyElement_NodeGroup::setReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxyElement_NodeGroup::ckSetReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkCallback *cb) const
+    { CProxyElement_NodeGroup::ckSetReductionClient(cb); }
+int ckGetGroupPe(void) const
+{return CProxyElement_NodeGroup::ckGetGroupPe();}
+
+    void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
+    {       CProxyElement_NodeGroup::ckDelegate(dTo,dPtr); }
+    void ckUndelegate(void)
+    {       CProxyElement_NodeGroup::ckUndelegate(); }
+    void pup(PUP::er &p)
+    {       CProxyElement_NodeGroup::pup(p);
+    }
+    void ckSetGroupID(CkGroupID g) {
+      CProxyElement_NodeGroup::ckSetGroupID(g);
+    }
+    blockCommProxy* ckLocalBranch(void) const {
+      return ckLocalBranch(ckGetGroupID());
+    }
+    static blockCommProxy* ckLocalBranch(CkGroupID gID) {
+      return (blockCommProxy*)CkLocalNodeBranch(gID);
+    }
+/* DECLS: blockCommProxy();
+ */
+    
+
+/* DECLS: void setblock(const CProxy_Block &block);
+ */
+    
+    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setblockdone();
+ */
+    
+    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcomm(const CProxy_Comm &comm);
+ */
+    
+    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcommdone();
+ */
+    
+    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+
+};
+/* ---------------- collective proxy -------------- */
+class CProxy_blockCommProxy: public CProxy_NodeGroup{
+  public:
+    typedef blockCommProxy local_t;
+    typedef CkIndex_blockCommProxy index_t;
+    typedef CProxy_blockCommProxy proxy_t;
+    typedef CProxyElement_blockCommProxy element_t;
+    typedef CProxySection_blockCommProxy section_t;
+
+    CProxy_blockCommProxy(void) {
+    }
+    CProxy_blockCommProxy(const IrrGroup *g) : CProxy_NodeGroup(g){
+    }
+    CProxy_blockCommProxy(CkGroupID _gid,CK_DELCTOR_PARAM) : CProxy_NodeGroup(_gid,CK_DELCTOR_ARGS){  }
+    CProxy_blockCommProxy(CkGroupID _gid) : CProxy_NodeGroup(_gid){  }
+    CProxyElement_blockCommProxy operator[](int onPE) const
+      {return CProxyElement_blockCommProxy(ckGetGroupID(),onPE,CK_DELCTOR_CALL);}
+
+    int ckIsDelegated(void) const
+    { return CProxy_NodeGroup::ckIsDelegated(); }
+    inline CkDelegateMgr *ckDelegatedTo(void) const
+    { return CProxy_NodeGroup::ckDelegatedTo(); }
+    inline CkDelegateData *ckDelegatedPtr(void) const
+    { return CProxy_NodeGroup::ckDelegatedPtr(); }
+    CkGroupID ckDelegatedIdx(void) const
+    { return CProxy_NodeGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxy_NodeGroup::ckCheck();}
+CkChareID ckGetChareID(void) const
+   {return CProxy_NodeGroup::ckGetChareID();}
+CkGroupID ckGetGroupID(void) const
+   {return CProxy_NodeGroup::ckGetGroupID();}
+operator CkGroupID () const { return ckGetGroupID(); }
+
+    inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxy_NodeGroup::setReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxy_NodeGroup::ckSetReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkCallback *cb) const
+    { CProxy_NodeGroup::ckSetReductionClient(cb); }
+
+    void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
+    {       CProxy_NodeGroup::ckDelegate(dTo,dPtr); }
+    void ckUndelegate(void)
+    {       CProxy_NodeGroup::ckUndelegate(); }
+    void pup(PUP::er &p)
+    {       CProxy_NodeGroup::pup(p);
+    }
+    void ckSetGroupID(CkGroupID g) {
+      CProxy_NodeGroup::ckSetGroupID(g);
+    }
+    blockCommProxy* ckLocalBranch(void) const {
+      return ckLocalBranch(ckGetGroupID());
+    }
+    static blockCommProxy* ckLocalBranch(CkGroupID gID) {
+      return (blockCommProxy*)CkLocalNodeBranch(gID);
+    }
+/* DECLS: blockCommProxy();
+ */
+    
+    static CkGroupID ckNew(const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setblock(const CProxy_Block &block);
+ */
+    
+    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setblockdone();
+ */
+    
+    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcomm(const CProxy_Comm &comm);
+ */
+    
+    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcommdone();
+ */
+    
+    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+
+};
+/* ---------------- section proxy -------------- */
+class CProxySection_blockCommProxy: public CProxySection_NodeGroup{
+  public:
+    typedef blockCommProxy local_t;
+    typedef CkIndex_blockCommProxy index_t;
+    typedef CProxy_blockCommProxy proxy_t;
+    typedef CProxyElement_blockCommProxy element_t;
+    typedef CProxySection_blockCommProxy section_t;
+
+    CProxySection_blockCommProxy(void) {
+    }
+    CProxySection_blockCommProxy(const IrrGroup *g) : CProxySection_NodeGroup(g){
+    }
+    CProxySection_blockCommProxy(const CkGroupID &_gid,const int *_pelist,int _npes, CK_DELCTOR_PARAM) : CProxySection_NodeGroup(_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
+    CProxySection_blockCommProxy(const CkGroupID &_gid,const int *_pelist,int _npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_NodeGroup(_gid,_pelist,_npes,factor){  }
+    CProxySection_blockCommProxy(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, int factor = USE_DEFAULT_BRANCH_FACTOR) : CProxySection_NodeGroup(n,_gid,_pelist,_npes,factor){  }
+    CProxySection_blockCommProxy(int n,const CkGroupID *_gid, int const * const *_pelist,const int *_npes, CK_DELCTOR_PARAM) : CProxySection_NodeGroup(n,_gid,_pelist,_npes,CK_DELCTOR_ARGS){  }
+
+    int ckIsDelegated(void) const
+    { return CProxySection_NodeGroup::ckIsDelegated(); }
+    inline CkDelegateMgr *ckDelegatedTo(void) const
+    { return CProxySection_NodeGroup::ckDelegatedTo(); }
+    inline CkDelegateData *ckDelegatedPtr(void) const
+    { return CProxySection_NodeGroup::ckDelegatedPtr(); }
+    CkGroupID ckDelegatedIdx(void) const
+    { return CProxySection_NodeGroup::ckDelegatedIdx(); }
+inline void ckCheck(void) const {CProxySection_NodeGroup::ckCheck();}
+CkChareID ckGetChareID(void) const
+   {return CProxySection_NodeGroup::ckGetChareID();}
+CkGroupID ckGetGroupID(void) const
+   {return CProxySection_NodeGroup::ckGetGroupID();}
+operator CkGroupID () const { return ckGetGroupID(); }
+
+    inline void setReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxySection_NodeGroup::setReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkReductionClientFn fn,void *param=NULL) const
+    { CProxySection_NodeGroup::ckSetReductionClient(fn,param); }
+    inline void ckSetReductionClient(CkCallback *cb) const
+    { CProxySection_NodeGroup::ckSetReductionClient(cb); }
+inline int ckGetNumSections() const
+{ return CProxySection_NodeGroup::ckGetNumSections(); }
+inline CkSectionInfo &ckGetSectionInfo()
+{ return CProxySection_NodeGroup::ckGetSectionInfo(); }
+inline CkSectionID *ckGetSectionIDs()
+{ return CProxySection_NodeGroup::ckGetSectionIDs(); }
+inline CkSectionID &ckGetSectionID()
+{ return CProxySection_NodeGroup::ckGetSectionID(); }
+inline CkSectionID &ckGetSectionID(int i)
+{ return CProxySection_NodeGroup::ckGetSectionID(i); }
+inline CkGroupID ckGetGroupIDn(int i) const
+{ return CProxySection_NodeGroup::ckGetGroupIDn(i); }
+inline const int *ckGetElements() const
+{ return CProxySection_NodeGroup::ckGetElements(); }
+inline const int *ckGetElements(int i) const
+{ return CProxySection_NodeGroup::ckGetElements(i); }
+inline int ckGetNumElements() const
+{ return CProxySection_NodeGroup::ckGetNumElements(); } 
+inline int ckGetNumElements(int i) const
+{ return CProxySection_NodeGroup::ckGetNumElements(i); }
+
+    void ckDelegate(CkDelegateMgr *dTo,CkDelegateData *dPtr=NULL)
+    {       CProxySection_NodeGroup::ckDelegate(dTo,dPtr); }
+    void ckUndelegate(void)
+    {       CProxySection_NodeGroup::ckUndelegate(); }
+    void pup(PUP::er &p)
+    {       CProxySection_NodeGroup::pup(p);
+    }
+    void ckSetGroupID(CkGroupID g) {
+      CProxySection_NodeGroup::ckSetGroupID(g);
+    }
+    blockCommProxy* ckLocalBranch(void) const {
+      return ckLocalBranch(ckGetGroupID());
+    }
+    static blockCommProxy* ckLocalBranch(CkGroupID gID) {
+      return (blockCommProxy*)CkLocalNodeBranch(gID);
+    }
+/* DECLS: blockCommProxy();
+ */
+    
+
+/* DECLS: void setblock(const CProxy_Block &block);
+ */
+    
+    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setblockdone();
+ */
+    
+    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcomm(const CProxy_Comm &comm);
+ */
+    
+    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void setcommdone();
+ */
+    
+    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+
+};
+#define blockCommProxy_SDAG_CODE 
+typedef CBaseT1<NodeGroup, CProxy_blockCommProxy>CBase_blockCommProxy;
+
 
 
 
@@ -921,6 +1340,24 @@ class Closure_KokkosManager {
 
 
     struct finalize_3_closure;
+
+};
+
+/* ---------------- method closures -------------- */
+class Closure_blockCommProxy {
+  public:
+
+
+    struct setblock_2_closure;
+
+
+    struct setblockdone_3_closure;
+
+
+    struct setcomm_4_closure;
+
+
+    struct setcommdone_5_closure;
 
 };
 

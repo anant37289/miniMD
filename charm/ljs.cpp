@@ -301,4 +301,31 @@ void KokkosManager::finalize() {
   contribute(CkCallback(CkReductionTarget(Main, kokkosFinalized), main_proxy));
 }
 
+void blockCommProxy::setblock(CProxy_Block block){
+  block_proxy = block;
+  thisProxy[0].setblockdone();
+}
+
+void blockCommProxy::setblockdone(){
+  if(++num_contrib==CmiNumNodes()){
+    CkArrayOptions opts(num_chares);
+    opts.bindTo(block_proxy);
+    comm_proxy = CProxy_Comm::ckNew(opts);
+    thisProxy.setcomm(comm_proxy);
+    num_contrib = 0;
+  }
+}
+
+void blockCommProxy::setcomm(CProxy_Comm comm){
+  comm_proxy = comm;
+  thisProxy[0].setcommdone();
+}
+
+void blockCommProxy::setcommdone(){
+  if(++num_contrib==CmiNumNodes()){
+    block_proxy.init();
+    num_contrib = 0;
+  }
+}
+
 #include "miniMD.def.h"

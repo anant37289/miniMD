@@ -56,12 +56,9 @@ mainmodule miniMD {
       when kokkosInitialized() serial {
         CkPrintf("[Main] Kokkos initialized\n");
         //TODO: this will not be valid for n>2, so make something else for that because readonly are not updated
+        CProxy_blockCommProxy _blockCommProxy =  CProxy_blockCommProxy::ckNew();
         block_proxy = CProxy_Block::ckNew(num_chares);
-        CkArrayOptions opts(num_chares);
-        opts.bindTo(block_proxy);
-        comm_proxy = CProxy_Comm::ckNew(opts);
-
-        block_proxy.init();
+        _blockCommProxy.setblock(block_proxy);
       }
 
       when reduceVelocity(CkReductionMsg* msg) serial {
@@ -104,6 +101,13 @@ mainmodule miniMD {
     entry void initialize();
     entry void finalize();
   };
+  nodegroup blockCommProxy {
+    entry blockCommProxy();
+    entry void setblock(CProxy_Block block);
+    entry void setblockdone();
+    entry void setcomm(CProxy_Comm comm);
+    entry void setcommdone();
+  }
 };
 
 module block {
@@ -266,20 +270,34 @@ module block {
     entry void borders_recv_1(int ref, char data[size], size_t size);
     entry void borders_recv_2(int ref, char data[size], size_t size);
 
+    entry void comms_1(int iswap, CkCallback cb) {
+      serial {
+        int tag = comm->nswap*comm->iter + iswap;
+        thisProxy[comm->send1_chare].comms_recv_1(tag);
+      }
+      when comms_recv_1[comm->nswap*comm->iter+iswap](int ref) serial {
+        cb.send();
+      }
+    }
+    entry void comms_recv_1(int ref);
+
     // Non-blocking communication routines for Comm::communicate and Comm::reverse_communicate
     entry void comms(int iswap, CkCallback cb) {
       serial {
         int tag = comm->nswap*comm->iter + iswap;
-        thisProxy[comm->send1_chare].comms_recv(tag, (char*)comm->send1, comm->send1_size);
+        CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+        CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
       }
 
-      when comms_recv[comm->nswap*comm->iter+iswap](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
-        cb.send();
-      }
+      when comms_recv[comm->nswap*comm->iter+iswap](int ref, size_t size, nocopydevice char data[size])
+        when send_done() serial {
+            cb.send();
+        }
     }
 
-    entry void comms_recv(int ref, char data[size], size_t size);
+    entry void comms_recv(int ref, size_t size, nocopydevice char data[size]);
+    entry void send_done();
 
     // Non-blocking communication routines for Comm::communicate
     entry void comm_all(CkCallback cb) {

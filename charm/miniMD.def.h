@@ -193,6 +193,97 @@
 #endif /* CK_TEMPLATES_ONLY */
 
 
+/* ---------------- method closures -------------- */
+#ifndef CK_TEMPLATES_ONLY
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_blockCommProxy::setblock_2_closure : public SDAG::Closure {
+            CProxy_Block block;
+
+
+      setblock_2_closure() {
+        init();
+      }
+      setblock_2_closure(CkMigrateMessage*) {
+        init();
+      }
+            CProxy_Block & getP0() { return block;}
+      void pup(PUP::er& __p) {
+        __p | block;
+        packClosure(__p);
+      }
+      virtual ~setblock_2_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(setblock_2_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_blockCommProxy::setblockdone_3_closure : public SDAG::Closure {
+      
+
+      setblockdone_3_closure() {
+        init();
+      }
+      setblockdone_3_closure(CkMigrateMessage*) {
+        init();
+      }
+            void pup(PUP::er& __p) {
+        packClosure(__p);
+      }
+      virtual ~setblockdone_3_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(setblockdone_3_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_blockCommProxy::setcomm_4_closure : public SDAG::Closure {
+            CProxy_Comm comm;
+
+
+      setcomm_4_closure() {
+        init();
+      }
+      setcomm_4_closure(CkMigrateMessage*) {
+        init();
+      }
+            CProxy_Comm & getP0() { return comm;}
+      void pup(PUP::er& __p) {
+        __p | comm;
+        packClosure(__p);
+      }
+      virtual ~setcomm_4_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(setcomm_4_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_blockCommProxy::setcommdone_5_closure : public SDAG::Closure {
+      
+
+      setcommdone_5_closure() {
+        init();
+      }
+      setcommdone_5_closure(CkMigrateMessage*) {
+        init();
+      }
+            void pup(PUP::er& __p) {
+        packClosure(__p);
+      }
+      virtual ~setcommdone_5_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(setcommdone_5_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+
 
 
 /* DEFS: readonly CProxy_Main main_proxy;
@@ -1021,13 +1112,11 @@ void Main::_serial_0() {
 #line 52 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos initialized\n");
+        CProxy_blockCommProxy _blockCommProxy = CProxy_blockCommProxy::ckNew();
         block_proxy = CProxy_Block::ckNew(num_chares);
-        CkArrayOptions opts(num_chares);
-        opts.bindTo(block_proxy);
-        comm_proxy = CProxy_Comm::ckNew(opts);
-        block_proxy.init();
+        _blockCommProxy.setblock(block_proxy);
       
-#line 1031 "miniMD.def.h"
+#line 1120 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_0_end();
@@ -1070,7 +1159,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
   {
     CkReductionMsg*& msg = gen0;
     { // begin serial block
-#line 60 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 58 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Reducing velocities...\n");
         double vxtot = 0;
@@ -1086,7 +1175,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
         }
         block_proxy.contCreateVelocity(vxtot, vytot, vztot);
       
-#line 1090 "miniMD.def.h"
+#line 1179 "miniMD.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -1124,12 +1213,12 @@ void Main::_when_2_end() {
 void Main::_serial_2() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_2()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 75 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 73 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Blocks initialized\n");
         block_proxy.run();
       
-#line 1133 "miniMD.def.h"
+#line 1222 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_2_end();
@@ -1166,12 +1255,12 @@ void Main::_when_3_end() {
 void Main::_serial_3() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_3()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 79 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 77 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Blocks complete\n");
         kokkos_proxy.finalize();
       
-#line 1175 "miniMD.def.h"
+#line 1264 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_3_end();
@@ -1208,12 +1297,12 @@ void Main::_when_4_end() {
 void Main::_serial_4() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_4()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 83 "/u/ajain18/miniMD/charm/ljs.ci"
+#line 81 "/u/ajain18/miniMD/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos finalized\n");
         CkExit();
       
-#line 1217 "miniMD.def.h"
+#line 1306 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_4_end();
@@ -1663,6 +1752,490 @@ void CkIndex_KokkosManager::__register(const char *s, size_t size) {
 }
 #endif /* CK_TEMPLATES_ONLY */
 
+/* DEFS: nodegroup blockCommProxy: NodeGroup{
+blockCommProxy();
+void setblock(const CProxy_Block &block);
+void setblockdone();
+void setcomm(const CProxy_Comm &comm);
+void setcommdone();
+};
+ */
+#ifndef CK_TEMPLATES_ONLY
+ int CkIndex_blockCommProxy::__idx=0;
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: blockCommProxy();
+ */
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblock(const CProxy_Block &block);
+ */
+void CProxyElement_blockCommProxy::setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Block &block
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+  }
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+  } else {
+    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblockdone();
+ */
+void CProxyElement_blockCommProxy::setblockdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+  } else {
+    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcomm(const CProxy_Comm &comm);
+ */
+void CProxyElement_blockCommProxy::setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Comm &comm
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+  }
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+  } else {
+    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcommdone();
+ */
+void CProxyElement_blockCommProxy::setcommdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+  } else {
+    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: blockCommProxy();
+ */
+CkGroupID CProxy_blockCommProxy::ckNew(const CkEntryOptions *impl_e_opts)
+{
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  UsrToEnv(impl_msg)->setMsgtype(NodeBocInitMsg);
+  CkGroupID gId = CkCreateNodeGroup(CkIndex_blockCommProxy::__idx, CkIndex_blockCommProxy::idx_blockCommProxy_void(), impl_msg);
+  return gId;
+}
+
+// Entry point registration function
+int CkIndex_blockCommProxy::reg_blockCommProxy_void() {
+  int epidx = CkRegisterEp("blockCommProxy()",
+      reinterpret_cast<CkCallFnPtr>(_call_blockCommProxy_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_blockCommProxy::_call_blockCommProxy_void(void* impl_msg, void* impl_obj_void)
+{
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  new (impl_obj_void) blockCommProxy();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblock(const CProxy_Block &block);
+ */
+void CProxy_blockCommProxy::setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Block &block
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+  }
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetGroupID(),0);
+}
+
+// Entry point registration function
+int CkIndex_blockCommProxy::reg_setblock_marshall2() {
+  int epidx = CkRegisterEp("setblock(const CProxy_Block &block)",
+      reinterpret_cast<CkCallFnPtr>(_call_setblock_marshall2), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_setblock_marshall2);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_setblock_marshall2);
+
+  return epidx;
+}
+
+void CkIndex_blockCommProxy::_call_setblock_marshall2(void* impl_msg, void* impl_obj_void)
+{
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
+  char *impl_buf=impl_msg_typed->msgBuf;
+  envelope *env = UsrToEnv(impl_msg_typed);
+  /*Unmarshall pup'd fields: const CProxy_Block &block*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Block> block;
+  implP|block;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  impl_obj->setblock(std::move(block.t));
+}
+int CkIndex_blockCommProxy::_callmarshall_setblock_marshall2(char* impl_buf, void* impl_obj_void) {
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  envelope *env = UsrToEnv(impl_buf);
+  /*Unmarshall pup'd fields: const CProxy_Block &block*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Block> block;
+  implP|block;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  impl_obj->setblock(std::move(block.t));
+  return implP.size();
+}
+void CkIndex_blockCommProxy::_marshallmessagepup_setblock_marshall2(PUP::er &implDestP,void *impl_msg) {
+  CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
+  char *impl_buf=impl_msg_typed->msgBuf;
+  envelope *env = UsrToEnv(impl_msg_typed);
+  /*Unmarshall pup'd fields: const CProxy_Block &block*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Block> block;
+  implP|block;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  if (implDestP.hasComments()) implDestP.comment("block");
+  implDestP|block;
+}
+PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setblock_2_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblockdone();
+ */
+void CProxy_blockCommProxy::setblockdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetGroupID(),0);
+}
+
+// Entry point registration function
+int CkIndex_blockCommProxy::reg_setblockdone_void() {
+  int epidx = CkRegisterEp("setblockdone()",
+      reinterpret_cast<CkCallFnPtr>(_call_setblockdone_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_blockCommProxy::_call_setblockdone_void(void* impl_msg, void* impl_obj_void)
+{
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  impl_obj->setblockdone();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setblockdone_3_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcomm(const CProxy_Comm &comm);
+ */
+void CProxy_blockCommProxy::setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Comm &comm
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+  }
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetGroupID(),0);
+}
+
+// Entry point registration function
+int CkIndex_blockCommProxy::reg_setcomm_marshall4() {
+  int epidx = CkRegisterEp("setcomm(const CProxy_Comm &comm)",
+      reinterpret_cast<CkCallFnPtr>(_call_setcomm_marshall4), CkMarshallMsg::__idx, __idx, 0+CK_EP_NOKEEP);
+  CkRegisterMarshallUnpackFn(epidx, _callmarshall_setcomm_marshall4);
+  CkRegisterMessagePupFn(epidx, _marshallmessagepup_setcomm_marshall4);
+
+  return epidx;
+}
+
+void CkIndex_blockCommProxy::_call_setcomm_marshall4(void* impl_msg, void* impl_obj_void)
+{
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
+  char *impl_buf=impl_msg_typed->msgBuf;
+  envelope *env = UsrToEnv(impl_msg_typed);
+  /*Unmarshall pup'd fields: const CProxy_Comm &comm*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Comm> comm;
+  implP|comm;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  impl_obj->setcomm(std::move(comm.t));
+}
+int CkIndex_blockCommProxy::_callmarshall_setcomm_marshall4(char* impl_buf, void* impl_obj_void) {
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  envelope *env = UsrToEnv(impl_buf);
+  /*Unmarshall pup'd fields: const CProxy_Comm &comm*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Comm> comm;
+  implP|comm;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  impl_obj->setcomm(std::move(comm.t));
+  return implP.size();
+}
+void CkIndex_blockCommProxy::_marshallmessagepup_setcomm_marshall4(PUP::er &implDestP,void *impl_msg) {
+  CkMarshallMsg *impl_msg_typed=(CkMarshallMsg *)impl_msg;
+  char *impl_buf=impl_msg_typed->msgBuf;
+  envelope *env = UsrToEnv(impl_msg_typed);
+  /*Unmarshall pup'd fields: const CProxy_Comm &comm*/
+  PUP::fromMem implP(impl_buf);
+  PUP::detail::TemporaryObjectHolder<CProxy_Comm> comm;
+  implP|comm;
+  impl_buf+=CK_ALIGN(implP.size(),16);
+  /*Unmarshall arrays:*/
+  if (implDestP.hasComments()) implDestP.comment("comm");
+  implDestP|comm;
+}
+PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setcomm_4_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcommdone();
+ */
+void CProxy_blockCommProxy::setcommdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetGroupID(),0);
+}
+
+// Entry point registration function
+int CkIndex_blockCommProxy::reg_setcommdone_void() {
+  int epidx = CkRegisterEp("setcommdone()",
+      reinterpret_cast<CkCallFnPtr>(_call_setcommdone_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_blockCommProxy::_call_setcommdone_void(void* impl_msg, void* impl_obj_void)
+{
+  blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
+  impl_obj->setcommdone();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setcommdone_5_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: blockCommProxy();
+ */
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblock(const CProxy_Block &block);
+ */
+void CProxySection_blockCommProxy::setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Block &block
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Block>::type>::type &)block;
+  }
+  if (ckIsDelegated()) {
+     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+  } else {
+    void *impl_msg_tmp;
+    for (int i=0; i<ckGetNumSections(); ++i) {
+       impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
+       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_setblock_marshall2(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+    }
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setblockdone();
+ */
+void CProxySection_blockCommProxy::setblockdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+  } else {
+    void *impl_msg_tmp;
+    for (int i=0; i<ckGetNumSections(); ++i) {
+       impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
+       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_setblockdone_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+    }
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcomm(const CProxy_Comm &comm);
+ */
+void CProxySection_blockCommProxy::setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  //Marshall: const CProxy_Comm &comm
+  int impl_off=0;
+  { //Find the size of the PUP'd data
+    PUP::sizer implP;
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+    impl_off+=implP.size();
+  }
+  CkMarshallMsg *impl_msg=CkAllocateMarshallMsg(impl_off,impl_e_opts);
+  { //Copy over the PUP'd data
+    PUP::toMem implP((void *)impl_msg->msgBuf);
+    //Have to cast away const-ness to get pup routine
+    implP|(typename std::remove_cv<typename std::remove_reference<CProxy_Comm>::type>::type &)comm;
+  }
+  if (ckIsDelegated()) {
+     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+  } else {
+    void *impl_msg_tmp;
+    for (int i=0; i<ckGetNumSections(); ++i) {
+       impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
+       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_setcomm_marshall4(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+    }
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+/* DEFS: void setcommdone();
+ */
+void CProxySection_blockCommProxy::setcommdone(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+  } else {
+    void *impl_msg_tmp;
+    for (int i=0; i<ckGetNumSections(); ++i) {
+       impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
+       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_setcommdone_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+    }
+  }
+}
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
+void CkIndex_blockCommProxy::__register(const char *s, size_t size) {
+  __idx = CkRegisterChare(s, size, TypeGroup);
+  CkRegisterBase(__idx, CkIndex_NodeGroup::__idx);
+   CkRegisterGroupIrr(__idx,blockCommProxy::isIrreducible());
+  // REG: blockCommProxy();
+  idx_blockCommProxy_void();
+  CkRegisterDefaultCtor(__idx, idx_blockCommProxy_void());
+
+  // REG: void setblock(const CProxy_Block &block);
+  idx_setblock_marshall2();
+
+  // REG: void setblockdone();
+  idx_setblockdone_void();
+
+  // REG: void setcomm(const CProxy_Comm &comm);
+  idx_setcomm_marshall4();
+
+  // REG: void setcommdone();
+  idx_setcommdone_void();
+
+}
+#endif /* CK_TEMPLATES_ONLY */
+
 #ifndef CK_TEMPLATES_ONLY
 void _registerminiMD(void)
 {
@@ -1770,6 +2343,16 @@ void finalize();
 */
   CkIndex_KokkosManager::__register("KokkosManager", sizeof(KokkosManager));
 
+/* REG: nodegroup blockCommProxy: NodeGroup{
+blockCommProxy();
+void setblock(const CProxy_Block &block);
+void setblockdone();
+void setcomm(const CProxy_Comm &comm);
+void setcommdone();
+};
+*/
+  CkIndex_blockCommProxy::__register("blockCommProxy", sizeof(blockCommProxy));
+
 }
 extern "C" void CkRegisterMainModule(void) {
   _registerminiMD();
@@ -1785,5 +2368,11 @@ void CBase_Main::virtual_pup(PUP::er &p) {
 template <>
 void CBase_KokkosManager::virtual_pup(PUP::er &p) {
     recursive_pup<KokkosManager>(dynamic_cast<KokkosManager*>(this), p);
+}
+#endif /* CK_TEMPLATES_ONLY */
+#ifndef CK_TEMPLATES_ONLY
+template <>
+void CBase_blockCommProxy::virtual_pup(PUP::er &p) {
+    recursive_pup<blockCommProxy>(dynamic_cast<blockCommProxy*>(this), p);
 }
 #endif /* CK_TEMPLATES_ONLY */

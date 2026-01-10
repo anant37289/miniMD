@@ -27,6 +27,12 @@ public:
   int reductionCount=0;
   MMD_float reductionSum=0;
 
+  Kokkos::Cuda compute_instance;
+  Kokkos::Cuda h2d_instance;
+  Kokkos::Cuda d2h_instance;
+  Kokkos::Cuda pack_instance;
+  Kokkos::Cuda unpack_instance;
+
   // For thermo communication
   int i;
 
@@ -45,6 +51,10 @@ public:
   void run_neighbour_build(CkCallback cb);
   void run();
   void printConfig();
+  void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+      postInfo[0].hapi_stream = compute_instance.cuda_stream();
+      data = (char*)(comm->buf_recv.data());
+  }
 
   ~Block() {}
 };

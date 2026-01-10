@@ -296,33 +296,11 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
 
 void Comm::communicate(Atom &atom, bool preprocess)
 {
-  /*
-  std::ostringstream os;
-  os << "Comm::communicate " << index;
-  NVTXTracer(os.str(), NVTXColor::PeterRiver);
-  */
-  // Kokkos::Profiling::pushRegion("Comm::communicate");
-
-  // Create host mirrors for integrate loop
-  // if (!preprocess && !h_buf_alloc) {
-  //   h_buf_alloc = true;
-  //   buf_comms_send = new float_1d_view_type[nswap];
-  //   buf_comms_recv = new float_1d_view_type[nswap];
-  //   h_buf_comms_send = new float_1d_host_view_type[nswap];
-  //   h_buf_comms_recv = new float_1d_host_view_type[nswap];
-  //   for (int i = 0; i < nswap; i++) {
-  //     buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
-  //     buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
-  //     h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
-  //     h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
-  //   }
-  // }
-  // Kokkos::fence();
-
   int iswap;
   int pbc_flags[4];
 
     // Send and recv one buffer at a time
+    ckout<<nswap<<endl;
   for(iswap = 0; iswap < nswap; iswap++) {
 
     pbc_flags[0] = pbc_any[iswap];
@@ -334,31 +312,27 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
     // Pack buffer
     if (sendchare[iswap] != index) {
+      compute_instance.fence();
       atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
       // Kokkos::fence();
 
-      // Exchange with another proc
-      // If self, set recv buffer to send buffer
-
-      auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
-      Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
-
       // Send and suspend
-      send1 = h_buf_send.data();
+      send1 = buf_send.data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
       send1_chare = sendchare[iswap];
-      recv1 = h_buf_recv.data();
       suspend(compute_instance);
+      block_proxy[thisIndex].comms_1(iswap, CkCallbackResumeThread());
       block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
       // Move received data to device
-      auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
-      Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
+      // auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+      // Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
       // Unpack received data
       buf = buf_recv;
       // Kokkos::fence();
       atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
+      compute_instance.fence();
     } else {
       // No need to synchronize for self packing
       atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);

@@ -2,6 +2,7 @@
 #define LJS_J_
 
 #include "miniMD.decl.h"
+#include "block.decl.h"
 #include "ljs_kokkos.h"
 
 struct InstanceHolder {
@@ -25,6 +26,15 @@ public:
   KokkosManager();
   void finalize();
   void initialize();
+};
+
+class blockCommProxy : public CBase_blockCommProxy {
+  public:
+  int num_contrib;
+  void setblock(CProxy_Block block);
+  void setblockdone();//make comm
+  void setcomm(CProxy_Comm comm);
+  void setcommdone();
 };
 
 #endif

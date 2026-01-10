@@ -1,0 +1,4 @@
+/u/ajain18/miniMD/charm/build2/CMakeFiles/miniMD.dir
+/u/ajain18/miniMD/charm/build2/CMakeFiles/result.dir
+/u/ajain18/miniMD/charm/build2/CMakeFiles/edit_cache.dir
+/u/ajain18/miniMD/charm/build2/CMakeFiles/rebuild_cache.dir
