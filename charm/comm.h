@@ -143,6 +143,7 @@ class Comm : public CBase_Comm
     int_1d_view_type send_flag;
     int maxnlocal;
     int nrecv_atoms;
+    int post_exchange_recv_count; //used to coordinate posts in exchange which happen to the same buffer.
 
     // Used for Charm++ communication
     int nsend, nrecv, nrecv1, nrecv2, nlocal;

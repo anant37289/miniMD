@@ -65,6 +65,7 @@ Comm::Comm()
   count_device = Kokkos::View<int*>("comm::count_host", 1);
   h_exc_alloc = false;
   h_buf_alloc = false;
+  post_exchange_recv_count = 0;
 
   // Save pointer to Block bound array element
   iter = 0;
@@ -297,7 +298,6 @@ void Comm::communicate(Atom &atom, bool preprocess)
 {
   int iswap;
   int pbc_flags[4];
-  // compute_instance.fence();
 
     // Send and recv one buffer at a time
     // ckout<<nswap<<endl;
@@ -326,7 +326,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       
       suspend(compute_instance);
       // block->append_debug_string("chare "+std::to_string(index)+" done packing for iswap "+std::to_string(iswap)+" for chare " +std::to_string(send1_chare)+"\n");
-      auto buf_send_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),buf_send );
+      // auto buf_send_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),buf_send );
       // block->append_debug_string("chare "+std::to_string(index)+" sample send "+std::to_string(buf_send_h(0)) +" "+std::to_string(buf_send_h(4))+" "+std::to_string(buf_send_h(4*(nsend-1))) +"\n");
 
       block_proxy[thisIndex].comms_1(iswap, CkCallbackResumeThread());
@@ -340,7 +340,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       buf = buf_recv;
       // Kokkos::fence();
       atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
-      auto buf_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), buf);
+      // auto buf_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), buf);
       // block->append_debug_string("chare "+std::to_string(index)+" sample recv (buf) "+std::to_string(buf_h(0)) +" "+std::to_string(buf_h(4))+" "+std::to_string(buf_h(4*(nrecv-1))) +"\n");
 
       // compute_instance.fence();
@@ -584,7 +584,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count_host(0)*7>=maxsend) {
-        growsend(count_host(0));
+        growsend(count_host(0)*7);
       }
     }
     if(h_exc_sendflag.extent(0)<exc_sendflag.extent(0))
@@ -620,15 +620,16 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     atom.nlocal -= count_host(0);
 
     nsend = count_host(0) * 7;
+    nrecv = 0;
+    post_exchange_recv_count = 0;
 
-    send1 = static_cast<void*>(&nsend);
-    send1_size = sizeof(int);
+    // send1 = static_cast<void*>(&nsend);
+    // send1_size = sizeof(int);
     send1_chare = chareneigh[idim][0];
-    send2 = static_cast<void*>(&nsend);
-    send2_size = sizeof(int);
+    // send2 = static_cast<void*>(&nsend);
+    // send2_size = sizeof(int);
     send2_chare = chareneigh[idim][1];
-    recv1 = static_cast<void*>(&nrecv1);
-    recv2 = static_cast<void*>(&nrecv2);
+    suspend(compute_instance);
     block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
 
     /*
@@ -645,33 +646,33 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     }
     */
 
-    if (nrecv > maxrecv) {
+    // if (nrecv > maxrecv) {
       
-      growrecv(nrecv);
-    }
-    if(h_buf_send.extent(0)<buf_send.extent(0))
-      h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
-    if(h_buf_recv.extent(0)<buf_recv.extent(0))
-      h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
+    //   growrecv(nrecv);
+    // }
+    // if(h_buf_send.extent(0)<buf_send.extent(0))
+    //   h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
+    // if(h_buf_recv.extent(0)<buf_recv.extent(0))
+    //   h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
 
-    auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
-    Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
+    // auto h_buf_send_sub = Kokkos::subview(h_buf_send, std::make_pair(std::size_t(0),buf_send.size()));
+    // Kokkos::deep_copy(compute_instance, h_buf_send_sub, buf_send);
 
-    suspend(compute_instance);
+    // suspend(compute_instance);
 
-    send1 = static_cast<void*>(h_buf_send.data());
+    send1 = static_cast<void*>(buf_send.data());
     send1_size = nsend * sizeof(MMD_float);
     send1_chare = chareneigh[idim][0];
-    send2 = static_cast<void*>(h_buf_send.data());
+    send2 = static_cast<void*>(buf_send.data());
     send2_size = nsend * sizeof(MMD_float);
     send2_chare = chareneigh[idim][1];
-    recv1 = h_buf_recv.data();
-    recv2 = h_buf_recv.data() + nrecv1;
+    // recv1 = h_buf_recv.data();
+    // recv2 = h_buf_recv.data() + nrecv1;
     block_proxy[thisIndex].exchange_2(idim, CkCallbackResumeThread());
 
     // Move received data to device
-    auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
-    Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
+    // auto h_buf_recv_sub = Kokkos::subview(h_buf_recv, std::make_pair(std::size_t(0),buf_recv.size()));
+    // Kokkos::deep_copy(compute_instance, buf_recv, h_buf_recv_sub);
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
@@ -983,7 +984,7 @@ void Comm::growsend(int n)
 void Comm::growrecv(int n)
 {
   maxrecv = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
-  buf_recv = float_1d_view_type("Comm::buf_recv",maxrecv);;
+  Kokkos::resize(buf_recv, maxrecv);
 }
 
 /* realloc the size of the iswap sendlist as needed with BUFFACTOR */

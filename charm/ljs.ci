@@ -193,55 +193,59 @@ module block {
     entry void exchange_1(int idim, CkCallback cb) {
       serial {
         int tag = 3*comm->iter + idim;
-        thisProxy[comm->send1_chare].exchange_1_recv_1(tag, (char*)comm->send1, comm->send1_size);
+        thisProxy[comm->send1_chare].exchange_1_recv_1(tag);
         if (comm->charegrid[idim] > 2) {
-          thisProxy[comm->send2_chare].exchange_1_recv_2(tag, (char*)comm->send2, comm->send2_size);
+          thisProxy[comm->send2_chare].exchange_1_recv_2(tag);
         }
       }
 
-      when exchange_1_recv_1[3*comm->iter+idim](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
-        comm->nrecv = comm->nrecv1;
-      }
-      if (comm->charegrid[idim] > 2) {
-        when exchange_1_recv_2[3*comm->iter+idim](int ref, char data[size], size_t size) serial {
-          memcpy(comm->recv2, data, size);
-          comm->nrecv += comm->nrecv2;
+      when exchange_1_recv_1[3*comm->iter+idim](int ref) 
+        if (comm->charegrid[idim] > 2) {
+          when exchange_1_recv_2[3*comm->iter+idim](int ref) serial {
+            //do nothing
+          }
         }
-      }
-
-      serial {
-        cb.send();
-      }
+        serial {
+          cb.send();
+        }
     }
 
     entry void exchange_2(int idim, CkCallback cb) {
       serial {
         int tag = 3*comm->iter + idim;
-        thisProxy[comm->send1_chare].exchange_2_recv_1(tag, (char*)comm->send1, comm->send1_size);
+        CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+        CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
         if (comm->charegrid[idim] > 2) {
-          thisProxy[comm->send2_chare].exchange_2_recv_2(tag, (char*)comm->send2, comm->send2_size);
+          CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+          CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+          thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, CkDeviceBuffer((char*)comm->send2, cb));
         }
       }
 
-      when exchange_2_recv_1[3*comm->iter+idim](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
-      }
-      if (comm->charegrid[idim] > 2) {
-        when exchange_2_recv_2[3*comm->iter+idim](int ref, char data[size], size_t size) serial {
-          memcpy(comm->recv2, data, size);
+      when exchange_2_recv_1[3*comm->iter+idim](int ref, size_t size, nocopydevice char data[size]) {
+        when send_done() {
+          if (comm->charegrid[idim] > 2) {
+            when exchange_2_recv_2[3*comm->iter+idim](int ref, size_t size, nocopydevice char data[size]){
+              when send_done()
+                serial {
+                  //do nothing
+                }
+            }
+          }
         }
       }
-
+      
       serial {
         cb.send();
       }
     }
 
-    entry void exchange_1_recv_1(int ref, char data[size], size_t size);
-    entry void exchange_1_recv_2(int ref, char data[size], size_t size);
-    entry void exchange_2_recv_1(int ref, char data[size], size_t size);
-    entry void exchange_2_recv_2(int ref, char data[size], size_t size);
+
+    entry void exchange_1_recv_1(int ref);
+    entry void exchange_1_recv_2(int ref);
+    entry void exchange_2_recv_1(int ref, size_t size, nocopydevice char data[size]);
+    entry void exchange_2_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
     // Non-blocking communication routines for Comm:borders
     entry void borders_1(int iswap, CkCallback cb) {

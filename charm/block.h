@@ -80,6 +80,35 @@ public:
 
   }
 
+  void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+  int recv_idim = ref % 3;
+  size_t start_idx = comm->post_exchange_recv_count;
+  comm->nrecv1 = size/sizeof(MMD_float);
+  comm->nrecv+=size/sizeof(MMD_float);
+  if(size / sizeof(MMD_float) > (comm->maxrecv - comm->post_exchange_recv_count)){
+    comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
+    Kokkos::fence();
+  }
+  postInfo[0].hapi_stream = compute_instance.cuda_stream();
+  data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
+  comm->post_exchange_recv_count += size/sizeof(MMD_float);
+}
+
+void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+  int recv_idim = ref % 3;
+  size_t start_idx = comm->post_exchange_recv_count;
+  comm->nrecv2 = size/sizeof(MMD_float);
+  comm->nrecv+=size/sizeof(MMD_float);
+  if(size / sizeof(MMD_float) > (comm->maxrecv - comm->post_exchange_recv_count)){
+    comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
+    Kokkos::fence();
+  }
+  postInfo[0].hapi_stream = compute_instance.cuda_stream();
+  data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
+  comm->post_exchange_recv_count += size/sizeof(MMD_float);
+}
+
+
   ~Block() {}
 };
 
