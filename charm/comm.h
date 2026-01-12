@@ -40,6 +40,8 @@ class Comm : public CBase_Comm
   public:
 
     struct TagExchangeSendlist {};
+    struct TagExchangeFillReplacementList {};
+    struct TagExchangeFillCopyList {};
     struct TagExchangePack {};
     struct TagExchangeCountRecv {};
     struct TagExchangeUnpack {};
@@ -56,6 +58,10 @@ class Comm : public CBase_Comm
 
     KOKKOS_INLINE_FUNCTION
     void operator() (TagExchangeSendlist, const int&  ) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator() (TagExchangeFillReplacementList, const int& ) const;
+    KOKKOS_INLINE_FUNCTION
+    void operator() (TagExchangeFillCopyList, const int& ) const;
     KOKKOS_INLINE_FUNCTION
     void operator() (TagExchangePack, const int&  ) const;
     KOKKOS_INLINE_FUNCTION
@@ -107,6 +113,9 @@ class Comm : public CBase_Comm
     int_1d_view_type exc_sendflag;
     int_1d_view_type exc_sendlist;
     int_1d_view_type exc_copylist;
+    int_1d_view_type replacement_indices;
+    int nlocal_new;
+    int nsend_atoms;
     int_1d_host_view_type h_exc_sendflag;
     int_1d_host_view_type h_exc_sendlist;
     int_1d_host_view_type h_exc_copylist;
