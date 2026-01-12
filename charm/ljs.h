@@ -31,10 +31,8 @@ public:
 class blockCommProxy : public CBase_blockCommProxy {
   public:
   int num_contrib;
-  void setblock(CProxy_Block block);
-  void setblockdone();//make comm
-  void setcomm(CProxy_Comm comm);
-  void setcommdone();
+  void setblockcomm(CProxy_Block block, CProxy_Comm comm);
+  void setblockcommdone();//make comm
 };
 
 #endif

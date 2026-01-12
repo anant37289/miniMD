@@ -27,8 +27,8 @@ void exchange_2_recv_1(int ref, const char *data, const size_t &size);
 void exchange_2_recv_2(int ref, const char *data, const size_t &size);
 void borders_1(int iswap, const CkCallback &cb);
 void borders_2(int iswap, const CkCallback &cb);
-void borders_recv_1(int ref, const char *data, const size_t &size);
-void borders_recv_2(int ref, const char *data, const size_t &size);
+void borders_recv_1(int ref);
+void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
 void comms_1(int iswap, const CkCallback &cb);
 void comms_recv_1(int ref);
 void comms(int iswap, const CkCallback &cb);
@@ -593,7 +593,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static int _callmarshall_borders_2_marshall20(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_borders_2_marshall20(PUP::er &p,void *msg);
-    /* DECLS: void borders_recv_1(int ref, const char *data, const size_t &size);
+    /* DECLS: void borders_recv_1(int ref);
      */
     // Entry point registration at startup
     
@@ -606,13 +606,13 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     }
 
     
-    inline static int idx_borders_recv_1(void (Block::*)(int ref, const char *data, const size_t &size) ) {
+    inline static int idx_borders_recv_1(void (Block::*)(int ref) ) {
       return idx_borders_recv_1_marshall21();
     }
 
 
     
-    static int borders_recv_1(int ref, const char *data, const size_t &size) { return idx_borders_recv_1_marshall21(); }
+    static int borders_recv_1(int ref) { return idx_borders_recv_1_marshall21(); }
     
     static void _call_borders_recv_1_marshall21(void* impl_msg, void* impl_obj);
     
@@ -621,7 +621,7 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static int _callmarshall_borders_recv_1_marshall21(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_borders_recv_1_marshall21(PUP::er &p,void *msg);
-    /* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+    /* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
      */
     // Entry point registration at startup
     
@@ -634,13 +634,13 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     }
 
     
-    inline static int idx_borders_recv_2(void (Block::*)(int ref, const char *data, const size_t &size) ) {
+    inline static int idx_borders_recv_2(void (Block::*)(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) ) {
       return idx_borders_recv_2_marshall22();
     }
 
 
     
-    static int borders_recv_2(int ref, const char *data, const size_t &size) { return idx_borders_recv_2_marshall22(); }
+    static int borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data) { return idx_borders_recv_2_marshall22(); }
     
     static void _call_borders_recv_2_marshall22(void* impl_msg, void* impl_obj);
     
@@ -1110,15 +1110,15 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_2(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_1(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_1(int ref);
  */
     
-    void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_1(int ref, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms_1(int iswap, const CkCallback &cb);
  */
@@ -1348,15 +1348,15 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_2(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_1(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_1(int ref);
  */
     
-    void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_1(int ref, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms_1(int iswap, const CkCallback &cb);
  */
@@ -1658,15 +1658,15 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     
     void borders_2(int iswap, const CkCallback &cb, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_1(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_1(int ref);
  */
     
-    void borders_recv_1(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_1(int ref, const CkEntryOptions *impl_e_opts=NULL) ;
 
-/* DECLS: void borders_recv_2(int ref, const char *data, const size_t &size);
+/* DECLS: void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data);
  */
     
-    void borders_recv_2(int ref, const char *data, const size_t &size, const CkEntryOptions *impl_e_opts=NULL) ;
+    void borders_recv_2(int ref, const size_t &size, CkDeviceBuffer deviceBuffer_data, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: void comms_1(int iswap, const CkCallback &cb);
  */
@@ -1837,6 +1837,8 @@ private:                                                                       \
   SDAG::Continuation* _when_8(Closure_Block::borders_2_20_closure* gen0);      \
   SDAG::Continuation* _when_8(Closure_Block::borders_2_20_closure* gen0, int refnum_0);\
   void _when_8_end(Closure_Block::borders_2_20_closure* gen0, Closure_Block::borders_recv_2_22_closure* gen1);\
+  SDAG::Continuation* _when_9(Closure_Block::borders_2_20_closure* gen0, Closure_Block::borders_recv_2_22_closure* gen1);\
+  void _when_9_end(Closure_Block::borders_2_20_closure* gen0, Closure_Block::borders_recv_2_22_closure* gen1);\
   void _serial_21(Closure_Block::borders_2_20_closure* gen0, Closure_Block::borders_recv_2_22_closure* gen1);\
 public:                                                                        \
   void comms_1(int iswap, CkCallback cb);                                      \
@@ -1847,9 +1849,9 @@ private:                                                                       \
   void _slist_10(Closure_Block::comms_1_23_closure* gen0);                     \
   void _slist_10_end(Closure_Block::comms_1_23_closure* gen0);                 \
   void _serial_22(Closure_Block::comms_1_23_closure* gen0);                    \
-  SDAG::Continuation* _when_9(Closure_Block::comms_1_23_closure* gen0);        \
-  SDAG::Continuation* _when_9(Closure_Block::comms_1_23_closure* gen0, int refnum_0);\
-  void _when_9_end(Closure_Block::comms_1_23_closure* gen0, Closure_Block::comms_recv_1_24_closure* gen1);\
+  SDAG::Continuation* _when_10(Closure_Block::comms_1_23_closure* gen0);       \
+  SDAG::Continuation* _when_10(Closure_Block::comms_1_23_closure* gen0, int refnum_0);\
+  void _when_10_end(Closure_Block::comms_1_23_closure* gen0, Closure_Block::comms_recv_1_24_closure* gen1);\
   void _serial_23(Closure_Block::comms_1_23_closure* gen0, Closure_Block::comms_recv_1_24_closure* gen1);\
 public:                                                                        \
   void comms(int iswap, CkCallback cb);                                        \
@@ -1860,11 +1862,11 @@ private:                                                                       \
   void _slist_11(Closure_Block::comms_25_closure* gen0);                       \
   void _slist_11_end(Closure_Block::comms_25_closure* gen0);                   \
   void _serial_24(Closure_Block::comms_25_closure* gen0);                      \
-  SDAG::Continuation* _when_10(Closure_Block::comms_25_closure* gen0);         \
-  SDAG::Continuation* _when_10(Closure_Block::comms_25_closure* gen0, int refnum_0);\
-  void _when_10_end(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
-  SDAG::Continuation* _when_11(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
+  SDAG::Continuation* _when_11(Closure_Block::comms_25_closure* gen0);         \
+  SDAG::Continuation* _when_11(Closure_Block::comms_25_closure* gen0, int refnum_0);\
   void _when_11_end(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
+  SDAG::Continuation* _when_12(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
+  void _when_12_end(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
   void _serial_25(Closure_Block::comms_25_closure* gen0, Closure_Block::comms_recv_26_closure* gen1);\
 public:                                                                        \
   void comm_all(CkCallback cb);                                                \
@@ -1883,9 +1885,9 @@ private:                                                                       \
   void _if_2_end(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
   void _slist_14(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
   void _slist_14_end(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  SDAG::Continuation* _when_12(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
-  SDAG::Continuation* _when_12(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0);\
-  void _when_12_end(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_29_closure* gen3);\
+  SDAG::Continuation* _when_13(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0);\
+  SDAG::Continuation* _when_13(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, int refnum_0);\
+  void _when_13_end(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_29_closure* gen3);\
   void _serial_27(Closure_Block::comm_all_28_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf0, Closure_Block::comm_all_recv_29_closure* gen3);\
   void _serial_28(Closure_Block::comm_all_28_closure* gen0);                   \
 public:                                                                        \
@@ -1905,9 +1907,9 @@ private:                                                                       \
   void _if_3_end(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
   void _slist_17(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
   void _slist_17_end(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  SDAG::Continuation* _when_13(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
-  SDAG::Continuation* _when_13(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0);\
-  void _when_13_end(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_31_closure* gen3);\
+  SDAG::Continuation* _when_14(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1);\
+  SDAG::Continuation* _when_14(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, int refnum_0);\
+  void _when_14_end(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_31_closure* gen3);\
   void _serial_30(Closure_Block::comm_rev_all_30_closure* gen0, SDAG::ForallClosure* my_iswap_cl, SDAG::CCounter* _cf1, Closure_Block::comm_rev_all_recv_31_closure* gen3);\
   void _serial_31(Closure_Block::comm_rev_all_30_closure* gen0);               \
 public:                                                                        \
@@ -1924,15 +1926,15 @@ public:                                                                        \
   void exchange_2_recv_2(Closure_Block::exchange_2_recv_2_18_closure* genClosure);\
   void exchange_2_recv_2(int ref, char *data, size_t size);                    \
   void borders_recv_1(Closure_Block::borders_recv_1_21_closure* genClosure);   \
-  void borders_recv_1(int ref, char *data, size_t size);                       \
+  void borders_recv_1(int ref);                                                \
   void borders_recv_2(Closure_Block::borders_recv_2_22_closure* genClosure);   \
-  void borders_recv_2(int ref, char *data, size_t size);                       \
+  void borders_recv_2(int ref, size_t size, CkDeviceBuffer deviceBuffer_data); \
+  void send_done(Closure_Block::send_done_27_closure* genClosure);             \
+  void send_done();                                                            \
   void comms_recv_1(Closure_Block::comms_recv_1_24_closure* genClosure);       \
   void comms_recv_1(int ref);                                                  \
   void comms_recv(Closure_Block::comms_recv_26_closure* genClosure);           \
   void comms_recv(int ref, size_t size, CkDeviceBuffer deviceBuffer_data);     \
-  void send_done(Closure_Block::send_done_27_closure* genClosure);             \
-  void send_done();                                                            \
   void comm_all_recv(Closure_Block::comm_all_recv_29_closure* genClosure);     \
   void comm_all_recv(int ref, char *data, size_t size);                        \
   void comm_rev_all_recv(Closure_Block::comm_rev_all_recv_31_closure* genClosure);\

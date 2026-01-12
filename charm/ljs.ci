@@ -58,7 +58,10 @@ mainmodule miniMD {
         //TODO: this will not be valid for n>2, so make something else for that because readonly are not updated
         CProxy_blockCommProxy _blockCommProxy =  CProxy_blockCommProxy::ckNew();
         block_proxy = CProxy_Block::ckNew(num_chares);
-        _blockCommProxy.setblock(block_proxy);
+        CkArrayOptions opts(num_chares);
+        opts.bindTo(block_proxy);
+        comm_proxy = CProxy_Comm::ckNew(opts);
+        _blockCommProxy.setblockcomm(block_proxy, comm_proxy);
       }
 
       when reduceVelocity(CkReductionMsg* msg) serial {
@@ -103,10 +106,8 @@ mainmodule miniMD {
   };
   nodegroup blockCommProxy {
     entry blockCommProxy();
-    entry void setblock(CProxy_Block block);
-    entry void setblockdone();
-    entry void setcomm(CProxy_Comm comm);
-    entry void setcommdone();
+    entry void setblockcomm(CProxy_Block block, CProxy_Comm comm);
+    entry void setblockcommdone();
   }
 };
 
@@ -246,11 +247,10 @@ module block {
     entry void borders_1(int iswap, CkCallback cb) {
       serial {
         int tag = comm->maxswap_static*comm->iter + iswap;
-        thisProxy[comm->send1_chare].borders_recv_1(tag, (char*)comm->send1, comm->send1_size);
+        thisProxy[comm->recvchare[iswap]].borders_recv_1(tag);
       }
 
-      when borders_recv_1[comm->maxswap_static*comm->iter+iswap](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
+      when borders_recv_1[comm->maxswap_static*comm->iter+iswap](int ref) serial {
         cb.send();
       }
     }
@@ -258,22 +258,25 @@ module block {
     entry void borders_2(int iswap, CkCallback cb) {
       serial {
         int tag = comm->maxswap_static*comm->iter + iswap;
-        thisProxy[comm->send1_chare].borders_recv_2(tag, (char*)comm->send1, comm->send1_size);
+        CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
+        CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
       }
 
-      when borders_recv_2[comm->maxswap_static*comm->iter+iswap](int ref, char data[size], size_t size) serial {
-        memcpy(comm->recv1, data, size);
-        cb.send();
-      }
+      
+      when borders_recv_2[comm->maxswap_static*comm->iter+iswap](int ref, size_t size, nocopydevice char data[size]) 
+         when send_done() serial {//wait for send to be done in order to be able to reuse the send buffers
+            cb.send();
+        }
     }
 
-    entry void borders_recv_1(int ref, char data[size], size_t size);
-    entry void borders_recv_2(int ref, char data[size], size_t size);
+    entry void borders_recv_1(int ref);
+    entry void borders_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
     entry void comms_1(int iswap, CkCallback cb) {
       serial {
         int tag = comm->nswap*comm->iter + iswap;
-        thisProxy[comm->send1_chare].comms_recv_1(tag);
+        thisProxy[comm->recvchare[iswap]].comms_recv_1(tag);
       }
       when comms_recv_1[comm->nswap*comm->iter+iswap](int ref) serial {
         cb.send();

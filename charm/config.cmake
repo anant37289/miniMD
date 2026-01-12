@@ -1,5 +1,5 @@
 set(KOKKOS_DIR "/u/ajain18/belobench/LibCharmtyles/kokkos/install")
-set(CHARM_DIR "/u/ajain18/charm/mpi-linux-x86_64-cuda/")
+set(CHARM_DIR "/u/ajain18/charm/mpi-linux-x86_64-smp-cuda/")
 set(CHARMC "${CHARM_DIR}/bin/charmc")
 set(CUDA_DIR "/opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/12.8")
 set(BASE_DIR "/u/ajain18/miniMD/charm")

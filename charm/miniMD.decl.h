@@ -850,10 +850,8 @@ typedef CBaseT1<Group, CProxy_KokkosManager>CBase_KokkosManager;
 
 /* DECLS: nodegroup blockCommProxy: NodeGroup{
 blockCommProxy();
-void setblock(const CProxy_Block &block);
-void setblockdone();
-void setcomm(const CProxy_Comm &comm);
-void setcommdone();
+void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
+void setblockcommdone();
 };
  */
  class blockCommProxy;
@@ -890,110 +888,58 @@ class CkIndex_blockCommProxy:public CkIndex_NodeGroup{
     static void _call_blockCommProxy_void(void* impl_msg, void* impl_obj);
     
     static void _call_sdag_blockCommProxy_void(void* impl_msg, void* impl_obj);
-    /* DECLS: void setblock(const CProxy_Block &block);
+    /* DECLS: void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
      */
     // Entry point registration at startup
     
-    static int reg_setblock_marshall2();
+    static int reg_setblockcomm_marshall2();
     // Entry point index lookup
     
-    inline static int idx_setblock_marshall2() {
-      static int epidx = reg_setblock_marshall2();
+    inline static int idx_setblockcomm_marshall2() {
+      static int epidx = reg_setblockcomm_marshall2();
       return epidx;
     }
 
     
-    inline static int idx_setblock(void (blockCommProxy::*)(const CProxy_Block &block) ) {
-      return idx_setblock_marshall2();
+    inline static int idx_setblockcomm(void (blockCommProxy::*)(const CProxy_Block &block, const CProxy_Comm &comm) ) {
+      return idx_setblockcomm_marshall2();
     }
 
 
     
-    static int setblock(const CProxy_Block &block) { return idx_setblock_marshall2(); }
+    static int setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm) { return idx_setblockcomm_marshall2(); }
     
-    static void _call_setblock_marshall2(void* impl_msg, void* impl_obj);
+    static void _call_setblockcomm_marshall2(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_setblock_marshall2(void* impl_msg, void* impl_obj);
+    static void _call_sdag_setblockcomm_marshall2(void* impl_msg, void* impl_obj);
     
-    static int _callmarshall_setblock_marshall2(char* impl_buf, void* impl_obj_void);
+    static int _callmarshall_setblockcomm_marshall2(char* impl_buf, void* impl_obj_void);
     
-    static void _marshallmessagepup_setblock_marshall2(PUP::er &p,void *msg);
-    /* DECLS: void setblockdone();
+    static void _marshallmessagepup_setblockcomm_marshall2(PUP::er &p,void *msg);
+    /* DECLS: void setblockcommdone();
      */
     // Entry point registration at startup
     
-    static int reg_setblockdone_void();
+    static int reg_setblockcommdone_void();
     // Entry point index lookup
     
-    inline static int idx_setblockdone_void() {
-      static int epidx = reg_setblockdone_void();
+    inline static int idx_setblockcommdone_void() {
+      static int epidx = reg_setblockcommdone_void();
       return epidx;
     }
 
     
-    inline static int idx_setblockdone(void (blockCommProxy::*)() ) {
-      return idx_setblockdone_void();
+    inline static int idx_setblockcommdone(void (blockCommProxy::*)() ) {
+      return idx_setblockcommdone_void();
     }
 
 
     
-    static int setblockdone() { return idx_setblockdone_void(); }
+    static int setblockcommdone() { return idx_setblockcommdone_void(); }
     
-    static void _call_setblockdone_void(void* impl_msg, void* impl_obj);
+    static void _call_setblockcommdone_void(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_setblockdone_void(void* impl_msg, void* impl_obj);
-    /* DECLS: void setcomm(const CProxy_Comm &comm);
-     */
-    // Entry point registration at startup
-    
-    static int reg_setcomm_marshall4();
-    // Entry point index lookup
-    
-    inline static int idx_setcomm_marshall4() {
-      static int epidx = reg_setcomm_marshall4();
-      return epidx;
-    }
-
-    
-    inline static int idx_setcomm(void (blockCommProxy::*)(const CProxy_Comm &comm) ) {
-      return idx_setcomm_marshall4();
-    }
-
-
-    
-    static int setcomm(const CProxy_Comm &comm) { return idx_setcomm_marshall4(); }
-    
-    static void _call_setcomm_marshall4(void* impl_msg, void* impl_obj);
-    
-    static void _call_sdag_setcomm_marshall4(void* impl_msg, void* impl_obj);
-    
-    static int _callmarshall_setcomm_marshall4(char* impl_buf, void* impl_obj_void);
-    
-    static void _marshallmessagepup_setcomm_marshall4(PUP::er &p,void *msg);
-    /* DECLS: void setcommdone();
-     */
-    // Entry point registration at startup
-    
-    static int reg_setcommdone_void();
-    // Entry point index lookup
-    
-    inline static int idx_setcommdone_void() {
-      static int epidx = reg_setcommdone_void();
-      return epidx;
-    }
-
-    
-    inline static int idx_setcommdone(void (blockCommProxy::*)() ) {
-      return idx_setcommdone_void();
-    }
-
-
-    
-    static int setcommdone() { return idx_setcommdone_void(); }
-    
-    static void _call_setcommdone_void(void* impl_msg, void* impl_obj);
-    
-    static void _call_sdag_setcommdone_void(void* impl_msg, void* impl_obj);
+    static void _call_sdag_setblockcommdone_void(void* impl_msg, void* impl_obj);
 };
 /* --------------- element proxy ------------------ */
 class CProxyElement_blockCommProxy: public CProxyElement_NodeGroup{
@@ -1060,25 +1006,15 @@ int ckGetGroupPe(void) const
  */
     
 
-/* DECLS: void setblock(const CProxy_Block &block);
+/* DECLS: void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
  */
     
-    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockdone();
+/* DECLS: void setblockcommdone();
  */
     
-    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcomm(const CProxy_Comm &comm);
- */
-    
-    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcommdone();
- */
-    
-    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 /* ---------------- collective proxy -------------- */
@@ -1142,25 +1078,15 @@ operator CkGroupID () const { return ckGetGroupID(); }
     
     static CkGroupID ckNew(const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblock(const CProxy_Block &block);
+/* DECLS: void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
  */
     
-    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockdone();
+/* DECLS: void setblockcommdone();
  */
     
-    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcomm(const CProxy_Comm &comm);
- */
-    
-    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcommdone();
- */
-    
-    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 /* ---------------- section proxy -------------- */
@@ -1243,25 +1169,15 @@ inline int ckGetNumElements(int i) const
  */
     
 
-/* DECLS: void setblock(const CProxy_Block &block);
+/* DECLS: void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
  */
     
-    void setblock(const CProxy_Block &block, const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockdone();
+/* DECLS: void setblockcommdone();
  */
     
-    void setblockdone(const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcomm(const CProxy_Comm &comm);
- */
-    
-    void setcomm(const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
-
-/* DECLS: void setcommdone();
- */
-    
-    void setcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 #define blockCommProxy_SDAG_CODE 
@@ -1348,16 +1264,10 @@ class Closure_blockCommProxy {
   public:
 
 
-    struct setblock_2_closure;
+    struct setblockcomm_2_closure;
 
 
-    struct setblockdone_3_closure;
-
-
-    struct setcomm_4_closure;
-
-
-    struct setcommdone_5_closure;
+    struct setblockcommdone_3_closure;
 
 };
 

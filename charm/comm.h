@@ -85,7 +85,6 @@ class Comm : public CBase_Comm
     void wait(Kokkos::Cuda, Kokkos::Cuda);
 
   public:
-    void* block;
     int iter;
 
     int index;                                      // my chare index
