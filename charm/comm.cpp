@@ -297,6 +297,8 @@ void Comm::communicate(Atom &atom, bool preprocess)
   int iswap;
   int pbc_flags[4];
 
+  //push the pack unpack depencency
+  wait(compute_instance, pack_instance);
   // Send and recv one buffer at a time
   for(iswap = 0; iswap < nswap; iswap++) {
 
@@ -311,12 +313,11 @@ void Comm::communicate(Atom &atom, bool preprocess)
     if (sendchare[iswap] != index) {
       atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
       
-      // Send and suspend
       send1 = buf_send.data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
       send1_chare = sendchare[iswap];
       
-      suspend(compute_instance);
+      suspend(pack_instance);
       block_proxy[thisIndex].comms_1(iswap, CkCallbackResumeThread());
       block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
@@ -327,6 +328,8 @@ void Comm::communicate(Atom &atom, bool preprocess)
       atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);
     }
   }
+  wait(pack_instance, compute_instance);
+
 }
 
 
@@ -483,6 +486,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
   /* enforce PBC */
 
+  wait(compute_instance, pack_instance);
   atom.pbc();//wrap around atoms going out of boundry
 
   /* loop over dimensions */
@@ -520,20 +524,20 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     //count the atoms which are leaving, also keep track of position in the lists
     while (count_host(0) >= exc_sendlist.extent(0)) {
       count_host(0) = 0;
-      Kokkos::deep_copy(compute_instance, count_device, count_host);
+      Kokkos::deep_copy(pack_instance, count_device, count_host);
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist> (compute_instance, 0,nlocal), *this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeSendlist> (pack_instance, 0,nlocal), *this);
 
-      Kokkos::deep_copy(compute_instance, count_host, count_device);
+      Kokkos::deep_copy(pack_instance, count_host, count_device);
       
-      suspend(compute_instance);
+      suspend(pack_instance);
       
       if ((count_host(0)>=exc_sendlist.extent(0)) ||
           (count_host(0)>=exc_copylist.extent(0)) ) {
         
-        Kokkos::resize(exc_sendlist,(count_host(0)+1)*1.1);
-        Kokkos::resize(exc_copylist,(count_host(0)+1)*1.1);
-        Kokkos::resize(replacement_indices,(count_host(0)+1)*1.1);
+        Kokkos::resize(exc_sendlist,(count_host(0)+1)*1.5);
+        Kokkos::resize(exc_copylist,(count_host(0)+1)*1.5);
+        Kokkos::resize(replacement_indices,(count_host(0)+1)*1.5);
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count_host(0)*7>=maxsend) {
@@ -546,13 +550,13 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     // Reset counters for the two kernels
     count_host(1) = 0;  // replacement index counter
     count_host(2) = 0;  // copylist assignment counter
-    Kokkos::deep_copy(compute_instance, count_device, count_host);
+    Kokkos::deep_copy(pack_instance, count_device, count_host);
     
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillReplacementList>(compute_instance, 0, nsend_atoms), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillReplacementList>(pack_instance, 0, nsend_atoms), *this);
     
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(compute_instance, 0, nsend_atoms), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(pack_instance, 0, nsend_atoms), *this);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(compute_instance, 0,count_host(0)), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(pack_instance, 0,count_host(0)), *this);
     atom.nlocal -= count_host(0);
 
     nsend = count_host(0) * 7;
@@ -560,7 +564,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     post_exchange_recv_count = 0;
     send1_chare = chareneigh[idim][0];
     send2_chare = chareneigh[idim][1];
-    suspend(compute_instance);
+    suspend(pack_instance);
     block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
 
     /*
@@ -605,7 +609,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     nrecv = 0;
 
-    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagExchangeCountRecv>(compute_instance, 0,nrecv_atoms), *this, nrecv);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<TagExchangeCountRecv>(pack_instance, 0,nrecv_atoms), *this, nrecv);
 
     nlocal = atom.nlocal;
 
@@ -613,14 +617,15 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       atom.nlocal += nrecv;
 
     count_host(0) = nlocal;
-    Kokkos::deep_copy(compute_instance, count_device, nlocal);
+    Kokkos::deep_copy(pack_instance, count_device, nlocal);
 
     if(atom.nlocal>=atom.nmax)
       atom.growarray();
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(compute_instance, 0,nrecv_atoms), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
 
   }
+  wait(pack_instance, compute_instance);
   atom_ = atom;
 }
 
@@ -698,8 +703,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
     maxnlocal = atom.nlocal;
   }
 
-  Block* block = block_proxy(thisIndex).ckLocal();
-  // block->append_debug_string("====chare "+std::to_string(index)+"=====\n");
+  wait(compute_instance, pack_instance);
 
   for(idim = 0; idim < 3; idim++) {
     nlast = 0;
@@ -729,13 +733,13 @@ void Comm::borders(Atom &atom_, bool preprocess)
       nsend = 0;
 
       count_host(0) = 0;
-      Kokkos::deep_copy(compute_instance, count_device, 0);
+      Kokkos::deep_copy(pack_instance, count_device, 0);
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(pack_instance, nfirst,nlast),*this);
 
-      Kokkos::deep_copy(compute_instance, count_host, count_device);
+      Kokkos::deep_copy(pack_instance, count_host, count_device);
 
-      suspend(compute_instance);
+      suspend(pack_instance);
 
       nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {        
@@ -743,11 +747,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
         growlist(iswap, nsend);
 
-        Kokkos::deep_copy(compute_instance, count_device, 0);
+        Kokkos::deep_copy(pack_instance, count_device, 0);
 
-        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(compute_instance, nfirst,nlast),*this);
+        Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(pack_instance, nfirst,nlast),*this);
 
-        Kokkos::deep_copy(compute_instance, count_host, count_device);
+        Kokkos::deep_copy(pack_instance, count_host, count_device);
       }
 
       if(nsend * 4 > maxsend) {
@@ -755,14 +759,14 @@ void Comm::borders(Atom &atom_, bool preprocess)
         growsend(nsend * 4);
       }
 
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(compute_instance, 0,nsend),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(pack_instance, 0,nsend),*this);
       // swap atoms with other proc
       // put incoming ghosts at end of my atom arrays
       // if swapping with self, simply copy, no messages
 
 
         if(sendchare[iswap] != index) {
-          suspend(compute_instance);
+          suspend(pack_instance);
           send1 = static_cast<void*>(buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
           send1_chare = sendchare[iswap];
@@ -786,7 +790,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       x = atom.x;
       
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(compute_instance, 0,nrecv),*this);
+      Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(pack_instance, 0,nrecv),*this);
       // set all pointers & counters
         sendnum[iswap] = nsend;
         recvnum[iswap] = nrecv;
@@ -798,11 +802,10 @@ void Comm::borders(Atom &atom_, bool preprocess)
         atom.nghost += nrecv;
 
         iswap++;        
-
     }
   }
-  // block->print_debug_string();
 
+  wait(pack_instance, compute_instance);
   /* insure buffers are large enough for reverse comm */
 
   int max1, max2;
@@ -823,7 +826,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
     growrecv(max2);
   }
   atom_ = atom;
-  // compute_instance.fence();
 
 }
 
@@ -912,4 +914,12 @@ void Comm::suspend(Kokkos::Cuda instance) {
   resume_cb = new CkCallbackResumeThread();
   hapiAddCallback(instance.cuda_stream(), resume_cb);
   delete resume_cb;
+}
+
+//insert a instance1->instance2 event in streams
+void Comm::wait(Kokkos::Cuda instance1, Kokkos::Cuda instance2){
+    cudaEvent_t dep_event_1;
+    hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
+    hapiCheck(cudaEventRecord(dep_event_1, instance1.cuda_stream()));
+    hapiCheck(cudaStreamWaitEvent(instance2.cuda_stream(), dep_event_1, 0));
 }

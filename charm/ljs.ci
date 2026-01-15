@@ -55,7 +55,6 @@ mainmodule miniMD {
     entry void run() {
       when kokkosInitialized() serial {
         CkPrintf("[Main] Kokkos initialized\n");
-        //TODO: this will not be valid for n>2, so make something else for that because readonly are not updated
         CProxy_blockCommProxy _blockCommProxy =  CProxy_blockCommProxy::ckNew();
         block_proxy = CProxy_Block::ckNew(num_chares);
         CkArrayOptions opts(num_chares);
@@ -187,6 +186,45 @@ module block {
       }
     }
     entry void pressure_recv(CkReductionMsg* msg);
+
+    entry void mark_start(CkCallback cb){
+      serial {
+        CkCallback cb_start(CkReductionTarget(Block, markstart_recv), thisProxy[0]);
+        contribute(cb_start);
+      }
+
+      when start_iterations() serial {
+        cb.send();
+      }
+    }
+
+    entry void start_iterations();
+    entry [reductiontarget]  void markstart_recv(){
+      serial {
+        total_time = 0;
+        thisProxy.start_iterations();
+      }
+    }
+
+
+    entry void mark_done(CkCallback cb) {
+      serial {
+        CkCallback cb_done(CkReductionTarget(Block, markdone_recv), thisProxy[0]);
+        contribute(cb_done);
+      }
+
+      when end_iterations() serial {
+        cb.send();
+      }
+    }
+    entry void end_iterations();
+    entry [reductiontarget]  void markdone_recv(){
+      serial {
+        CkPrintf("[Block %d] Total time (exclude 1st iteration): %.6lf s\n", thisIndex,  total_time);
+        CkPrintf("[Block %d] Average time per iteration: %.6lf s\n", thisIndex,  total_time / (integrate.ntimes-1));
+        thisProxy.end_iterations();
+      }
+    }
 
 
     // Non-blocking communication routines for Comm:exchange

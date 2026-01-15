@@ -257,19 +257,21 @@ KokkosManager::KokkosManager() {
 
 void KokkosManager::initialize() {
   if(CmiMyRank()==0){
+    ckout<<"initialized"<<endl;
     Kokkos::InitializationSettings args_kokkos;
     if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
     args_kokkos.set_device_id(0);
     Kokkos::initialize(args_kokkos);
   }
+  ckout<<"at barrier"<<endl;
   CmiNodeBarrier();
   
   // Create per-GPU streams (only works with 1 process per GPU)
-  cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0);
-  cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1);
-  cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1);
-  cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1);
-  cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1);
+  hapiCheck(cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0));
+  hapiCheck(cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1));
 
   // Create CUDA execution instances using streams
   instances = new InstanceHolder;

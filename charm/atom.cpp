@@ -108,7 +108,7 @@ void Atom::addatom(MMD_float x_in, MMD_float y_in, MMD_float z_in,
 void Atom::pbc()
 {
   Kokkos::parallel_for(Kokkos::Experimental::require(
-        Kokkos::RangePolicy<TagAtomPBC>(compute_instance,0,nlocal),
+        Kokkos::RangePolicy<TagAtomPBC>(pack_instance,0,nlocal),
         Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
 }
 
@@ -119,10 +119,9 @@ void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in,
   buf = buf_in;
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
 
-  Kokkos::Cuda instance = compute_instance;
+  Kokkos::Cuda instance = pack_instance;
 
 
-  //KOKKOS_ASSERT(compute_instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   if(pbc_flags[0] == 0) {
     Kokkos::parallel_for(Kokkos::Experimental::require(
           Kokkos::RangePolicy<TagAtomPackCommNoPBC>(instance,0,n),
@@ -140,7 +139,7 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
   first = first_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance = compute_instance;
+  Kokkos::Cuda instance = pack_instance;
 
   //KOKKOS_ASSERT(instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   Kokkos::parallel_for(Kokkos::Experimental::require(
@@ -157,11 +156,11 @@ void Atom::pack_comm_self(int n, int_1d_view_type list_in, int first_in, int* pb
 
   if(pbc_flags[0] == 0) {
     Kokkos::parallel_for(Kokkos::Experimental::require(
-          Kokkos::RangePolicy<TagAtomPackCommSelfNoPBC>(compute_instance,0,n),
+          Kokkos::RangePolicy<TagAtomPackCommSelfNoPBC>(pack_instance,0,n),
           Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   } else {
     Kokkos::parallel_for(Kokkos::Experimental::require(
-          Kokkos::RangePolicy<TagAtomPackCommSelfPBC>(compute_instance,0,n),
+          Kokkos::RangePolicy<TagAtomPackCommSelfPBC>(pack_instance,0,n),
           Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   }
 }
