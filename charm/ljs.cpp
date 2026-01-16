@@ -256,14 +256,15 @@ KokkosManager::KokkosManager() {
 }
 
 void KokkosManager::initialize() {
+  int device;
+  hapiCheck(hapiGetDevice(&device));
+  ckout<<"PE["<<CkMyPe()<<"] on GPU "<<device<<endl;
   if(CmiMyRank()==0){
-    ckout<<"initialized"<<endl;
     Kokkos::InitializationSettings args_kokkos;
     if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
-    args_kokkos.set_device_id(0);
+    args_kokkos.set_device_id(device);
     Kokkos::initialize(args_kokkos);
   }
-  ckout<<"at barrier"<<endl;
   CmiNodeBarrier();
   
   // Create per-GPU streams (only works with 1 process per GPU)

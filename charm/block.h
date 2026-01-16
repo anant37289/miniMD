@@ -27,6 +27,14 @@ public:
   int reductionCount=0;
   MMD_float reductionSum=0;
   double total_time=0;
+  std::string debug_string;
+  void append_debug_string(std::string addend){
+    debug_string+=addend;
+  }
+  void print_debug_string(){
+    ckout<<debug_string.c_str()<<endl;
+    debug_string="";
+  }
 
   Kokkos::Cuda compute_instance;
   Kokkos::Cuda h2d_instance;
@@ -53,17 +61,20 @@ public:
   void run();
   void printConfig();
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
-      postInfo[0].hapi_stream = pack_instance.cuda_stream();
+      postInfo[0].hapi_stream = compute_instance.cuda_stream();
       data = (char*)(comm->buf_recv.data());
   }
 
   void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+    int iswap = ref%comm->nswap;
+    append_debug_string("post called by iswap index "+std::to_string(iswap)+" on index "+std::to_string(comm->index)+"\n");
     comm->nrecv = size / (sizeof(MMD_float)*atom.border_size);
+    append_debug_string("setting nrecv to "+std::to_string(comm->nrecv)+"\n");
     if (size / sizeof(MMD_float) > comm->maxrecv) {
       comm->growrecv( size / sizeof(MMD_float));
       Kokkos::fence();
     }
-    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    postInfo[0].hapi_stream = compute_instance.cuda_stream();
     data = (char*)(comm->buf_recv.data());
   }
 
@@ -76,7 +87,7 @@ public:
     comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
     Kokkos::fence();
   }
-  postInfo[0].hapi_stream = pack_instance.cuda_stream();
+  postInfo[0].hapi_stream = compute_instance.cuda_stream();
   data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
   comm->post_exchange_recv_count += size/sizeof(MMD_float);
 }
@@ -90,7 +101,7 @@ void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* po
     comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
     Kokkos::fence();
   }
-  postInfo[0].hapi_stream = pack_instance.cuda_stream();
+  postInfo[0].hapi_stream = compute_instance.cuda_stream();
   data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
   comm->post_exchange_recv_count += size/sizeof(MMD_float);
 }

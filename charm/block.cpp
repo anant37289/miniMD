@@ -236,17 +236,20 @@ void Block::init() {
 }
 
 void Block::run(){
-      thermo.compute(0, atom, neighbor, force, comm);
+      // thermo.compute(0, atom, neighbor, force, comm);
       comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
-        {
-          atom.sort(neighbor);}
+        atom.sort(neighbor);
       comm->borders(atom, true);
 
+      print_debug_string();
+
       force->evflag = 1;
-      
+      Kokkos::fence();
+
       thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+
       Kokkos::fence();
       // neighbor.build(atom);
       force->compute(atom, neighbor, comm, thisIndex);
@@ -339,6 +342,7 @@ void Block::run(){
             next_sort +=  integrate.sort_every;
           }
           comm->borders(atom, false);
+          
 
 
         // Kokkos::Profiling::pushRegion("neighbor::build");
