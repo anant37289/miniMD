@@ -44,7 +44,7 @@ void Integrate::setup()
 
 void Integrate::initialIntegrate()
 {
-  Kokkos::parallel_for(Kokkos::RangePolicy<TagInitialIntegrate>(0,nlocal), *this);
+  Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagInitialIntegrate>(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -59,7 +59,7 @@ void Integrate::operator() (TagInitialIntegrate, const int& i) const {
 
 void Integrate::finalIntegrate()
 {
-  Kokkos::parallel_for(Kokkos::RangePolicy<TagFinalIntegrate>(0,nlocal), *this);
+  Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagFinalIntegrate>(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
 }
 
 KOKKOS_INLINE_FUNCTION
