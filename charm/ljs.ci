@@ -253,6 +253,8 @@ module block {
         int tag = 3*comm->iter + idim;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
+        Block* block = block_proxy(thisIndex).ckLocal();
+        block->append_debug_string("chare "+std::to_string(thisIndex)+" done packing for idim "+std::to_string(idim)+" for chare " +std::to_string(comm->send1_chare)+"\n");
         thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
         if (comm->charegrid[idim] > 2) {
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
@@ -299,6 +301,8 @@ module block {
 
     entry void borders_2(int iswap, CkCallback cb) {
       serial {
+        Block* block = block_proxy(thisIndex).ckLocal();
+        block->append_debug_string("chare "+std::to_string(thisIndex)+" done packing for iswap "+std::to_string(iswap)+" for chare " +std::to_string(comm->send1_chare)+"\n");
         int tag = comm->maxswap_static*comm->iter + iswap;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);

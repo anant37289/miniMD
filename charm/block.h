@@ -67,9 +67,10 @@ public:
 
   void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
     int iswap = ref%comm->nswap;
+    // Block* block = block_proxy(thisIndex).ckLocal();
     append_debug_string("post called by iswap index "+std::to_string(iswap)+" on index "+std::to_string(comm->index)+"\n");
     comm->nrecv = size / (sizeof(MMD_float)*atom.border_size);
-    append_debug_string("setting nrecv to "+std::to_string(comm->nrecv)+"\n");
+    // append_debug_string("setting nrecv to "+std::to_string(comm->nrecv)+"\n");
     if (size / sizeof(MMD_float) > comm->maxrecv) {
       comm->growrecv( size / sizeof(MMD_float));
       Kokkos::fence();
@@ -80,6 +81,7 @@ public:
 
   void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
   int recv_idim = ref % 3;
+  append_debug_string("post called by iswap index "+std::to_string(recv_idim)+" on index "+std::to_string(comm->index)+"\n");
   size_t start_idx = comm->post_exchange_recv_count;
   comm->nrecv1 = size/sizeof(MMD_float);
   comm->nrecv+=size/sizeof(MMD_float);

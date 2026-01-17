@@ -243,8 +243,6 @@ void Block::run(){
         atom.sort(neighbor);
       comm->borders(atom, true);
 
-      print_debug_string();
-
       force->evflag = 1;
       Kokkos::fence();
 

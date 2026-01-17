@@ -320,6 +320,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       
       suspend(compute_instance);
       block_proxy[thisIndex].comms_1(iswap, CkCallbackResumeThread());
+      // ckout<<"["<<index<<"] ending comms1"<<endl;
       block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
       buf = buf_recv;
@@ -484,6 +485,9 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   //NVTXTracer("Comm::exchange", NVTXColor::WetAsphalt);
   // Kokkos::Profiling::pushRegion("exchange");
   // ckout<<"["<<index<<"] starting exchange"<<endl;
+    Block* block = block_proxy(thisIndex).ckLocal();
+  block->append_debug_string("====chare "+std::to_string(index)+"===== exchange\n");
+
   atom = atom_;
 
   /* enforce PBC */
@@ -568,6 +572,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     send2_chare = chareneigh[idim][1];
     suspend(compute_instance);
     block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
+    // ckout<<"["<<index<<"] starting exchange1"<<endl;
 
     /*
     MPI_Sendrecv(&nsend, 1, MPI_INT, chareneigh[idim][0], 0,
@@ -629,6 +634,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   }
   // wait(compute_instance, compute_instance);
   atom_ = atom;
+  // block->print_debug_string();
   // ckout<<"["<<index<<"] done exchange"<<endl;
 }
 
@@ -702,8 +708,8 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   iswap = 0;
 
-    Block* block = block_proxy(thisIndex).ckLocal();
-    block->append_debug_string("====chare "+std::to_string(index)+"=====\n");
+  Block* block = block_proxy(thisIndex).ckLocal();
+  block->append_debug_string("====chare "+std::to_string(index)+"=====\n");
 
   if(atom.nlocal > maxnlocal) {
     send_flag = int_1d_view_type("Comm::sendflag",atom.nlocal);
@@ -777,11 +783,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
           send1 = static_cast<void*>(buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
           send1_chare = sendchare[iswap];
-          block->append_debug_string("chare "+std::to_string(index)+" done packing for iswap "+std::to_string(iswap)+" for chare " +std::to_string(send1_chare)+" will send "+std::to_string(nsend)+" atoms \n");
+          // block->append_debug_string("chare "+std::to_string(index)+" done packing for iswap "+std::to_string(iswap)+" for chare " +std::to_string(send1_chare)+" will send "+std::to_string(nsend)+" atoms \n");
           // auto buf_send_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),buf_send );
           // block->append_debug_string("chare "+std::to_string(index)+" sample send "+std::to_string(buf_send_h(0)) +" "+std::to_string(buf_send_h(4))+" "+std::to_string(buf_send_h(4*(nsend-1))) +"\n");
           block_proxy[thisIndex].borders_1(iswap, CkCallbackResumeThread());
-          
+          // ckout<<"["<<index<<"] done borders1"<<endl;
 
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
           
@@ -805,7 +811,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
       compute_instance.fence();
       // auto buf_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), buf);
       // block->append_debug_string("chare "+std::to_string(index)+" sample recv (buf) "+std::to_string(buf_h(0)) +" "+std::to_string(buf_h(4))+" "+std::to_string(buf_h(4*(nrecv-1))) +"\n");
-      block->append_debug_string("chare "+std::to_string(index)+" done unpacking for iswap "+std::to_string(iswap)+" nrecv="+std::to_string(nrecv)+"\n");
+      // block->append_debug_string("chare "+std::to_string(index)+" done unpacking for iswap "+std::to_string(iswap)+" nrecv="+std::to_string(nrecv)+"\n");
       // set all pointers & counters
       sendnum[iswap] = nsend;
         recvnum[iswap] = nrecv;
@@ -816,9 +822,10 @@ void Comm::borders(Atom &atom_, bool preprocess)
         firstrecv[iswap] = atom.nlocal + atom.nghost;
         atom.nghost += nrecv;
 
-        iswap++;        
+        iswap++;  
+      }
     }
-  }
+    // block->print_debug_string();
 
   // wait(compute_instance, compute_instance);
   /* insure buffers are large enough for reverse comm */
