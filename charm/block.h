@@ -27,6 +27,7 @@ public:
   int reductionCount=0;
   MMD_float reductionSum=0;
   double total_time=0;
+  double start_time=0;
 
   Kokkos::Cuda compute_instance;
   Kokkos::Cuda h2d_instance;
