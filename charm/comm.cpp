@@ -315,6 +315,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       
       send1 = buf_send.data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
+      // ckout<<"send1_size "<<send1_size<<endl;
       send1_chare = sendchare[iswap];
       
       suspend(pack_instance);

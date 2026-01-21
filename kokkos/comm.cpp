@@ -49,7 +49,7 @@ Comm::Comm()
   check_safeexchange = 0;
   do_safeexchange = 0;
   maxnlocal = 0;
-  count = Kokkos::DualView<int*>("comm::count",1);
+  count = Kokkos::DualView<int*>("comm::count",3);
   mirrors_created = false;
 }
 
@@ -433,25 +433,23 @@ void Comm::exchange(Atom &atom_)
       if (count.h_view(0)*7>=maxsend)
         growsend(count.h_view(0));
     }
-    h_exc_sendflag = Kokkos::create_mirror_view(exc_sendflag);
-    h_exc_copylist = Kokkos::create_mirror_view(exc_copylist);
-    h_exc_sendlist = Kokkos::create_mirror_view(exc_sendlist);
+    nsend_atoms = count.h_view(0);
+    nlocal_new = nlocal - nsend_atoms;
 
-    Kokkos::deep_copy(h_exc_sendflag,exc_sendflag);
-    Kokkos::deep_copy(h_exc_copylist,exc_copylist);
-    Kokkos::deep_copy(h_exc_sendlist,exc_sendlist);
-
-    int sendpos = nlocal-1;
-    nlocal -= count.h_view(0);
-    for(int i = 0; i < count.h_view(0); i++) {
-      if (h_exc_sendlist(i)<nlocal) {
-        while (h_exc_sendflag(sendpos)) sendpos--;
-        h_exc_copylist(i) = sendpos;
-        sendpos--;
-      } else
-        h_exc_copylist(i) = -1;
+    if (replacement_indices.extent(0) < nsend_atoms) {
+      Kokkos::resize(replacement_indices, (nsend_atoms + 1) * 1.5);
     }
-    Kokkos::deep_copy(exc_copylist,h_exc_copylist);
+
+    count.h_view(1) = 0;
+    count.h_view(2) = 0;
+    count.modify<HostType>();
+    count.sync<DeviceType>();
+
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillReplacementList>(0, nsend_atoms), *this);
+    Kokkos::fence();
+
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(0, nsend_atoms), *this);
+    Kokkos::fence();
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.h_view(0)),*this);
 
@@ -545,6 +543,38 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
 
   if(value >= lo && value < hi)
     atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.d_view(0),1), &buf_recv[i * 7]);
+}
+KOKKOS_INLINE_FUNCTION
+void Comm::operator() (TagExchangeFillReplacementList, const int& i) const {
+  // Iterate over the "dead zone" [nlocal_new, nlocal_new + nsend_atoms)
+  // We scan from the end backwards to match original sendpos-- logic
+  int tail_idx = nlocal_new + (nsend_atoms - 1 - i);  // reverse order
+  
+  // If this atom is NOT being sent, it's a valid replacement
+  if (exc_sendflag(tail_idx) == 0) {
+    int slot = Kokkos::atomic_fetch_add(&count.d_view(1), 1);
+    if (slot < replacement_indices.extent(0)) {
+      replacement_indices(slot) = tail_idx;
+    }
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void Comm::operator() (TagExchangeFillCopyList, const int& i) const {
+  int send_idx = exc_sendlist(i);
+  
+  if (send_idx < nlocal_new) {
+    // This is a "hole" - need to fill it with a replacement atom
+    int slot = Kokkos::atomic_fetch_add(&count.d_view(2), 1);
+    if (slot < replacement_indices.extent(0)) {
+      exc_copylist(i) = replacement_indices(slot);
+    } else {
+      exc_copylist(i) = -1;
+    }
+  } else {
+    // Atom is in the dead zone, no copy needed
+    exc_copylist(i) = -1;
+  }
 }
 
 /* borders:

@@ -308,7 +308,7 @@ int main(int argc, char** argv)
 
   Kokkos::InitializationSettings args_kokkos;
   if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
-  args_kokkos.set_device_id(0);
+  args_kokkos.set_device_id(me);
   Kokkos::initialize(args_kokkos);
   // Scope Guard
   {
@@ -475,9 +475,6 @@ int main(int argc, char** argv)
   if(me == 0)
     printf("# Done .... \n");
 
-  // printf("==deets==\n");
-  // printf("num atoms %i\n", atom.nlocal);
-
   if(me == 0) {
     fprintf(stdout, "# " VARIANT_STRING " output ...\n");
     fprintf(stdout, "# Run Settings: \n");
@@ -509,7 +506,6 @@ int main(int argc, char** argv)
     fprintf(stdout, "\t# Size of float: %i\n\n", (int) sizeof(MMD_float));
   }
 
-  // thermo.compute(0, atom, neighbor, force, timer, comm);
 
   comm.exchange(atom);
   if(sort>0)
@@ -532,8 +528,10 @@ int main(int argc, char** argv)
     thermo.compute(0, atom, neighbor, force, timer, comm);
   }
 
+  Kokkos::fence();// to make sure everything before this has finished before timing
   timer.barrier_start(TIME_TOTAL);
   integrate.run(atom, force, neighbor, comm, thermo, timer);
+  Kokkos::fence();
   timer.barrier_stop(TIME_TOTAL);
 
   int natoms;
@@ -573,4 +571,3 @@ int main(int argc, char** argv)
   MPI_Finalize();
   return 0;
 }
-

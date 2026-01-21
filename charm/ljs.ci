@@ -201,7 +201,7 @@ module block {
     entry void start_iterations();
     entry [reductiontarget]  void markstart_recv(){
       serial {
-        total_time = 0;
+        start_time = CkWallTimer();
         thisProxy.start_iterations();
       }
     }
@@ -220,6 +220,7 @@ module block {
     entry void end_iterations();
     entry [reductiontarget]  void markdone_recv(){
       serial {
+        total_time = CkWallTimer() - start_time;
         CkPrintf("[Block %d] Total time (exclude 1st iteration): %.6lf s\n", thisIndex,  total_time);
         CkPrintf("[Block %d] Average time per iteration: %.6lf s\n", thisIndex,  total_time / (integrate.ntimes-1));
         thisProxy.end_iterations();

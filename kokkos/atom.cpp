@@ -119,9 +119,9 @@ void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in,
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
 
   if(pbc_flags[0] == 0) {
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomPackCommNoPBC>(0,n), *this);
+    Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagAtomPackCommNoPBC>(0,n), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   } else {
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomPackCommPBC>(0,n), *this);
+    Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagAtomPackCommPBC>(0,n), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   }
 }
 
@@ -130,7 +130,7 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
   unpack_comm_count++;
   first = first_in;
   buf = buf_in;
-  Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomUnpackComm>(0,n), *this);
+  Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagAtomUnpackComm>(0,n),Kokkos::Experimental::WorkItemProperty::HintLightWeight) , *this);
 }
 
 void Atom::pack_comm_self(int n, int_1d_view_type list_in, int first_in, int* pbc_flags_in)
@@ -141,9 +141,11 @@ void Atom::pack_comm_self(int n, int_1d_view_type list_in, int first_in, int* pb
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
 
   if(pbc_flags[0] == 0) {
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomPackCommSelfNoPBC>(0,n), *this);
+    Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagAtomPackCommSelfNoPBC>(0,n),
+     Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   } else {
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomPackCommSelfPBC>(0,n), *this);
+    Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagAtomPackCommSelfPBC>(0,n), 
+    Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
   }
 }
 
@@ -231,5 +233,3 @@ void Atom::sort(Neighbor &neighbor)
   v_copy = v_tmp;
   type_copy = type_tmp;
 }
-
-

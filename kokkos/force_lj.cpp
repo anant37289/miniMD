@@ -294,14 +294,18 @@ void ForceLJ::compute_halfneigh_threaded(Atom &atom, Neighbor &neighbor, int me)
 
   if(ntypes>MAX_STACK_TYPES) {
     if(EVFLAG)
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<TagComputeHalfNeighThread<1,GHOST_NEWTON,0> >(0,nlocal), *this , t_eng_virial);
+      Kokkos::parallel_reduce(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeHalfNeighThread<1,GHOST_NEWTON,0> >(0,nlocal),
+        Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this , t_eng_virial);
     else
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagComputeHalfNeighThread<0,GHOST_NEWTON,0> >(0,nlocal), *this );
+      Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeHalfNeighThread<0,GHOST_NEWTON,0> >(0,nlocal),
+        Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this );
   } else {
     if(EVFLAG)
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<TagComputeHalfNeighThread<1,GHOST_NEWTON,1> >(0,nlocal), *this , t_eng_virial);
+      Kokkos::parallel_reduce(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeHalfNeighThread<1,GHOST_NEWTON,1> >(0,nlocal),
+        Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this , t_eng_virial);
     else
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagComputeHalfNeighThread<0,GHOST_NEWTON,1> >(0,nlocal), *this );
+      Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeHalfNeighThread<0,GHOST_NEWTON,1> >(0,nlocal),
+        Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this );
   }
   eng_vdwl += t_eng_virial.eng;
   virial += t_eng_virial.virial;
@@ -322,14 +326,14 @@ void ForceLJ::compute_fullneigh(Atom &atom, Neighbor &neighbor, int me)
 
   if(ntypes>MAX_STACK_TYPES) {
     if(EVFLAG)
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<TagComputeFullNeigh<1,0> >(0,nlocal), *this , t_eng_virial);
+      Kokkos::parallel_reduce(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeFullNeigh<1,0> >(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this , t_eng_virial);
     else
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagComputeFullNeigh<0,0> >(0,nlocal), *this );
+      Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeFullNeigh<0,0> >(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this );
   } else {
     if(EVFLAG)
-      Kokkos::parallel_reduce(Kokkos::RangePolicy<TagComputeFullNeigh<1,1> >(0,nlocal), *this , t_eng_virial);
+      Kokkos::parallel_reduce(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeFullNeigh<1,1> >(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this , t_eng_virial);
     else
-      Kokkos::parallel_for(Kokkos::RangePolicy<TagComputeFullNeigh<0,1> >(0,nlocal), *this );
+      Kokkos::parallel_for(Kokkos::Experimental::require(Kokkos::RangePolicy<TagComputeFullNeigh<0,1> >(0,nlocal), Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this );
   }
   t_eng_virial.eng *= 4.0;
   t_eng_virial.virial *= 0.5;
@@ -455,4 +459,3 @@ void ForceLJ::operator() (TagComputeFullNeigh<EVFLAG,STACK_PARAMS> , const int& 
   f(i,1) += fiy;
   f(i,2) += fiz;
 }
-

@@ -240,8 +240,7 @@ void Block::run(){
       comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
-        {
-          atom.sort(neighbor);}
+          atom.sort(neighbor);
       comm->borders(atom, true);
 
       force->evflag = 1;
@@ -253,11 +252,12 @@ void Block::run(){
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
       
-      thermo.compute(0, atom, neighbor, force, comm);
+      thermo.compute(0, atom, neighbor, force, comm);//to check if Init is done correctly
 
       Kokkos::fence();
       //Main iteration loop
       // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
+      thisProxy[thisIndex].mark_start(CkCallbackResumeThread());
       {
         int i, n;
 
@@ -267,10 +267,9 @@ void Block::run(){
         integrate.dtforce = integrate.dtforce / integrate.mass;
 
         int next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
-        double total_time = 0;
 
         for(n = 0; n < integrate.ntimes; n++) {
-          double iter_start_time = CkWallTimer();
+          //start timing with iteration 1
           if (integrate.index == 0 && (n == 0 || n % 10 == 0)) {
             CkPrintf("[Block] Starting iteration %d\n", n);
           }
@@ -369,16 +368,10 @@ void Block::run(){
       */
 
       // Don't include first iteration time
-      if (n > 0) {
-        total_time += CkWallTimer() - iter_start_time;
-      }
     }
-
-    if (integrate.index == 0) {
-      CkPrintf("[Block] Total time (exclude 1st iteration): %.6lf s\n", total_time);
-      CkPrintf("[Block] Average time per iteration: %.6lf s\n", total_time / (integrate.ntimes-1));
-    }
-      }
+  }
+  compute_instance.fence();
+  thisProxy[thisIndex].mark_done(CkCallbackResumeThread());
 
       force->evflag = 1;
       force->compute(atom, neighbor, comm, thisIndex);
