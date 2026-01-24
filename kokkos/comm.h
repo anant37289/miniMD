@@ -136,6 +136,8 @@ class Comm
     int_1d_view_type send_flag;
     int maxnlocal;
     int nrecv_atoms;
+    double iter_start_time;
+    double comm_time;
 
   private:
     Atom atom;

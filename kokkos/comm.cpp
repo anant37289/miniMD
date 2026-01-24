@@ -51,6 +51,7 @@ Comm::Comm()
   maxnlocal = 0;
   count = Kokkos::DualView<int*>("comm::count",3);
   mirrors_created = false;
+  comm_time = 0.0;
 }
 
 Comm::~Comm() {}
@@ -322,7 +323,6 @@ void Comm::communicate(Atom &atom)
       Kokkos::fence();
   }
 
-  Kokkos::Profiling::popRegion();
 }
 
 /* reverse communication of atom info every timestep */
@@ -373,6 +373,10 @@ void Comm::reverse_communicate(Atom &atom)
 
 void Comm::exchange(Atom &atom_)
 {
+  if(me==0){
+    Kokkos::fence();
+    iter_start_time = MPI_Wtime();
+  }
   Kokkos::Profiling::pushRegion("exchange");
   atom = atom_;
   int nsend, nrecv, nrecv1, nrecv2, nlocal;
@@ -509,6 +513,11 @@ void Comm::exchange(Atom &atom_)
     Kokkos::fence();
 
   }
+
+  if(me==0){
+    Kokkos::fence();
+    comm_time += MPI_Wtime() - iter_start_time;
+  }
   atom_ = atom;
   Kokkos::Profiling::popRegion();
 }
@@ -591,6 +600,11 @@ void Comm::borders(Atom &atom_)
   Kokkos::Profiling::pushRegion("Comm::borders");
   atom = atom_;
   int ineed, nsend, nrecv, nfirst, nlast;
+
+  if(me==0){
+    Kokkos::fence();
+    iter_start_time = MPI_Wtime();
+  }
 
   /* erase all ghost atoms */
 
@@ -712,6 +726,10 @@ void Comm::borders(Atom &atom_)
     }
   }
 
+  if(me==0){
+    Kokkos::fence();
+    comm_time += MPI_Wtime() - iter_start_time;
+  }
   /* insure buffers are large enough for reverse comm */
 
   int max1, max2;

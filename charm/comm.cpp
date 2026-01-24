@@ -69,6 +69,7 @@ Comm::Comm()
 
   // Save pointer to Block bound array element
   iter = 0;
+  comm_time=0.0;
 }
 
 Comm::~Comm() {}

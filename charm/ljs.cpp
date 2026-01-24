@@ -51,6 +51,7 @@
 /* readonly */ MMD_float in_force_cut;
 /* readonly */ MMD_float in_neigh_cut;
 /* readonly */ int in_thermo_nstat;
+/* readonly */ bool time_segments;
 
 extern int input(const char* filename, int& in_nx, int& in_ny, int& in_nz,
     MMD_float& in_t_request, MMD_float& in_rho, int& in_units,
@@ -165,6 +166,11 @@ public:
 
       if ((strcmp(m->argv[i], "--half_neigh") == 0))  {
         halfneigh = atoi(m->argv[++i]);
+        continue;
+      }
+
+      if((strcmp(m->argv[i], "--time_segments")==0))  {
+        time_segments = atoi(m->argv[++i]);
         continue;
       }
 

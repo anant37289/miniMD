@@ -28,6 +28,10 @@ public:
   MMD_float reductionSum=0;
   double total_time=0;
   double start_time=0;
+  double iter_start_time;
+  double comm_time=0;
+  double force_time=0;
+  double neigh_time=0;
 
   Kokkos::Cuda compute_instance;
   Kokkos::Cuda h2d_instance;
@@ -53,6 +57,9 @@ public:
   void run_neighbour_build(CkCallback cb);
   void run();
   void printConfig();
+  void suspend(Kokkos::Cuda instance){
+    hapiAddCallback(instance.cuda_stream(), CkCallbackResumeThread());
+  }
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
       postInfo[0].hapi_stream = pack_instance.cuda_stream();
       data = (char*)(comm->buf_recv.data());

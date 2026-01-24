@@ -95,12 +95,14 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
       nlocal = atom.nlocal;
 
       initialIntegrate();
+      Kokkos::fence();
 
       timer.stamp();
 
       if((n + 1) % neighbor.every) {
 
         comm.communicate(atom);
+        Kokkos::fence();
         timer.stamp(TIME_COMM);
 
       } else {
@@ -141,14 +143,15 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
           }
 
-          timer.stamp_extra_start();
+          // timer.stamp_extra_start();
           comm.exchange(atom);
           if(n+1>=next_sort) {
             atom.sort(neighbor);
             next_sort +=  sort_every;
           }
           comm.borders(atom);
-          timer.stamp_extra_stop(TIME_TEST);
+          Kokkos::fence();
+          // timer.stamp_extra_stop(TIME_TEST);
           timer.stamp(TIME_COMM);
 
         Kokkos::fence();
@@ -164,6 +167,7 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
       force->evflag = (n + 1) % thermo.nstat == 0;
       force->compute(atom, neighbor, comm, comm.me);
       Kokkos::Profiling::popRegion();
+      Kokkos::fence();
 
       timer.stamp(TIME_FORCE);
 

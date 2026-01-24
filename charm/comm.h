@@ -170,6 +170,8 @@ class Comm : public CBase_Comm
     x_view_type x;
     int pbc_flags[4];
     int_1d_atomic_view_type send_count;
+    double comm_time;
+    double iter_strat_time;
 };
 
 #endif

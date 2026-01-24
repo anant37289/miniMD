@@ -528,6 +528,7 @@ int main(int argc, char** argv)
     thermo.compute(0, atom, neighbor, force, timer, comm);
   }
 
+  comm.comm_time = 0.0;
   Kokkos::fence();// to make sure everything before this has finished before timing
   timer.barrier_start(TIME_TOTAL);
   integrate.run(atom, force, neighbor, comm, thermo, timer);
@@ -554,6 +555,8 @@ int main(int argc, char** argv)
            nprocs, num_threads, integrate.ntimes, natoms,
            timer.array[TIME_TOTAL], timer.array[TIME_FORCE], timer.array[TIME_NEIGH], timer.array[TIME_COMM], time_other,
            1.0 * natoms * integrate.ntimes / timer.array[TIME_TOTAL], 1.0 * natoms * integrate.ntimes / timer.array[TIME_TOTAL] / nprocs / num_threads, timer.array[TIME_TEST]);
+
+    printf("# comm time %lf\n", comm.comm_time);
 
   }
 
