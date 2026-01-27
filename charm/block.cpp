@@ -241,7 +241,7 @@ void Block::run(){
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
         atom.sort(neighbor);
-      // comm->borders(atom, true);
+      comm->borders(atom, true);
 
       force->evflag = 1;
       Kokkos::fence();
@@ -293,6 +293,7 @@ void Block::run(){
             What it does: It assumes the list of atoms that are "ghosts" (neighbors on other processors) has not changed. It only updates their coordinates (and potentially velocities).
             Why: This is very fast because it reuses the pre-calculated sendlist and recvlist. It doesn't need to search for atoms or resize buffers. It just packs the new x values of the same atoms and sends them.
             */
+           if(n!=1) 
             comm->communicate(atom, false);
 
           } else {
