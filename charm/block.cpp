@@ -237,11 +237,11 @@ void Block::init() {
 
 void Block::run(){
       // thermo.compute(0, atom, neighbor, force, comm);
-      comm->exchange(atom, true);
+      // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
         atom.sort(neighbor);
-      comm->borders(atom, true);
+      // comm->borders(atom, true);
 
       force->evflag = 1;
       Kokkos::fence();
@@ -251,8 +251,8 @@ void Block::run(){
       Kokkos::fence();
       // neighbor.build(atom);
       force->compute(atom, neighbor, comm, thisIndex);
-      if (neighbor.halfneigh && neighbor.ghost_newton)
-        comm->reverse_communicate(atom, true);
+      // if (neighbor.halfneigh && neighbor.ghost_newton)
+        // comm->reverse_communicate(atom, true);
       
       thermo.compute(0, atom, neighbor, force, comm);
 
