@@ -238,7 +238,7 @@ void Block::init() {
 
 void Block::run(){
       thermo.compute(0, atom, neighbor, force, comm);
-      comm->exchange(atom, true);
+      // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       if (sort > 0)
           atom.sort(neighbor);

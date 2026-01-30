@@ -312,7 +312,8 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
     // Pack buffer
     if (sendchare[iswap] != index) {
-      atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
+      if(comm_send_size[iswap]>0)
+        atom.pack_comm(sendnum[iswap], list, buf_send, pbc_flags);
       
       send1 = buf_send.data();
       send1_size = comm_send_size[iswap] * sizeof(MMD_float);
@@ -320,11 +321,17 @@ void Comm::communicate(Atom &atom, bool preprocess)
       send1_chare = sendchare[iswap];
       
       suspend(pack_instance);
-      block_proxy[thisIndex].comms_1(iswap, CkCallbackResumeThread());
-      block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
+      block_proxy[thisIndex].comms_notify(iswap, CkCallbackResumeThread());
+
+      if(comm_send_size[iswap]>0)
+        block_proxy[thisIndex].comms_send(iswap, CkCallbackResumeThread());
+
+      if(comm_recv_size[iswap]>0)
+        block_proxy[thisIndex].comms_recv_wait(iswap, CkCallbackResumeThread());
 
       buf = buf_recv;
-      atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
+      if(comm_recv_size[iswap]>0)
+        atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
     } else {
       // No need to synchronize for self packing
       atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);
@@ -386,7 +393,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
         send1_size = reverse_send_size[iswap] * sizeof(MMD_float);
         send1_chare = recvchare[iswap];
         recv1 = h_buf_recv.data();
-        block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
+        // block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
         // Move received data to device
         Kokkos::deep_copy(h2d_instance, buf_recv, h_buf_recv);
@@ -484,6 +491,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 {
   //NVTXTracer("Comm::exchange", NVTXColor::WetAsphalt);
   // Kokkos::Profiling::pushRegion("exchange");
+  // ckout<<"comm::exchange"<<endl;
   atom = atom_;
 
   /* enforce PBC */
@@ -533,6 +541,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       Kokkos::deep_copy(pack_instance, count_host, count_device);
       
       suspend(pack_instance);
+
+      // ckout<<"["<<thisIndex<<", "<<idim<<"] nsend"<<count_host(0)<<endl;
       
       if ((count_host(0)>=exc_sendlist.extent(0)) ||
           (count_host(0)>=exc_copylist.extent(0)) ) {
@@ -564,11 +574,13 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nsend = count_host(0) * 7;
     nrecv = 0;
     post_exchange_recv_count = 0;
+    send1 = static_cast<void*>(buf_send.data());
+    send1_size = nsend * sizeof(MMD_float);
     send1_chare = chareneigh[idim][0];
+    send2 = static_cast<void*>(buf_send.data());
+    send2_size = nsend * sizeof(MMD_float);
     send2_chare = chareneigh[idim][1];
-    suspend(pack_instance);
-    block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
-
+    // ckout<<"["<<thisIndex<<", "<<idim<<"] nsend"<<count_host(0)<<endl;
     /*
     MPI_Sendrecv(&nsend, 1, MPI_INT, chareneigh[idim][0], 0,
                  &nrecv1, 1, MPI_INT, chareneigh[idim][1], 0,
@@ -583,13 +595,26 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     }
     */
 
-    send1 = static_cast<void*>(buf_send.data());
-    send1_size = nsend * sizeof(MMD_float);
-    send1_chare = chareneigh[idim][0];
-    send2 = static_cast<void*>(buf_send.data());
-    send2_size = nsend * sizeof(MMD_float);
-    send2_chare = chareneigh[idim][1];
-    block_proxy[thisIndex].exchange_2(idim, CkCallbackResumeThread());
+    suspend(pack_instance);
+    block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
+    // ckout<<"chare "<<thisIndex<<endl;
+    // ckout<<"send1_size "<<send1_size<<"\n";
+    // ckout<<"send2_size "<<send2_size<<"\n";
+    // ckout<<"nrecv1 "<<nrecv1<<"\n";
+    // ckout<<"nrecv2 "<<nrecv2<<endl;
+    if(send1_size>0)
+      block_proxy[thisIndex].exchange_2_send_1(idim, CkCallbackResumeThread());
+
+    if (charegrid[idim] > 2 && send2_size>0)
+      block_proxy[thisIndex].exchange_2_send_2(idim, CkCallbackResumeThread());
+
+    if(nrecv1>0)
+      block_proxy[thisIndex].exchange_2_recv_1_wait(idim, CkCallbackResumeThread());
+
+    if(nrecv2>0 && charegrid[idim] > 2)
+      block_proxy[thisIndex].exchange_2_recv_2_wait(idim, CkCallbackResumeThread());
+
+    block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;

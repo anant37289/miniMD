@@ -61,11 +61,13 @@ public:
     hapiAddCallback(instance.cuda_stream(), CkCallbackResumeThread());
   }
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+      // ckout<<"comms_recv recv_size "<<size<<endl;
       postInfo[0].hapi_stream = pack_instance.cuda_stream();
       data = (char*)(comm->buf_recv.data());
   }
 
   void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+    // ckout<<"borders_recv_2 recv_size "<<size<<endl;
     comm->nrecv = size / (sizeof(MMD_float)*atom.border_size);
     if (size / sizeof(MMD_float) > comm->maxrecv) {
       comm->growrecv( size / sizeof(MMD_float));
@@ -76,6 +78,7 @@ public:
   }
 
   void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+  // ckout<<"exchange_2_recv_1 recv size "<<size<<endl;
   int recv_idim = ref % 3;
   size_t start_idx = comm->post_exchange_recv_count;
   comm->nrecv1 = size/sizeof(MMD_float);
@@ -90,6 +93,7 @@ public:
 }
 
 void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+  // ckout<<"exchange_2_recv_2 recv size "<<size<<endl;
   int recv_idim = ref % 3;
   size_t start_idx = comm->post_exchange_recv_count;
   comm->nrecv2 = size/sizeof(MMD_float);
