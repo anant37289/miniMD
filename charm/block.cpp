@@ -76,12 +76,18 @@ void Block::init() {
   }
 
   // Store CUDA execution instances
-  kokkos_manager = kokkos_proxy.ckLocalBranch();
-  compute_instance = kokkos_manager->instances->compute_instance;
-  h2d_instance = kokkos_manager->instances->h2d_instance;
-  d2h_instance = kokkos_manager->instances->d2h_instance;
-  pack_instance = kokkos_manager->instances->pack_instance;
-  unpack_instance = kokkos_manager->instances->unpack_instance;
+
+  hapiCheck(cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0));
+  hapiCheck(cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1));
+
+  compute_instance = Kokkos::Cuda(compute_stream);
+  h2d_instance = Kokkos::Cuda(h2d_stream);
+  d2h_instance = Kokkos::Cuda(d2h_stream);
+  pack_instance = Kokkos::Cuda(pack_stream);
+  unpack_instance = Kokkos::Cuda(unpack_stream);
 
   atom.compute_instance = compute_instance;
   atom.h2d_instance = h2d_instance;
@@ -235,6 +241,7 @@ void Block::init() {
    CkCallback cb(CkCallback(CkReductionTarget(Main, reduceVelocity), main_proxy));
    contribute(3*sizeof(double), vtot, CkReduction::set, cb);
 }
+
 
 void Block::run(){
       thermo.compute(0, atom, neighbor, force, comm);

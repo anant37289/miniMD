@@ -139,6 +139,7 @@ class Comm : public CBase_Comm
     bool h_buf_alloc;
     int maxsend;
     int maxrecv;
+    int* maxrecvcomm;
 
     int chareneigh[3][2];              // my 6 chare neighbors
     int charegrid[3];                  // # of chares in each dim
@@ -161,6 +162,7 @@ class Comm : public CBase_Comm
     int send1_chare, send2_chare, recv1_chare, recv2_chare;
     int maxswap_static;
     CkCallbackResumeThread* resume_cb;
+    
 
   public:
     Atom atom;

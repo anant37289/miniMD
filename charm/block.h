@@ -39,6 +39,12 @@ public:
   Kokkos::Cuda pack_instance;
   Kokkos::Cuda unpack_instance;
 
+  cudaStream_t compute_stream;
+  cudaStream_t h2d_stream;
+  cudaStream_t d2h_stream;
+  cudaStream_t pack_stream;
+  cudaStream_t unpack_stream;
+
   // For thermo communication
   int i;
 
@@ -51,6 +57,16 @@ public:
 public:
   Block();
 
+  ~Block(){
+    //may want to delete instances[?]
+    cudaStreamDestroy(compute_stream);
+    cudaStreamDestroy(h2d_stream);
+    cudaStreamDestroy(d2h_stream);
+    cudaStreamDestroy(pack_stream);
+    cudaStreamDestroy(unpack_stream);
+  }
+
+
   void saveBoundArray();
   void init();
   void contCreateVelocity(double vxtot, double vytot, double vztot);
@@ -62,8 +78,10 @@ public:
   }
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
       // ckout<<"comms_recv recv_size "<<size<<endl;
+      int iswap = ref%comm->nswap;
+
       postInfo[0].hapi_stream = pack_instance.cuda_stream();
-      data = (char*)(comm->buf_recv.data());
+      data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
   void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
@@ -106,9 +124,6 @@ void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* po
   data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
   comm->post_exchange_recv_count += size/sizeof(MMD_float);
 }
-
-
-  ~Block() {}
 };
 
 #endif // BLOCK_H_

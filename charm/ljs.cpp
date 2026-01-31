@@ -274,36 +274,10 @@ void KokkosManager::initialize() {
   }
   ckout<<"at barrier"<<endl;
   CmiNodeBarrier();
-  
-  // Create per-GPU streams (only works with 1 process per GPU)
-  hapiCheck(cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0));
-  hapiCheck(cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1));
-
-  // Create CUDA execution instances using streams
-  instances = new InstanceHolder;
-  instances->compute_instance = Kokkos::Cuda(compute_stream);
-  instances->h2d_instance = Kokkos::Cuda(h2d_stream);
-  instances->d2h_instance = Kokkos::Cuda(d2h_stream);
-  instances->pack_instance = Kokkos::Cuda(pack_stream);
-  instances->unpack_instance = Kokkos::Cuda(unpack_stream);
-
   contribute(CkCallback(CkReductionTarget(Main, kokkosInitialized), main_proxy));
 }
 
 void KokkosManager::finalize() {
-  // Destroy instance holder
-  delete instances;
-
-  // Destroy streams
-  cudaStreamDestroy(compute_stream);
-  cudaStreamDestroy(h2d_stream);
-  cudaStreamDestroy(d2h_stream);
-  cudaStreamDestroy(pack_stream);
-  cudaStreamDestroy(unpack_stream);
-
   // Finalize Kokkos
   if(CmiMyRank()==0){
     Kokkos::finalize();

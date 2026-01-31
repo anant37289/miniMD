@@ -202,13 +202,22 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
   reverse_recv_size = int_1d_host_view_type("Comm::reverse_recv_size",maxswap);
   firstrecv = int_1d_host_view_type("Comm::firstrecv",maxswap);
   maxsendlist = int_1d_host_view_type("Comm::maxsendlist",maxswap);
+  maxrecvcomm = new int[maxswap];
 
   // XXX: No equivalents to sendproc_exc and recvproc_exc as they were not used
   // in the original code
 
-  for(i = 0; i < maxswap; i++) maxsendlist[i] = BUFMIN;
+  for(i = 0; i < maxswap; i++) {
+    maxsendlist[i] = BUFMIN;
+    maxrecvcomm[i] = BUFMIN;
+  }
 
   sendlist = int_2d_lr_view_type("Comm::sendlist",maxswap,BUFMIN);
+
+  buf_comms_recv = new float_1d_view_type[maxswap];
+  for (int i = 0; i < maxswap; i++) {
+    buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecvcomm[i]);
+  }
 
   /* setup 4 parameters for each exchange: (spart,rpart,slablo,slabhi)
      sendchare(nswap) = chare to send to at each swap
@@ -300,6 +309,22 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
   //push the pack unpack depencency
   wait(compute_instance, pack_instance);
+  suspend(pack_instance);
+
+  //resize recv buffer if not same as buf_recv
+  for(iswap = 0; iswap < nswap; iswap++){
+    if (sendchare[iswap] != index){
+      //notify that recv buffers are ready!!
+      if(buf_comms_recv[iswap].size()!=buf_recv.size())
+        {
+          auto buf_comms_recv_local = buf_comms_recv[iswap];
+          Kokkos::resize(buf_comms_recv_local, 1.5*buf_recv.size());
+          buf_comms_recv[iswap] = buf_comms_recv_local;
+          Kokkos::fence();
+        }
+        block_proxy[thisIndex].comms_notify_recv_ready(iswap, CkCallbackResumeThread());
+    }
+  }
   // Send and recv one buffer at a time
   for(iswap = 0; iswap < nswap; iswap++) {
 
@@ -321,7 +346,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       send1_chare = sendchare[iswap];
       
       suspend(pack_instance);
-      block_proxy[thisIndex].comms_notify(iswap, CkCallbackResumeThread());
+      block_proxy[thisIndex].comms_recv_ready_wait(iswap, CkCallbackResumeThread());
 
       if(comm_send_size[iswap]>0)
         block_proxy[thisIndex].comms_send(iswap, CkCallbackResumeThread());
@@ -329,7 +354,7 @@ void Comm::communicate(Atom &atom, bool preprocess)
       if(comm_recv_size[iswap]>0)
         block_proxy[thisIndex].comms_recv_wait(iswap, CkCallbackResumeThread());
 
-      buf = buf_recv;
+      buf = buf_comms_recv[iswap];
       if(comm_recv_size[iswap]>0)
         atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
     } else {

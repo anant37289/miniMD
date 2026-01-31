@@ -15,14 +15,6 @@ struct InstanceHolder {
 
 class KokkosManager : public CBase_KokkosManager {
 public:
-  cudaStream_t compute_stream;
-  cudaStream_t h2d_stream;
-  cudaStream_t d2h_stream;
-  cudaStream_t pack_stream;
-  cudaStream_t unpack_stream;
-
-  InstanceHolder* instances;
-
   KokkosManager();
   void finalize();
   void initialize();

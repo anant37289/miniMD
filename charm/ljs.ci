@@ -330,11 +330,14 @@ module block {
     entry void borders_recv_1(int ref);
     entry void borders_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
-    entry void comms_notify(int iswap, CkCallback cb) {
+    entry void comms_notify_recv_ready(int iswap, CkCallback cb) {
       serial {
         int tag = comm->nswap*comm->iter + iswap;
         thisProxy[comm->recvchare[iswap]].comms_recv_1(tag);
+        cb.send();
       }
+    }
+    entry void comms_recv_ready_wait(int iswap, CkCallback cb){
       when comms_recv_1[comm->nswap*comm->iter+iswap](int ref) serial {
         cb.send();
       }
