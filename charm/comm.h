@@ -132,7 +132,7 @@ class Comm : public CBase_Comm
 
     // Buffers for commnunicate and reverse_communicate
     float_1d_view_type* buf_comms_send;
-    float_1d_view_type* buf_comms_recv;
+    Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>* buf_comms_recv;
     float_1d_host_view_type* h_buf_comms_send;
     float_1d_host_view_type* h_buf_comms_recv;
 

@@ -214,9 +214,12 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
 
   sendlist = int_2d_lr_view_type("Comm::sendlist",maxswap,BUFMIN);
 
-  buf_comms_recv = new float_1d_view_type[maxswap];
+  buf_comms_recv = new Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>[maxswap];
+  
   for (int i = 0; i < maxswap; i++) {
-    buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecvcomm[i]);
+    MMD_float* device_ptr;
+    cudaMalloc(&device_ptr, BUFMIN*sizeof(MMD_float));
+    buf_comms_recv[i] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(device_ptr, BUFMIN);
   }
 
   /* setup 4 parameters for each exchange: (spart,rpart,slablo,slabhi)
@@ -315,12 +318,14 @@ void Comm::communicate(Atom &atom, bool preprocess)
   for(iswap = 0; iswap < nswap; iswap++){
     if (sendchare[iswap] != index){
       //notify that recv buffers are ready!!
-      if(buf_comms_recv[iswap].size()!=buf_recv.size())
+      if(buf_comms_recv[iswap].size() < buf_recv.size())
         {
-          auto buf_comms_recv_local = buf_comms_recv[iswap];
-          Kokkos::resize(buf_comms_recv_local, 1.5*buf_recv.size());
-          buf_comms_recv[iswap] = buf_comms_recv_local;
-          Kokkos::fence();
+          MMD_float* buf_old = buf_comms_recv[iswap].data();
+          MMD_float* buf_new;
+          hapiCheck(cudaMallocAsync((void**)&buf_new, 1.5*buf_recv.size()*sizeof(MMD_float), pack_instance.cuda_stream()));
+          hapiCheck(cudaMemcpyAsync((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice, pack_instance.cuda_stream()));
+          hapiCheck(cudaFreeAsync((void*)buf_old, pack_instance.cuda_stream()));
+          buf_comms_recv[iswap] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, 1.5*buf_recv.size());
         }
         block_proxy[thisIndex].comms_notify_recv_ready(iswap, CkCallbackResumeThread());
     }
@@ -382,7 +387,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
   if (!preprocess && !h_buf_alloc) {
     h_buf_alloc = true;
     buf_comms_send = new float_1d_view_type[nswap];
-    buf_comms_recv = new float_1d_view_type[nswap];
+    // buf_comms_recv = new float_1d_view_type[nswap];
     h_buf_comms_send = new float_1d_host_view_type[nswap];
     h_buf_comms_recv = new float_1d_host_view_type[nswap];
     for (int i = 0; i < nswap; i++) {
