@@ -229,22 +229,23 @@ module block {
 
 
     // Non-blocking communication routines for Comm:exchange
-    entry void exchange_1(int idim, CkCallback cb) {
+    entry void exchange_notify_recv_ready(int idim, CkCallback cb) {
       serial {
         int tag = 3*comm->iter + idim;
-        thisProxy[comm->send1_chare].exchange_1_recv_1(tag, comm->send1_size);
+        thisProxy[comm->send1_chare].exchange_1_recv_1(tag);
         if (comm->charegrid[idim] > 2) {
-          thisProxy[comm->send2_chare].exchange_1_recv_2(tag, comm->send2_size);
+          thisProxy[comm->send2_chare].exchange_1_recv_2(tag);
         }
+        cb.send();
       }
+    }
 
-      when exchange_1_recv_1[3*comm->iter+idim](int ref, size_t send1_size_) serial {
-        comm->nrecv1 = send1_size_/sizeof(MMD_float);
+    entry void exchange_recv_ready_wait(int idim, CkCallback cb){
+      when exchange_1_recv_1[3*comm->iter+idim](int ref) serial {
       }
       if (comm->charegrid[idim] > 2) {
-        when exchange_1_recv_2[3*comm->iter+idim](int ref, size_t send2_size_) serial {
-          comm->nrecv2 = send2_size_/sizeof(MMD_float);
-        }
+      when exchange_1_recv_2[3*comm->iter+idim](int ref) serial {
+      }
       }
       serial {
         cb.send();
@@ -256,7 +257,12 @@ module block {
         int tag = 3*comm->iter + idim;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-        thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
+        //dealing with 0 size exchanges send and receive in a dummy buffer(mark as a dummy send)
+        if(comm->send1==0)
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy));//no callback needed here
+        else 
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, false, CkDeviceBuffer((char*)comm->send1, cb));
+        
         cb_thread.send();
       }
     }
@@ -266,17 +272,20 @@ module block {
           int tag = 3*comm->iter + idim;
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
           CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-          thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, CkDeviceBuffer((char*)comm->send2, cb));
+          if(comm->send2==0)
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy));//no callback needed here
+          else
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, false, CkDeviceBuffer((char*)comm->send2, cb));
           cb_thread.send();
       }
     }
     entry void exchange_2_recv_1_wait(int idim, CkCallback cb){
-      when exchange_2_recv_1[3*comm->iter+idim](int ref, size_t size, nocopydevice char data[size]) serial {
+      when exchange_2_recv_1[3*comm->iter+idim](int ref, size_t size, bool is_dummy, nocopydevice char data[size]) serial {
         cb.send();
       }
     }
     entry void exchange_2_recv_2_wait(int idim, CkCallback cb){
-      when exchange_2_recv_2[3*comm->iter+idim](int ref, size_t size, nocopydevice char data[size]) serial {
+      when exchange_2_recv_2[3*comm->iter+idim](int ref, size_t size, bool is_dummy, nocopydevice char data[size]) serial {
         cb.send();
       }
     }
@@ -295,10 +304,10 @@ module block {
     }
 
 
-    entry void exchange_1_recv_1(int ref, size_t send1_size);
-    entry void exchange_1_recv_2(int ref, size_t send2_size);
-    entry void exchange_2_recv_1(int ref, size_t size, nocopydevice char data[size]);
-    entry void exchange_2_recv_2(int ref, size_t size, nocopydevice char data[size]);
+    entry void exchange_1_recv_1(int ref);
+    entry void exchange_1_recv_2(int ref);
+    entry void exchange_2_recv_1(int ref, size_t size, bool is_dummy, nocopydevice char data[size]);
+    entry void exchange_2_recv_2(int ref, size_t size, bool is_dummy, nocopydevice char data[size]);
 
     // Non-blocking communication routines for Comm:borders
     entry void borders_notify_recv_ready(int iswap, CkCallback cb) {

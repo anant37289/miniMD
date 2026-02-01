@@ -65,14 +65,17 @@ Comm::Comm()
   count_device = Kokkos::View<int*>("comm::count_device", 3);
   h_exc_alloc = false;
   h_buf_alloc = false;
-  post_exchange_recv_count = 0;
-
+  post_exchange_recv_count = new size_t[3];
+  nrecvexchange = new size_t[6];
+  hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
   // Save pointer to Block bound array element
   iter = 0;
   comm_time=0.0;
 }
 
-Comm::~Comm() {}
+Comm::~Comm() {
+  hapiFree(buf_comm_dummy);
+}
 
 /* setup spatial-decomposition communication patterns */
 
@@ -521,6 +524,14 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   atom.pbc();//wrap around atoms going out of boundry
 
   /* loop over dimensions */
+  for(int idim_=0;idim_<3;idim_++){
+    if(charegrid[idim_]==1) continue;
+    // post_exchange_recv_count[idim_] = 0;
+    // nrecvexchange[2*idim_] = 0;
+    // nrecvexchange[2*idim_+1] = 0;
+    // block_proxy[thisIndex].exchange_notify_recv_ready(idim_, CkCallbackResumeThread());
+    // ckout<<"["<<thisIndex<<"] notify recv ready for dim "<<idim_<<endl;
+  }
 
   for(idim = 0; idim < 3; idim++) {
     /* only exchange if more than one proc in this dimension */
@@ -593,8 +604,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     atom.nlocal -= count_host(0);
 
     nsend = count_host(0) * 7;
-    nrecv = 0;
-    post_exchange_recv_count = 0;
+    // nrecv = 0;
+    // post_exchange_recv_count = 0;
     send1 = static_cast<void*>(buf_send.data());
     send1_size = nsend * sizeof(MMD_float);
     send1_chare = chareneigh[idim][0];
@@ -616,26 +627,47 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     }
     */
 
-    suspend(pack_instance);
-    block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
+    
+    // block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
+    // block_proxy[thisIndex].exchange_notify_recv_ready(idim, CkCallbackResumeThread());
+    
     // ckout<<"chare "<<thisIndex<<endl;
     // ckout<<"send1_size "<<send1_size<<"\n";
     // ckout<<"send2_size "<<send2_size<<"\n";
     // ckout<<"nrecv1 "<<nrecv1<<"\n";
     // ckout<<"nrecv2 "<<nrecv2<<endl;
-    if(send1_size>0)
-      block_proxy[thisIndex].exchange_2_send_1(idim, CkCallbackResumeThread());
+    suspend(pack_instance);
+    // post_exchange_recv_count[idim] = 0;
+    // nrecvexchange[2*idim] = 0;
+    // nrecvexchange[2*idim+1] = 0;
+    post_exchange_recv_count[0] = 0;
+    block_proxy[thisIndex].exchange_notify_recv_ready(idim, CkCallbackResumeThread());
+    // ckout<<"["<<thisIndex<<"] notify recv ready for dim "<<idim_<<endl;
 
-    if (charegrid[idim] > 2 && send2_size>0)
+    block_proxy[thisIndex].exchange_recv_ready_wait(idim, CkCallbackResumeThread());
+    // ckout<<"["<<thisIndex<<"] exhange permission for dim "<<idim<<endl;
+
+
+    block_proxy[thisIndex].exchange_2_send_1(idim, CkCallbackResumeThread());
+
+    if (charegrid[idim] > 2)
       block_proxy[thisIndex].exchange_2_send_2(idim, CkCallbackResumeThread());
+    
+    // ckout<<"["<<thisIndex<<"]"<<"sends done for dim "<<idim<<endl;
 
-    if(nrecv1>0)
-      block_proxy[thisIndex].exchange_2_recv_1_wait(idim, CkCallbackResumeThread());
+    block_proxy[thisIndex].exchange_2_recv_1_wait(idim, CkCallbackResumeThread());
 
-    if(nrecv2>0 && charegrid[idim] > 2)
+    if(charegrid[idim] > 2)
       block_proxy[thisIndex].exchange_2_recv_2_wait(idim, CkCallbackResumeThread());
 
+    // ckout<<"["<<thisIndex<<"]"<<"recieves done for dim "<<idim<<endl;
+
     block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
+
+    // ckout<<"["<<thisIndex<<"] send done wait for dim "<<idim<<endl;
+
+    nrecv = nrecvexchange[2*idim] + nrecvexchange[2*idim+1];
+    cur_buf_recv = buf_comms_recv[idim];
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
@@ -671,7 +703,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       atom.growarray();
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
-
   }
   wait(pack_instance, compute_instance);
   atom_ = atom;

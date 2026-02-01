@@ -127,6 +127,7 @@ class Comm : public CBase_Comm
 
     float_1d_view_type buf_send;                 // send buffer for all comm
     float_1d_view_type buf_recv;                 // recv buffer for all comm
+    float_1d_view_type cur_buf_recv;
     float_1d_view_type buf;
     float_1d_host_view_type h_buf_send;
     float_1d_host_view_type h_buf_recv;
@@ -136,6 +137,7 @@ class Comm : public CBase_Comm
     Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>* buf_comms_recv;
     float_1d_host_view_type* h_buf_comms_send;
     float_1d_host_view_type* h_buf_comms_recv;
+    MMD_float* buf_comm_dummy;
 
     bool h_buf_alloc;
     int maxsend;
@@ -154,11 +156,12 @@ class Comm : public CBase_Comm
     int_1d_view_type send_flag;
     int maxnlocal;
     int nrecv_atoms;
-    int post_exchange_recv_count; //used to coordinate posts in exchange which happen to the same buffer.
+    size_t *post_exchange_recv_count; //used to coordinate posts in exchange which happen to the same buffer.
 
     // Used for Charm++ communication
     int nsend, nrecv, nrecv1, nrecv2, nlocal;
     int* nrecvcomm;
+    size_t* nrecvexchange;
     void *send1, *send2, *recv1, *recv2;
     size_t send1_size, send2_size;
     int send1_chare, send2_chare, recv1_chare, recv2_chare;
