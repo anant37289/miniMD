@@ -64,9 +64,10 @@ Comm::Comm()
   count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 3);
   count_device = Kokkos::View<int*>("comm::count_device", 3);
   hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
+  post_exchange_recv_count = new size_t[3];
+  nrecvexchange = new size_t[6];
   h_exc_alloc = false;
   h_buf_alloc = false;
-  post_exchange_recv_count = 0;
 
   // Save pointer to Block bound array element
   iter = 0;
@@ -520,6 +521,9 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   atom.pbc();//wrap around atoms going out of boundry
 
   /* loop over dimensions */
+  for(int i=0;i<3;i++){
+    if(charegrid[i] == 1) continue;
+  }
 
   for(idim = 0; idim < 3; idim++) {
     /* only exchange if more than one proc in this dimension */
@@ -593,7 +597,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
 
     nsend = count_host(0) * 7;
     nrecv = 0;
-    post_exchange_recv_count = 0;
     send1 = static_cast<void*>(buf_send.data());
     send1_size = nsend * sizeof(MMD_float);
     send1_chare = chareneigh[idim][0];
@@ -616,6 +619,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     */
 
     suspend(pack_instance);
+    post_exchange_recv_count[idim] = 0;
     block_proxy[thisIndex].exchange_notify_recv_ready(idim, CkCallbackResumeThread());
     block_proxy[thisIndex].exchange_recv_ready_wait(idim, CkCallbackResumeThread());
     // ckout<<"chare "<<thisIndex<<endl;
@@ -633,7 +637,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     if(charegrid[idim] > 2)
       block_proxy[thisIndex].exchange_2_recv_2_wait(idim, CkCallbackResumeThread());
 
-    block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
+    
 
     /*
     MPI_Datatype type = (sizeof(MMD_float) == 4) ? MPI_FLOAT : MPI_DOUBLE;
@@ -647,6 +651,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
                    MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     */
+    nrecv = nrecvexchange[2*idim] + nrecvexchange[2*idim+1];
+    cur_buf_recv = buf_comms_recv[idim];
 
     nrecv_atoms = nrecv / 7;
 
@@ -669,6 +675,8 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       atom.growarray();
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
+    //wait for send to finish to begin next iteration
+    block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
   }
   wait(pack_instance, compute_instance);
   atom_ = atom;
@@ -694,16 +702,16 @@ void Comm::operator() (TagExchangePack, const int& i ) const {
 }
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeCountRecv, const int& i, int& sum) const {
-  const MMD_float value = buf_recv[i * 7 + idim];
+  const MMD_float value = cur_buf_recv[i * 7 + idim];
   if(value >= lo && value < hi)
     sum++;
 }
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeUnpack, const int& i ) const {
-  double value = buf_recv[i * 7 + idim];
+  double value = cur_buf_recv[i * 7 + idim];
 
   if(value >= lo && value < hi)
-    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count_device(0),1), &buf_recv[i * 7]);
+    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count_device(0),1), &cur_buf_recv[i * 7]);
 }
 
 /* borders:

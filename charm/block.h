@@ -96,47 +96,41 @@ public:
   }
 
   void exchange_2_recv_1(int ref, size_t size, bool is_dummy, char*& data, CkDeviceBufferPost* postInfo){
-  // ckout<<"exchange_2_recv_1 recv size "<<size<<endl;
+    // ckout<<"exchange_2_recv_1 recv size "<<size<<endl;
+  int recv_idim = ref % 3;
   if(is_dummy) {
-    comm->nrecv1 = 0;
-    comm->post_exchange_recv_count += 0;
+    comm->nrecvexchange[2*recv_idim] = 0;
     postInfo[0].hapi_stream = pack_instance.cuda_stream();
     data = (char*)(comm->buf_comm_dummy);
     return;
   }
-  int recv_idim = ref % 3;
-  size_t start_idx = comm->post_exchange_recv_count;
-  comm->nrecv1 = size/sizeof(MMD_float);
-  comm->nrecv+=size/sizeof(MMD_float);
-  if(size / sizeof(MMD_float) > (comm->maxrecv - comm->post_exchange_recv_count)){
-    comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
-    Kokkos::fence();
+  size_t start_idx = comm->post_exchange_recv_count[recv_idim];
+  comm->nrecvexchange[2*recv_idim] = size/sizeof(MMD_float);
+  if(size / sizeof(MMD_float) > (comm->maxrecvcomm[recv_idim] - comm->post_exchange_recv_count[recv_idim])){
+    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], pack_instance.cuda_stream());
   }
   postInfo[0].hapi_stream = pack_instance.cuda_stream();
-  data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
-  comm->post_exchange_recv_count += size/sizeof(MMD_float);
+  data = (char*)(comm->buf_comms_recv[recv_idim].data()+comm->post_exchange_recv_count[recv_idim]);
+  comm->post_exchange_recv_count[recv_idim] += size/sizeof(MMD_float);
 }
 
 void exchange_2_recv_2(int ref, size_t size, bool is_dummy, char*& data, CkDeviceBufferPost* postInfo){
   // ckout<<"exchange_2_recv_2 recv size "<<size<<endl;
+  int recv_idim = ref % 3;
   if(is_dummy) {
-    comm->nrecv2 = 0;
-    comm->post_exchange_recv_count += 0;
+    comm->nrecvexchange[2*recv_idim+1] = 0;
     postInfo[0].hapi_stream = pack_instance.cuda_stream();
     data = (char*)(comm->buf_comm_dummy);
     return;
   }
-  int recv_idim = ref % 3;
-  size_t start_idx = comm->post_exchange_recv_count;
-  comm->nrecv2 = size/sizeof(MMD_float);
-  comm->nrecv+=size/sizeof(MMD_float);
-  if(size / sizeof(MMD_float) > (comm->maxrecv - comm->post_exchange_recv_count)){
-    comm->growrecv(size / sizeof(MMD_float) + comm->post_exchange_recv_count);
-    Kokkos::fence();
+  size_t start_idx = comm->post_exchange_recv_count[recv_idim];
+  comm->nrecvexchange[2*recv_idim+1] = size/sizeof(MMD_float);
+  if(size / sizeof(MMD_float) > (comm->maxrecvcomm[recv_idim] - comm->post_exchange_recv_count[recv_idim])){
+    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], pack_instance.cuda_stream());
   }
   postInfo[0].hapi_stream = pack_instance.cuda_stream();
-  data = (char*)(comm->buf_recv.data()+comm->post_exchange_recv_count);
-  comm->post_exchange_recv_count += size/sizeof(MMD_float);
+  data = (char*)(comm->buf_comms_recv[recv_idim].data()+comm->post_exchange_recv_count[recv_idim]);
+  comm->post_exchange_recv_count[recv_idim] += size/sizeof(MMD_float);
 }
 };
 
