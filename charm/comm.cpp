@@ -201,8 +201,9 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
   reverse_send_size = int_1d_host_view_type("Comm::reverse_send_size",maxswap);
   reverse_recv_size = int_1d_host_view_type("Comm::reverse_recv_size",maxswap);
   firstrecv = int_1d_host_view_type("Comm::firstrecv",maxswap);
-  maxsendlist = int_1d_host_view_type("Comm::maxsendlist",maxswap);
+  maxsendlist = int_1d_host_view_type("Comm::maxsendlist",maxswap);//why is this int?[ig we would need less than 8GB being sent from a chare at all times]
   maxrecvcomm = new int[maxswap];
+  nrecvcomm = new int[maxswap];
 
   // XXX: No equivalents to sendproc_exc and recvproc_exc as they were not used
   // in the original code
@@ -317,16 +318,6 @@ void Comm::communicate(Atom &atom, bool preprocess)
   //resize recv buffer if not same as buf_recv
   for(iswap = 0; iswap < nswap; iswap++){
     if (sendchare[iswap] != index){
-      //notify that recv buffers are ready!!
-      if(buf_comms_recv[iswap].size() < buf_recv.size())
-        {
-          MMD_float* buf_old = buf_comms_recv[iswap].data();
-          MMD_float* buf_new;
-          hapiCheck(cudaMallocAsync((void**)&buf_new, 1.5*buf_recv.size()*sizeof(MMD_float), pack_instance.cuda_stream()));
-          hapiCheck(cudaMemcpyAsync((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice, pack_instance.cuda_stream()));
-          hapiCheck(cudaFreeAsync((void*)buf_old, pack_instance.cuda_stream()));
-          buf_comms_recv[iswap] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, 1.5*buf_recv.size());
-        }
         block_proxy[thisIndex].comms_notify_recv_ready(iswap, CkCallbackResumeThread());
     }
   }
@@ -762,6 +753,12 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   wait(compute_instance, pack_instance);
 
+  for(int iswap_=0;iswap_<maxswap_static;iswap_++){
+    if(recvchare[iswap_]!=index){
+      block_proxy[thisIndex].borders_notify_recv_ready(iswap_, CkCallbackResumeThread());
+    }
+  }
+
   for(idim = 0; idim < 3; idim++) {
     nlast = 0;
 
@@ -827,13 +824,12 @@ void Comm::borders(Atom &atom_, bool preprocess)
           send1 = static_cast<void*>(buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
           send1_chare = sendchare[iswap];
-          block_proxy[thisIndex].borders_1(iswap, CkCallbackResumeThread());
+          block_proxy[thisIndex].borders_recv_ready_wait(iswap, CkCallbackResumeThread());
           
-
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
           
-          nrecv = this->nrecv;
-          buf = buf_recv;
+          nrecv = this->nrecvcomm[iswap];
+          buf = buf_comms_recv[iswap];
         } else {
           nrecv = nsend;
           buf = buf_send;
@@ -953,6 +949,17 @@ void Comm::growrecv(int n)
 {
   maxrecv = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
   Kokkos::resize(buf_recv, maxrecv);
+}
+
+void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
+  maxrecvcomm[iswap] = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
+  // Kokkos::resize(buf_recvcomm[iswap], maxrecvcomm[iswap]);
+  MMD_float* buf_old = buf_comms_recv[iswap].data();
+  MMD_float* buf_new;
+  hapiCheck(cudaMallocAsync((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float), stream));
+  // hapiCheck(cudaMemcpyAsync((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice, stream));
+  hapiCheck(cudaFreeAsync((void*)buf_old, stream));
+  buf_comms_recv[iswap] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, maxrecvcomm[iswap]);
 }
 
 /* realloc the size of the iswap sendlist as needed with BUFFACTOR */

@@ -301,12 +301,15 @@ module block {
     entry void exchange_2_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
     // Non-blocking communication routines for Comm:borders
-    entry void borders_1(int iswap, CkCallback cb) {
+    entry void borders_notify_recv_ready(int iswap, CkCallback cb) {
       serial {
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->recvchare[iswap]].borders_recv_1(tag);
+        cb.send();
       }
+    }
 
+    entry void borders_recv_ready_wait(int iswap, CkCallback cb){
       when borders_recv_1[comm->maxswap_static*comm->iter+iswap](int ref) serial {
         cb.send();
       }

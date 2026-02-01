@@ -78,7 +78,7 @@ public:
   }
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
       // ckout<<"comms_recv recv_size "<<size<<endl;
-      int iswap = ref%comm->nswap;
+      int iswap = ref%comm->maxswap_static;
 
       postInfo[0].hapi_stream = pack_instance.cuda_stream();
       data = (char*)((comm->buf_comms_recv[iswap]).data());
@@ -86,13 +86,13 @@ public:
 
   void borders_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
     // ckout<<"borders_recv_2 recv_size "<<size<<endl;
-    comm->nrecv = size / (sizeof(MMD_float)*atom.border_size);
-    if (size / sizeof(MMD_float) > comm->maxrecv) {
-      comm->growrecv( size / sizeof(MMD_float));
-      Kokkos::fence();
+    int iswap = ref%comm->maxswap_static;
+    comm->nrecvcomm[iswap] = size / (sizeof(MMD_float)*atom.border_size);
+    if (size / sizeof(MMD_float) > comm->maxrecvcomm[iswap]) {
+      comm->growrecvcomm(iswap, size / sizeof(MMD_float), pack_instance.cuda_stream());
     }
     postInfo[0].hapi_stream = pack_instance.cuda_stream();
-    data = (char*)(comm->buf_recv.data());
+    data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
   void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
