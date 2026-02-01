@@ -234,7 +234,7 @@ module block {
         int tag = 3*comm->iter + idim;
         thisProxy[comm->chareneigh[idim][0]].exchange_1_recv_1(tag);
         if (comm->charegrid[idim] > 2) {
-          thisProxy[comm->chareneigh[idim][0]].exchange_1_recv_2(tag);
+          thisProxy[comm->chareneigh[idim][1]].exchange_1_recv_2(tag);
         }
         cb.send();
       }
