@@ -95,8 +95,15 @@ public:
     data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
-  void exchange_2_recv_1(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+  void exchange_2_recv_1(int ref, size_t size, bool is_dummy, char*& data, CkDeviceBufferPost* postInfo){
   // ckout<<"exchange_2_recv_1 recv size "<<size<<endl;
+  if(is_dummy) {
+    comm->nrecv1 = 0;
+    comm->post_exchange_recv_count += 0;
+    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    data = (char*)(comm->buf_comm_dummy);
+    return;
+  }
   int recv_idim = ref % 3;
   size_t start_idx = comm->post_exchange_recv_count;
   comm->nrecv1 = size/sizeof(MMD_float);
@@ -110,8 +117,15 @@ public:
   comm->post_exchange_recv_count += size/sizeof(MMD_float);
 }
 
-void exchange_2_recv_2(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
+void exchange_2_recv_2(int ref, size_t size, bool is_dummy, char*& data, CkDeviceBufferPost* postInfo){
   // ckout<<"exchange_2_recv_2 recv size "<<size<<endl;
+  if(is_dummy) {
+    comm->nrecv2 = 0;
+    comm->post_exchange_recv_count += 0;
+    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    data = (char*)(comm->buf_comm_dummy);
+    return;
+  }
   int recv_idim = ref % 3;
   size_t start_idx = comm->post_exchange_recv_count;
   comm->nrecv2 = size/sizeof(MMD_float);

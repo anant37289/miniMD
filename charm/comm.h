@@ -127,6 +127,7 @@ class Comm : public CBase_Comm
 
     float_1d_view_type buf_send;                 // send buffer for all comm
     float_1d_view_type buf_recv;                 // recv buffer for all comm
+    MMD_float* buf_comm_dummy;
     float_1d_view_type buf;
     float_1d_host_view_type h_buf_send;
     float_1d_host_view_type h_buf_recv;

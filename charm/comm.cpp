@@ -63,6 +63,7 @@ Comm::Comm()
   count = Kokkos::DualView<int*>("comm::count",1);
   count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 3);
   count_device = Kokkos::View<int*>("comm::count_device", 3);
+  hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
   h_exc_alloc = false;
   h_buf_alloc = false;
   post_exchange_recv_count = 0;
@@ -73,8 +74,6 @@ Comm::Comm()
 }
 
 Comm::~Comm() {}
-
-/* setup spatial-decomposition communication patterns */
 
 int Comm::setup(MMD_float cutneigh, Atom &atom)
 {
@@ -617,22 +616,21 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     */
 
     suspend(pack_instance);
-    block_proxy[thisIndex].exchange_1(idim, CkCallbackResumeThread());
+    block_proxy[thisIndex].exchange_notify_recv_ready(idim, CkCallbackResumeThread());
+    block_proxy[thisIndex].exchange_recv_ready_wait(idim, CkCallbackResumeThread());
     // ckout<<"chare "<<thisIndex<<endl;
     // ckout<<"send1_size "<<send1_size<<"\n";
     // ckout<<"send2_size "<<send2_size<<"\n";
     // ckout<<"nrecv1 "<<nrecv1<<"\n";
     // ckout<<"nrecv2 "<<nrecv2<<endl;
-    if(send1_size>0)
-      block_proxy[thisIndex].exchange_2_send_1(idim, CkCallbackResumeThread());
+    block_proxy[thisIndex].exchange_2_send_1(idim, CkCallbackResumeThread());
 
-    if (charegrid[idim] > 2 && send2_size>0)
+    if (charegrid[idim] > 2)
       block_proxy[thisIndex].exchange_2_send_2(idim, CkCallbackResumeThread());
 
-    if(nrecv1>0)
-      block_proxy[thisIndex].exchange_2_recv_1_wait(idim, CkCallbackResumeThread());
+    block_proxy[thisIndex].exchange_2_recv_1_wait(idim, CkCallbackResumeThread());
 
-    if(nrecv2>0 && charegrid[idim] > 2)
+    if(charegrid[idim] > 2)
       block_proxy[thisIndex].exchange_2_recv_2_wait(idim, CkCallbackResumeThread());
 
     block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
@@ -671,7 +669,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       atom.growarray();
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
-
   }
   wait(pack_instance, compute_instance);
   atom_ = atom;
