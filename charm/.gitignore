@@ -1,7 +1,7 @@
 build
 *.def.h
 *.decl.h
-.out
-.err
-.csv
-.py
+*.out
+*.err
+*.csv
+*.py
