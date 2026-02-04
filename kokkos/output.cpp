@@ -55,7 +55,7 @@ void output(In &in, Atom &atom, Force* force, Neighbor &neighbor, Comm &comm,
 
   const int me = comm.me;
   const int nprocs = comm.nprocs;
-  const int nthreads = Kokkos::HostSpace::execution_space::concurrency();
+  const int nthreads = 1;
 
 
   /* enforce PBC, then check for lost atoms */

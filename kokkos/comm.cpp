@@ -416,10 +416,10 @@ void Comm::exchange(Atom &atom_)
       Kokkos::resize(exc_sendflag,nlocal);
     }
 
-    count.h_view(0) = exc_sendlist.extent(0);
+    count.view_host()(0) = exc_sendlist.extent(0);
 
-    while (count.h_view(0)>=exc_sendlist.extent(0)) {
-      count.h_view(0) = 0;
+    while (count.view_host()(0)>=exc_sendlist.extent(0)) {
+      count.view_host()(0) = 0;
       count.modify<HostType>();
       count.sync<DeviceType>();
 
@@ -428,24 +428,24 @@ void Comm::exchange(Atom &atom_)
 
       count.modify<DeviceType>();
       count.sync<HostType>();
-      if ((count.h_view(0)>=exc_sendlist.extent(0)) ||
-          (count.h_view(0)>=exc_copylist.extent(0)) ) {
-        Kokkos::resize(exc_sendlist,(count.h_view(0)+1)*1.1);
-        Kokkos::resize(exc_copylist,(count.h_view(0)+1)*1.1);
-        count.h_view(0)=exc_sendlist.extent(0);
+      if ((count.view_host()(0)>=exc_sendlist.extent(0)) ||
+          (count.view_host()(0)>=exc_copylist.extent(0)) ) {
+        Kokkos::resize(exc_sendlist,(count.view_host()(0)+1)*1.1);
+        Kokkos::resize(exc_copylist,(count.view_host()(0)+1)*1.1);
+        count.view_host()(0)=exc_sendlist.extent(0);
       }
-      if (count.h_view(0)*7>=maxsend)
-        growsend(count.h_view(0));
+      if (count.view_host()(0)*7>=maxsend)
+        growsend(count.view_host()(0));
     }
-    nsend_atoms = count.h_view(0);
+    nsend_atoms = count.view_host()(0);
     nlocal_new = nlocal - nsend_atoms;
 
     if (replacement_indices.extent(0) < nsend_atoms) {
       Kokkos::resize(replacement_indices, (nsend_atoms + 1) * 1.5);
     }
 
-    count.h_view(1) = 0;
-    count.h_view(2) = 0;
+    count.view_host()(1) = 0;
+    count.view_host()(2) = 0;
     count.modify<HostType>();
     count.sync<DeviceType>();
 
@@ -455,12 +455,12 @@ void Comm::exchange(Atom &atom_)
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(0, nsend_atoms), *this);
     Kokkos::fence();
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.h_view(0)),*this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(0,count.view_host()(0)),*this);
 
-    atom.nlocal -= count.h_view(0);
+    atom.nlocal -= count.view_host()(0);
     Kokkos::fence();
 
-    nsend = count.h_view(0) * 7;
+    nsend = count.view_host()(0) * 7;
 
       MPI_Sendrecv(&nsend, 1, MPI_INT, procneigh[idim][0], 0,
                    &nrecv1, 1, MPI_INT, procneigh[idim][1], 0,
@@ -502,7 +502,7 @@ void Comm::exchange(Atom &atom_)
     if(nrecv_atoms>0)
     atom.nlocal += nrecv;
 
-    count.h_view(0) = nlocal;
+    count.view_host()(0) = nlocal;
     count.modify<HostType>();
     count.sync<DeviceType>();
 
@@ -525,7 +525,7 @@ void Comm::exchange(Atom &atom_)
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeSendlist, const int& i) const {
   if (x(i,idim) < lo || x(i,idim) >= hi) {
-    const int mysend=Kokkos::atomic_fetch_add(&count.d_view(0),1);
+    const int mysend=Kokkos::atomic_fetch_add(&count.view_device()(0),1);
     if(mysend<exc_sendlist.extent(0)) {
       exc_sendlist(mysend) = i;
       exc_sendflag(i) = 1;
@@ -551,7 +551,7 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
   double value = buf_recv[i * 7 + idim];
 
   if(value >= lo && value < hi)
-    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.d_view(0),1), &buf_recv[i * 7]);
+    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count.view_device()(0),1), &buf_recv[i * 7]);
 }
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeFillReplacementList, const int& i) const {
@@ -561,7 +561,7 @@ void Comm::operator() (TagExchangeFillReplacementList, const int& i) const {
   
   // If this atom is NOT being sent, it's a valid replacement
   if (exc_sendflag(tail_idx) == 0) {
-    int slot = Kokkos::atomic_fetch_add(&count.d_view(1), 1);
+    int slot = Kokkos::atomic_fetch_add(&count.view_device()(1), 1);
     if (slot < replacement_indices.extent(0)) {
       replacement_indices(slot) = tail_idx;
     }
@@ -574,7 +574,7 @@ void Comm::operator() (TagExchangeFillCopyList, const int& i) const {
   
   if (send_idx < nlocal_new) {
     // This is a "hole" - need to fill it with a replacement atom
-    int slot = Kokkos::atomic_fetch_add(&count.d_view(2), 1);
+    int slot = Kokkos::atomic_fetch_add(&count.view_device()(2), 1);
     if (slot < replacement_indices.extent(0)) {
       exc_copylist(i) = replacement_indices(slot);
     } else {
@@ -647,24 +647,24 @@ void Comm::borders(Atom &atom_)
 
       nsend = 0;
 
-      count.h_view(0) = 0;
+      count.view_host()(0) = 0;
       count.modify<HostType>();
       count.sync<DeviceType>();
 
-      send_count = count.d_view;
+      send_count = count.view_device();
 
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderSendlist>(nfirst,nlast),*this);
 
       count.modify<DeviceType>();
       count.sync<HostType>();
 
-      nsend = count.h_view(0);
+      nsend = count.view_host()(0);
       if(nsend > exc_sendlist.extent(0)) {
         Kokkos::resize(exc_sendlist , nsend);
 
         growlist(iswap, nsend);
 
-        count.h_view(0) = 0;
+        count.view_host()(0) = 0;
         count.modify<HostType>();
         count.sync<DeviceType>();
 

@@ -66,7 +66,7 @@ ForceEAM::ForceEAM(int ntypes_)
 
   style = FORCEEAM;
 
-  nthreads = Kokkos::HostSpace::execution_space::concurrency();
+  // nthreads = Kokkos::DefaultHostExecutionSpace::concurrency();
 }
 
 /* ----------------------------------------------------------------------
@@ -843,37 +843,37 @@ void ForceEAM::array2spline()
   spline_dv_type dv_rhor_spline("ForceEam::rohr_spline",ntypes * ntypes , nr+1);
   spline_dv_type dv_z2r_spline("ForceEam::z2r_spline",ntypes * ntypes , nr+1);
 
-  interpolate(nrho, drho, frho, dv_frho_spline.h_view);
+  interpolate(nrho, drho, frho, dv_frho_spline.view_host());
 
-  interpolate(nr, dr, rhor, dv_rhor_spline.h_view);
+  interpolate(nr, dr, rhor, dv_rhor_spline.view_host());
 
-  interpolate(nr, dr, z2r, dv_z2r_spline.h_view);
+  interpolate(nr, dr, z2r, dv_z2r_spline.view_host());
 
   // replicate data for multiple types;
   for(int tt = 1 ; tt<ntypes*ntypes; tt++) {
     for(int k = 0; k<nrho+1; k++)
       for(int l=0;l<7;l++) {
-        dv_frho_spline.h_view(tt,k,l) = dv_frho_spline.h_view(0,k,l);
+        dv_frho_spline.view_host()(tt,k,l) = dv_frho_spline.view_host()(0,k,l);
       }
     for(int k = 0; k<nr+1; k++)
       for(int l=0;l<7;l++)
-        dv_rhor_spline.h_view(tt,k,l) = dv_rhor_spline.h_view(0,k,l);
+        dv_rhor_spline.view_host()(tt,k,l) = dv_rhor_spline.view_host()(0,k,l);
     for(int k = 0; k<nr+1; k++)
       for(int l=0;l<7;l++)
-        dv_z2r_spline.h_view(tt,k,l) = dv_z2r_spline.h_view(0,k,l);
+        dv_z2r_spline.view_host()(tt,k,l) = dv_z2r_spline.view_host()(0,k,l);
   }
 
   dv_frho_spline.modify<HostType>();
   dv_frho_spline.sync<DeviceType>();
-  frho_spline = dv_frho_spline.d_view;
+  frho_spline = dv_frho_spline.view_device();
 
   dv_rhor_spline.modify<HostType>();
   dv_rhor_spline.sync<DeviceType>();
-  rhor_spline = dv_rhor_spline.d_view;
+  rhor_spline = dv_rhor_spline.view_device();
 
   dv_z2r_spline.modify<HostType>();
   dv_z2r_spline.sync<DeviceType>();
-  z2r_spline = dv_z2r_spline.d_view;
+  z2r_spline = dv_z2r_spline.view_device();
 
 }
 

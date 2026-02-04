@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(miniMD CXX)
 
 # Set the path to Kokkos
-set(Kokkos_ROOT "/u/ajain18/hapi_hip/shogo/charm/kokkos/install")
+set(Kokkos_ROOT "/u/ajain18/belobench/LibCharmtyles/kokkos/install_a100")
 find_package(Kokkos REQUIRED)
 
 find_package(MPI REQUIRED)
