@@ -359,6 +359,74 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
 
   int iflag = 0;
 
+  // Pre-count
+  int count_atoms = 0;
+  while(oz * subboxdim <= khi) {
+    k = oz * subboxdim + sz;
+    j = oy * subboxdim + sy;
+    i = ox * subboxdim + sx;
+
+    if(iflag) continue;
+
+    if(((i + j + k) % 2 == 0) &&
+        (i >= ilo) && (i <= ihi) &&
+        (j >= jlo) && (j <= jhi) &&
+        (k >= klo) && (k <= khi)) {
+
+      xtmp = 0.5 * alat * i;
+      ytmp = 0.5 * alat * j;
+      ztmp = 0.5 * alat * k;
+
+      if(xtmp >= atom.box.xlo && xtmp < atom.box.xhi &&
+          ytmp >= atom.box.ylo && ytmp < atom.box.yhi &&
+          ztmp >= atom.box.zlo && ztmp < atom.box.zhi) {
+        count_atoms++;
+      }
+    }
+
+    sx++;
+    if(sx == subboxdim) {
+      sx = 0;
+      sy++;
+    }
+    if(sy == subboxdim) {
+      sy = 0;
+      sz++;
+    }
+    if(sz == subboxdim) {
+      sz = 0;
+      ox++;
+    }
+    if(ox * subboxdim > ihi) {
+      ox = 0;
+      oy++;
+    }
+    if(oy * subboxdim > jhi) {
+      oy = 0;
+      oz++;
+    }
+  }
+
+  atom.nmax = count_atoms;
+  if (atom.nmax > 0) {
+      Kokkos::resize(atom.x, atom.nmax);
+      Kokkos::resize(atom.v, atom.nmax);
+      Kokkos::resize(atom.f, atom.nmax);
+      Kokkos::resize(atom.type, atom.nmax);
+      Kokkos::resize(atom.xold, atom.nmax);
+      
+      atom.h_x = Kokkos::create_mirror_view(atom.x);
+      atom.h_v = Kokkos::create_mirror_view(atom.v);
+      atom.h_type = Kokkos::create_mirror_view(atom.type);
+  }
+
+  sx = 0;
+  sy = 0;
+  sz = 0;
+  ox = 0;
+  oy = 0;
+  oz = 0;
+
   while(oz * subboxdim <= khi) {
     k = oz * subboxdim + sz;
     j = oy * subboxdim + sy;
