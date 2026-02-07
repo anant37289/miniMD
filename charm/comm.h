@@ -87,7 +87,7 @@ class Comm : public CBase_Comm
     void growsend(int);
     void growrecv(int);
     void growrecvcomm(int,int,cudaStream_t);
-    void growlist(int, int);
+    void growlist(int, int,cudaStream_t);
     void suspend(Kokkos::Cuda);
     void wait(Kokkos::Cuda, Kokkos::Cuda);
 
@@ -108,13 +108,13 @@ class Comm : public CBase_Comm
     int_1d_host_view_type sendchare, recvchare;       // chare to send/recv with at each swap
 
     int_1d_host_view_type firstrecv;                  // where to put 1st recv atom in each swap
-    int_2d_lr_view_type sendlist;                   // list of atoms to send in each swap
+    int_2d_um_lr_view_type sendlist;                   // list of atoms to send in each swap
     int_1d_host_view_type maxsendlist;
 
-    int_1d_view_type exc_sendflag;
-    int_1d_view_type exc_sendlist;
-    int_1d_view_type exc_copylist;
-    int_1d_view_type replacement_indices;
+    int_1d_um_view_type exc_sendflag;
+    int_1d_um_view_type exc_sendlist;
+    int_1d_um_view_type exc_copylist;
+    int_1d_um_view_type replacement_indices;
     int nlocal_new;
     int nsend_atoms;
     int_1d_host_view_type h_exc_sendflag;
@@ -125,8 +125,8 @@ class Comm : public CBase_Comm
     int_1d_view_type count_device;
     bool h_exc_alloc;
 
-    float_1d_view_type buf_send;                 // send buffer for all comm
-    float_1d_view_type buf_recv;                 // recv buffer for all comm
+    float_1d_um_view_type buf_send;                 // send buffer for all comm
+    float_1d_um_view_type buf_recv;                 // recv buffer for all comm
     float_1d_view_type cur_buf_recv;
     MMD_float* buf_comm_dummy;
     float_1d_view_type buf;
@@ -135,7 +135,7 @@ class Comm : public CBase_Comm
 
     // Buffers for commnunicate and reverse_communicate
     float_1d_view_type* buf_comms_send;
-    Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>* buf_comms_recv;
+    float_1d_um_view_type* buf_comms_recv;
     float_1d_host_view_type* h_buf_comms_send;
     float_1d_host_view_type* h_buf_comms_recv;
 

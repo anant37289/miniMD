@@ -8,6 +8,8 @@
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_DualView.hpp"
+#include <type_traits>
+#include <cassert>
 
 typedef Kokkos::DefaultExecutionSpace DeviceType;
 typedef Kokkos::HostSpace::execution_space HostType;
@@ -49,7 +51,9 @@ typedef Kokkos::View<const MMD_int**,Kokkos::MemoryTraits<Kokkos::RandomAccess> 
 
 typedef Kokkos::View<MMD_float*[PAD],Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged>> x_um_view_type;
 typedef Kokkos::View<MMD_int*,Kokkos::MemoryTraits<Kokkos::Unmanaged> > int_1d_um_view_type;
-typedef Kokkos::View<const MMD_int*,Kokkos::MemoryTraits<Kokkos::Unmanaged> > int_1d_const_um_view_type;
+typedef Kokkos::View<MMD_float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> float_1d_um_view_type;
+typedef Kokkos::View<MMD_int**,Kokkos::LayoutRight, Kokkos::MemoryTraits<Kokkos::Unmanaged>> int_2d_um_lr_view_type;
+typedef Kokkos::View<const MMD_float*[PAD],Kokkos::LayoutRight,  Kokkos::MemoryTraits<Kokkos::RandomAccess | Kokkos::Unmanaged>> x_rnd_um_view_type;
 
 typedef typename x_view_type::host_mirror_type x_host_view_type;
 typedef typename float_1d_view_type::host_mirror_type float_1d_host_view_type;
@@ -83,5 +87,130 @@ struct eng_virial_type {
     virial+=src.virial;
   }
 };
+
+template <class ViewType>
+void resize_unmanaged_1d_views(
+    ViewType& view,
+    size_t new_n0,
+    cudaStream_t stream = 0)
+{
+    static_assert(ViewType::memory_traits::is_unmanaged,
+                  "Requires unmanaged view");
+
+    static_assert(std::is_same_v<
+                    typename ViewType::memory_space,
+                    Kokkos::CudaSpace>,
+                  "Only supports Kokkos::CudaSpace");
+
+    static_assert(ViewType::rank == 1, "Only rank-1 supported");
+
+    using value_type = typename ViewType::value_type;
+
+    value_type* old_ptr = view.data();
+
+    const size_t old_n0 = view.extent(0);
+
+    value_type* new_ptr = nullptr;
+    cudaMallocAsync(&new_ptr,
+                    new_n0 * sizeof(value_type),
+                    stream);
+
+    const size_t copy_n0 = std::min(old_n0, new_n0);
+    if (copy_n0 > 0) {
+        cudaMemcpyAsync(
+            new_ptr,
+            old_ptr,
+            copy_n0 * sizeof(value_type),
+            cudaMemcpyDeviceToDevice,
+            stream);
+    }
+
+    if (old_ptr) {
+        cudaFreeAsync(old_ptr, stream);
+    }
+
+    view = ViewType(new_ptr, new_n0);
+
+    if(stream==0)
+      Kokkos::fence();
+}
+
+template <class ViewType>
+void resize_unmanaged_2d_views(
+    ViewType& view,
+    size_t new_n0, // New Rows
+    size_t new_n1, // New Cols
+    cudaStream_t stream = 0)
+{
+    static_assert(ViewType::memory_traits::is_unmanaged, "Requires unmanaged view");
+    static_assert(std::is_same_v<typename ViewType::memory_space, Kokkos::CudaSpace>, "Only supports CudaSpace");
+    static_assert(ViewType::rank == 2, "Only rank-2 supported");
+
+    using Layout = typename ViewType::array_layout;
+    static_assert(
+        std::is_same_v<Layout, Kokkos::LayoutRight> || 
+        std::is_same_v<Layout, Kokkos::LayoutLeft>, 
+        "Only supports LayoutRight or LayoutLeft"
+    );
+
+    using value_type = typename ViewType::value_type;
+    value_type* old_ptr = view.data();
+    const size_t old_n0 = view.extent(0);
+    const size_t old_n1 = view.extent(1);
+
+    value_type* new_ptr = nullptr;
+    size_t new_size_bytes = new_n0 * new_n1 * sizeof(value_type);
+    
+    if (new_size_bytes > 0) {
+        cudaMallocAsync(&new_ptr, new_size_bytes, stream);
+    }
+
+    if (old_ptr && new_ptr && old_n0 > 0 && old_n1 > 0) {
+        
+        size_t dpitch, spitch, width, height;
+
+        if constexpr (std::is_same_v<Layout, Kokkos::LayoutRight>) {
+            // --- LAYOUT RIGHT (Row-Major) ---
+            // "Width" is the contiguous row length in bytes.
+            // "Height" is the number of rows.
+            // "Pitch" is the stride between the start of two rows (n1 * sizeof).
+            
+            width  = std::min(old_n1, new_n1) * sizeof(value_type); // Bytes to copy per row
+            height = std::min(old_n0, new_n0);                      // Number of rows
+            spitch = old_n1 * sizeof(value_type);
+            dpitch = new_n1 * sizeof(value_type);
+
+        } else {
+            // --- LAYOUT LEFT (Column-Major) ---
+            // "Width" is the contiguous column length in bytes.
+            // "Height" is the number of columns.
+            // "Pitch" is the stride between the start of two columns (n0 * sizeof).
+
+            width  = std::min(old_n0, new_n0) * sizeof(value_type); // Bytes to copy per col
+            height = std::min(old_n1, new_n1);                      // Number of cols
+            spitch = old_n0 * sizeof(value_type);
+            dpitch = new_n0 * sizeof(value_type);
+        }
+
+        cudaMemcpy2DAsync(
+            new_ptr, dpitch,
+            old_ptr, spitch,
+            width, height,
+            cudaMemcpyDeviceToDevice,
+            stream
+        );
+    }
+
+    // 3. Free Old Memory
+    if (old_ptr) {
+        cudaFreeAsync(old_ptr, stream);
+    }
+
+    // 4. Reconstruct View
+    view = ViewType(new_ptr, new_n0, new_n1);
+
+    if(stream==0)
+      Kokkos::fence();
+}
 
 #endif // __LJS_KOKKOS_H_

@@ -34,9 +34,9 @@
 #include "comm.h"
 #include "hapi_nvtx.h"
 
-#define BUFFACTOR 1.5
-#define BUFMIN 1000
-#define BUFEXTRA 100
+#define BUFFACTOR 2
+#define BUFMIN 10000
+#define BUFEXTRA 1000
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define IDX(x,y,z) ((charegrid[0] * charegrid[1] * (z)) + charegrid[0] * (y) + (x))
@@ -54,9 +54,12 @@ Comm::Comm()
 {
   index = thisIndex;
   maxsend = BUFMIN;
-  buf_send = float_1d_view_type("Comm::buf_send",maxsend + BUFMIN);
+  MMD_float* buf_send_ptr;
+  cudaMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float));
+  buf_send = float_1d_um_view_type(buf_send_ptr,maxsend + BUFMIN);
   maxrecv = BUFMIN;
-  buf_recv = float_1d_view_type("Comm::buf_recv",maxrecv);
+  MMD_float* buf_recv_ptr;
+  buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;
   maxnlocal = 0;
@@ -217,14 +220,17 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
     maxrecvcomm[i] = BUFMIN;
   }
 
-  sendlist = int_2d_lr_view_type("Comm::sendlist",maxswap,BUFMIN);
 
-  buf_comms_recv = new Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>[maxswap];
+  int* sendlist_ptr;
+  cudaMalloc(&sendlist_ptr, maxswap*BUFMIN*sizeof(int));
+  sendlist = int_2d_um_lr_view_type(sendlist_ptr,maxswap,BUFMIN);
+
+  buf_comms_recv = new float_1d_um_view_type[maxswap];
   
   for (int i = 0; i < maxswap; i++) {
     MMD_float* device_ptr;
     cudaMalloc(&device_ptr, BUFMIN*sizeof(MMD_float));
-    buf_comms_recv[i] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(device_ptr, BUFMIN);
+    buf_comms_recv[i] = float_1d_um_view_type(device_ptr, BUFMIN);
   }
 
   /* setup 4 parameters for each exchange: (spart,rpart,slablo,slabhi)
@@ -317,14 +323,6 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
   //push the pack unpack depencency
   wait(compute_instance, pack_instance);
-  suspend(pack_instance);
-
-  //resize recv buffer if not same as buf_recv
-  for(iswap = 0; iswap < nswap; iswap++){
-    if (sendchare[iswap] != index){
-        block_proxy[thisIndex].comms_notify_recv_ready(iswap, CkCallbackResumeThread());
-    }
-  }
   // Send and recv one buffer at a time
   for(iswap = 0; iswap < nswap; iswap++) {
 
@@ -357,13 +355,13 @@ void Comm::communicate(Atom &atom, bool preprocess)
       buf = buf_comms_recv[iswap];
       if(comm_recv_size[iswap]>0)
         atom.unpack_comm(recvnum[iswap], firstrecv[iswap], buf);
+      wait(unpack_instance, pack_instance);//add dependency with pack instance
     } else {
       // No need to synchronize for self packing
       atom.pack_comm_self(sendnum[iswap], list, firstrecv[iswap], pbc_flags);
     }
   }
   wait(pack_instance, compute_instance);
-
 }
 
 
@@ -524,15 +522,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   wait(compute_instance, pack_instance);
   atom.pbc();//wrap around atoms going out of boundry
 
-  /* loop over dimensions */
-  for(int i=0;i<3;i++){
-    if(charegrid[i] == 1) continue;
-    post_exchange_recv_count[i] = 0;
-    nrecvexchange[2*i] = 0;
-    nrecvexchange[2*i+1] = 0;
-    block_proxy[thisIndex].exchange_notify_recv_ready(i, CkCallbackResumeThread());
-  }
-
   for(idim = 0; idim < 3; idim++) {
     /* only exchange if more than one proc in this dimension */
 
@@ -559,7 +548,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nlocal = atom.nlocal;
 
     if (exc_sendflag.extent(0)<nlocal) {
-      Kokkos::resize(exc_sendflag,nlocal);
+      resize_unmanaged_1d_views(exc_sendflag, nlocal, pack_instance.cuda_stream());
     }
   
     count_host(0) = exc_sendlist.extent(0);//force entry to the loop
@@ -579,9 +568,9 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       if ((count_host(0)>=exc_sendlist.extent(0)) ||
           (count_host(0)>=exc_copylist.extent(0)) ) {
         
-        Kokkos::resize(exc_sendlist,(count_host(0)+1)*1.5);
-        Kokkos::resize(exc_copylist,(count_host(0)+1)*1.5);
-        Kokkos::resize(replacement_indices,(count_host(0)+1)*1.5);
+        resize_unmanaged_1d_views(exc_sendlist,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
+        resize_unmanaged_1d_views(exc_copylist,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
+        resize_unmanaged_1d_views(replacement_indices,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count_host(0)*7>=maxsend) {
@@ -808,9 +797,9 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {        
-        Kokkos::resize(exc_sendlist , nsend);
+        resize_unmanaged_1d_views(exc_sendlist , nsend, pack_instance.cuda_stream());
 
-        growlist(iswap, nsend);
+        growlist(iswap, nsend, pack_instance.cuda_stream());
 
         Kokkos::deep_copy(pack_instance, count_device, 0);
 
@@ -950,7 +939,7 @@ void Comm::operator() (TagBorderUnpack, const int& i) const {
 
 void Comm::growsend(int n)
 {
-  Kokkos::resize(buf_send,static_cast<int>(BUFFACTOR * n) + BUFEXTRA);
+  resize_unmanaged_1d_views(buf_send,static_cast<int>(BUFFACTOR * n) + BUFEXTRA);
   maxsend = static_cast<int>(BUFFACTOR * n);
 }
 
@@ -959,12 +948,11 @@ void Comm::growsend(int n)
 void Comm::growrecv(int n)
 {
   maxrecv = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
-  Kokkos::resize(buf_recv, maxrecv);
+  resize_unmanaged_1d_views(buf_recv, maxrecv);
 }
 
 void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
   maxrecvcomm[iswap] = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
-  // Kokkos::resize(buf_recvcomm[iswap], maxrecvcomm[iswap]);
   MMD_float* buf_old = buf_comms_recv[iswap].data();
   MMD_float* buf_new;
   hapiCheck(cudaMallocAsync((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float), stream));
@@ -975,11 +963,11 @@ void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
 
 /* realloc the size of the iswap sendlist as needed with BUFFACTOR */
 
-void Comm::growlist(int iswap, int n)
+void Comm::growlist(int iswap, int n, cudaStream_t)
 {
   if(n<=maxsendlist[iswap]) return;
   int maxswap = sendlist.extent(0);
-  Kokkos::resize(sendlist,sendlist.extent(0),BUFFACTOR * n + BUFEXTRA);
+  resize_unmanaged_2d_views(sendlist,sendlist.extent(0),BUFFACTOR * n + BUFEXTRA);
   for(int iswaps = 0; iswaps < maxswap; iswaps++) {
     maxsendlist[iswaps] = static_cast<int>(BUFFACTOR * n);
   }

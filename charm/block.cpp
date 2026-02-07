@@ -293,24 +293,29 @@ void Block::run(){
 
           integrate.initialIntegrate();
 
-          if((n + 1) % neighbor.every) {
-            /*
-            Frequency: Runs every timestep (except when re-neighboring).
-            What it does: It assumes the list of atoms that are "ghosts" (neighbors on other processors) has not changed. It only updates their coordinates (and potentially velocities).
-            Why: This is very fast because it reuses the pre-calculated sendlist and recvlist. It doesn't need to search for atoms or resize buffers. It just packs the new x values of the same atoms and sends them.
-            */
-            if(thisIndex==0 && time_segments){
-              suspend(compute_instance);
-              iter_start_time=CkWallTimer();
+          if(n==0){
+            //notify comms ready for iteration 0
+            if((n + 1) % neighbor.every){
+              for(int iswap = 0; iswap < comm->nswap; iswap++){
+                if (comm->sendchare[iswap] != thisIndex){
+                    thisProxy[thisIndex].comms_notify_recv_ready(0, iswap, CkCallbackResumeThread());
+                  }
+                }
             }
-            comm->communicate(atom, false);
-            if(thisIndex==0 && time_segments){
-              suspend(compute_instance);
-              comm_time+=CkWallTimer() - iter_start_time;
+            else {
+              for(int idim=0;idim<3;idim++){
+                if(comm->charegrid[idim] == 1) continue;
+                comm->post_exchange_recv_count[idim] = 0;
+                comm->nrecvexchange[2*idim] = 0;
+                comm->nrecvexchange[2*idim+1] = 0;
+                thisProxy[thisIndex].exchange_notify_recv_ready(0,idim, CkCallbackResumeThread());
+              }
             }
+          } 
 
+          if((n + 1) % neighbor.every) {
+            comm->communicate(atom, false);            
           } else {
-            // TODO: Reneighboring not supported (not converted to async)
             if(check_safeexchange) {
               double d_max = 0;
 
@@ -347,51 +352,36 @@ void Block::run(){
                 d_max, atom.box.xhi - atom.box.xlo, atom.box.yhi - atom.box.ylo, atom.box.zhi - atom.box.zlo);
 
         }
-
-          if(thisIndex==0 && time_segments){
-            suspend(compute_instance);
-            iter_start_time=CkWallTimer();
-          }
           comm->exchange(atom, false);
           if(n+1>=next_sort) {
             atom.sort(neighbor);
             next_sort +=  integrate.sort_every;
           }
           comm->borders(atom, false);
-          if(thisIndex==0 && time_segments){
-              suspend(compute_instance);
-              comm_time+=CkWallTimer() - iter_start_time;
+          neighbor.build(atom);
+      }
+
+      //notify buffer to be ready to receive for next iteration
+      suspend(compute_instance);//suspend to ensure comms above are done
+      if((n+2)%neighbor.every){
+          for(int iswap = 0; iswap < comm->nswap; iswap++){
+            if (comm->sendchare[iswap] != thisIndex){
+                thisProxy[thisIndex].comms_notify_recv_ready(n+1, iswap, CkCallbackResumeThread());
+            }
           }
-
-
-        // Kokkos::Profiling::pushRegion("neighbor::build");
-        if(thisIndex==0 && time_segments){
-            suspend(compute_instance);
-            iter_start_time=CkWallTimer();
-        }
-        // thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
-        neighbor.build(atom);
-        if(thisIndex==0 && time_segments){
-              suspend(compute_instance);
-              neigh_time+=CkWallTimer() - iter_start_time;
-        }
-        // neighbor.build(atom);
-        // Kokneighborkos::Profiling::popRegion();
+      } else {
+          for(int i=0;i<3;i++){
+            if(comm->charegrid[i] == 1) continue;
+            comm->post_exchange_recv_count[i] = 0;
+            comm->nrecvexchange[2*i] = 0;
+            comm->nrecvexchange[2*i+1] = 0;
+            thisProxy[thisIndex].exchange_notify_recv_ready(n+1,i, CkCallbackResumeThread());
+          }
       }
 
-      // Kokkos::Profiling::pushRegion("force");
       force->evflag = (n + 1) % thermo.nstat == 0;
-      if(thisIndex==0 && time_segments){
-            suspend(compute_instance);
-            iter_start_time=CkWallTimer();
-      }
       force->compute(atom, neighbor, comm, comm->index);
-      if(thisIndex==0 && time_segments){
-        suspend(compute_instance);
-        force_time+=CkWallTimer() - iter_start_time;
-      }
-      // Kokkos::Profiling::popRegion();
-
+      
       if (neighbor.halfneigh && neighbor.ghost_newton) {
         comm->reverse_communicate(atom, false);
       }

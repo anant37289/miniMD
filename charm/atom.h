@@ -69,18 +69,18 @@ class Atom
     int nlocal, nghost;
     int nmax;
 
-    x_view_type x;
-    x_view_type v;
-    x_view_type f;
+    x_um_view_type x;
+    x_um_view_type v;
+    x_um_view_type f;
     x_host_view_type h_x;
     x_host_view_type h_v;
     x_host_view_type h_f;
 
     int ntypes;
-    int_1d_view_type type, new_type, old_type;
+    int_1d_um_view_type type, new_type, old_type;
     int_1d_host_view_type h_type;
 
-    x_view_type xold, new_x, new_v, old_x, old_v;
+    x_um_view_type xold, new_x, new_v, old_x, old_v;
 
     MMD_float virial, mass;
 
@@ -200,9 +200,8 @@ class Atom
   private:
     int_1d_view_type binpos;
     int_2d_view_type bins;
-    x_view_type x_copy;
-    x_view_type v_copy;
-    int_1d_view_type type_copy;
+    x_um_view_type x_copy, v_copy;
+    int_1d_um_view_type type_copy;
     int copy_size;
 
     float_1d_view_type buf;

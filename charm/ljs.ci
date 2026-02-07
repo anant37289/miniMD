@@ -229,9 +229,9 @@ module block {
 
 
     // Non-blocking communication routines for Comm:exchange
-    entry void exchange_notify_recv_ready(int idim, CkCallback cb) {
+    entry void exchange_notify_recv_ready(int iter, int idim, CkCallback cb) {
       serial {
-        int tag = 3*comm->iter + idim;
+        int tag = 3*iter + idim;
         thisProxy[comm->chareneigh[idim][0]].exchange_1_recv_1(tag);
         if (comm->charegrid[idim] > 2) {
           thisProxy[comm->chareneigh[idim][1]].exchange_1_recv_2(tag);
@@ -258,9 +258,9 @@ module block {
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
         //dealing with 0 size exchanges send and receive in a dummy buffer(mark as a dummy send)
         if(comm->send1_size==0)
-          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy));//no callback needed here
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, pack_instance.cuda_stream()));//no callback needed here
         else 
-          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, false, CkDeviceBuffer((char*)comm->send1, cb));
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, false, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
         cb_thread.send();
       }
     }
@@ -271,9 +271,9 @@ module block {
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
           CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
           if(comm->send2_size==0)
-            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy));//no callback needed here
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, pack_instance.cuda_stream()));//no callback needed here
           else
-            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, false, CkDeviceBuffer((char*)comm->send2, cb));
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, false, CkDeviceBuffer((char*)comm->send2, cb, pack_instance.cuda_stream()));
           cb_thread.send();
       }
     }
@@ -326,7 +326,7 @@ module block {
         int tag = comm->maxswap_static*comm->iter + iswap;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
+        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
       }
 
       
@@ -339,9 +339,9 @@ module block {
     entry void borders_recv_1(int ref);
     entry void borders_recv_2(int ref, size_t size, nocopydevice char data[size]);
 
-    entry void comms_notify_recv_ready(int iswap, CkCallback cb) {
+    entry void comms_notify_recv_ready(int iter, int iswap, CkCallback cb) {
       serial {
-        int tag = comm->nswap*comm->iter + iswap;
+        int tag = comm->nswap*iter + iswap;
         thisProxy[comm->recvchare[iswap]].comms_recv_1(tag);
         cb.send();
       }
@@ -359,7 +359,7 @@ module block {
           int tag = comm->nswap*comm->iter + iswap;
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
           CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-          thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb));
+          thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
         }
         when send_done() serial {
           cb.send();

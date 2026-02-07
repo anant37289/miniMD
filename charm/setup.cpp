@@ -36,6 +36,7 @@
 #include "types.h"
 #include "integrate.h"
 #include "neighbor.h"
+#include "ljs_kokkos.h"
 
 #include <cstring>
 #include <cstdio>
@@ -409,12 +410,17 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
 
   atom.nmax = count_atoms;
   if (atom.nmax > 0) {
-      Kokkos::resize(atom.x, atom.nmax);
-      Kokkos::resize(atom.v, atom.nmax);
-      Kokkos::resize(atom.f, atom.nmax);
-      Kokkos::resize(atom.type, atom.nmax);
-      Kokkos::resize(atom.xold, atom.nmax);
-      
+      // Kokkos::resize(atom.x, atom.nmax);
+      // Kokkos::resize(atom.v, atom.nmax);
+      // Kokkos::resize(atom.f, atom.nmax);
+      // Kokkos::resize(atom.type, atom.nmax);
+      // Kokkos::resize(atom.xold, atom.nmax);
+      resize_unmanaged_2d_views(atom.x, atom.nmax, atom.x.extent(1));
+      resize_unmanaged_2d_views(atom.v, atom.nmax, atom.v.extent(1));
+      resize_unmanaged_2d_views(atom.f, atom.nmax, atom.f.extent(1));
+      resize_unmanaged_1d_views(atom.type, atom.nmax);
+      resize_unmanaged_2d_views(atom.xold, atom.nmax, atom.xold.extent(1));
+      Kokkos::fence();
       atom.h_x = Kokkos::create_mirror_view(atom.x);
       atom.h_v = Kokkos::create_mirror_view(atom.v);
       atom.h_type = Kokkos::create_mirror_view(atom.type);

@@ -67,11 +67,12 @@ Atom::~Atom()
 void Atom::growarray()
 {
   nmax += DELTA;
-  Kokkos::resize(x,nmax);
-  Kokkos::resize(v,nmax);
-  Kokkos::resize(f,nmax);
-  Kokkos::resize(type,nmax);
-  Kokkos::resize(xold,nmax);
+  resize_unmanaged_2d_views(x, nmax, x.extent(1));
+  resize_unmanaged_2d_views(v, nmax, v.extent(1));
+  resize_unmanaged_2d_views(f, nmax, f.extent(1));
+  resize_unmanaged_1d_views(type, nmax);
+  resize_unmanaged_2d_views(xold, nmax, xold.extent(1));
+  Kokkos::fence();
   h_x = Kokkos::create_mirror_view(x);
   h_v = Kokkos::create_mirror_view(v);
   h_type = Kokkos::create_mirror_view(type);
@@ -139,7 +140,7 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
   first = first_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance = pack_instance;
+  Kokkos::Cuda instance = unpack_instance;
 
   //KOKKOS_ASSERT(instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   Kokkos::parallel_for(Kokkos::Experimental::require(
@@ -242,9 +243,12 @@ void Atom::sort(Neighbor &neighbor)
   Kokkos::parallel_scan(Kokkos::RangePolicy<TagAtomSort>(compute_instance, 0,mbins), *this);
 
   if(copy_size<nmax) {
-    x_copy = x_view_type("atom::x_copy",nmax);
-    v_copy = x_view_type("atom::v_copy",nmax);
-    type_copy = int_1d_view_type("atom::type_copy",nmax);
+    // x_copy = x_view_type("atom::x_copy",nmax);
+    // v_copy = x_view_type("atom::v_copy",nmax);
+    // type_copy = int_1d_view_type("atom::type_copy",nmax);
+    resize_unmanaged_2d_views(x_copy, nmax, x_copy.extent(1), compute_instance.cuda_stream());
+    resize_unmanaged_2d_views(v_copy, nmax, x_copy.extent(1), compute_instance.cuda_stream());
+    resize_unmanaged_1d_views(type_copy, nmax, compute_instance.cuda_stream());
     copy_size = nmax;
   }
 
@@ -257,9 +261,9 @@ void Atom::sort(Neighbor &neighbor)
 
   Kokkos::parallel_for(Kokkos::RangePolicy<TagAtomSort>(compute_instance, 0,mbins), *this);
   
-  x_view_type x_tmp = x;
-  x_view_type v_tmp = v;
-  int_1d_view_type type_tmp = type;
+  x_um_view_type x_tmp = x;
+  x_um_view_type v_tmp = v;
+  int_1d_um_view_type type_tmp = type;
   
   x = x_copy;
   v = v_copy;

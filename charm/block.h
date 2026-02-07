@@ -80,7 +80,7 @@ public:
       // ckout<<"comms_recv recv_size "<<size<<endl;
       int iswap = ref%comm->maxswap_static;
 
-      postInfo[0].hapi_stream = pack_instance.cuda_stream();
+      postInfo[0].hapi_stream = unpack_instance.cuda_stream();
       data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
