@@ -84,8 +84,8 @@ class Comm : public CBase_Comm
     void exchange(Atom &, bool);
     void borders(Atom &, bool);
     //void send(int, int, CkCallback cb);
-    void growsend(int);
-    void growrecv(int);
+    void growsend(int, cudaStream_t);
+    void growrecv(int, cudaStream_t);
     void growrecvcomm(int,int,cudaStream_t);
     void growlist(int, int,cudaStream_t);
     void suspend(Kokkos::Cuda);

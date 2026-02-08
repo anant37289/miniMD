@@ -55,10 +55,11 @@ Comm::Comm()
   index = thisIndex;
   maxsend = BUFMIN;
   MMD_float* buf_send_ptr;
-  cudaMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float));
+  hapiCheck(cudaMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float)));
   buf_send = float_1d_um_view_type(buf_send_ptr,maxsend + BUFMIN);
   maxrecv = BUFMIN;
   MMD_float* buf_recv_ptr;
+  hapiCheck(cudaMalloc(&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
   buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;
@@ -574,7 +575,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count_host(0)*7>=maxsend) {
-        growsend(count_host(0)*7);
+        growsend(count_host(0)*7, pack_instance.cuda_stream());
       }
     }
     nsend_atoms = count_host(0);
@@ -810,7 +811,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       if(nsend * 4 > maxsend) {
         
-        growsend(nsend * 4);
+        growsend(nsend * 4, pack_instance.cuda_stream());
       }
 
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(pack_instance, 0,nsend),*this);
@@ -871,12 +872,12 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   if(max1 > maxsend) {
     
-    growsend(max1);
+    growsend(max1, compute_instance.cuda_stream());
   }
 
   if(max2 > maxrecv) {
     
-    growrecv(max2);
+    growrecv(max2, compute_instance.cuda_stream());
   }
   atom_ = atom;
 
@@ -937,18 +938,18 @@ void Comm::operator() (TagBorderUnpack, const int& i) const {
 
 /* realloc the size of the send buffer as needed with BUFFACTOR & BUFEXTRA */
 
-void Comm::growsend(int n)
+void Comm::growsend(int n, cudaStream_t stream)
 {
-  resize_unmanaged_1d_views(buf_send,static_cast<int>(BUFFACTOR * n) + BUFEXTRA);
+  resize_unmanaged_1d_views(buf_send,static_cast<int>(BUFFACTOR * n) + BUFEXTRA, stream);
   maxsend = static_cast<int>(BUFFACTOR * n);
 }
 
 /* free/malloc the size of the recv buffer as needed with BUFFACTOR */
 
-void Comm::growrecv(int n)
+void Comm::growrecv(int n, cudaStream_t stream)
 {
   maxrecv = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
-  resize_unmanaged_1d_views(buf_recv, maxrecv);
+  resize_unmanaged_1d_views(buf_recv, maxrecv, stream);
 }
 
 void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
@@ -963,11 +964,11 @@ void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
 
 /* realloc the size of the iswap sendlist as needed with BUFFACTOR */
 
-void Comm::growlist(int iswap, int n, cudaStream_t)
+void Comm::growlist(int iswap, int n, cudaStream_t stream)
 {
   if(n<=maxsendlist[iswap]) return;
   int maxswap = sendlist.extent(0);
-  resize_unmanaged_2d_views(sendlist,sendlist.extent(0),BUFFACTOR * n + BUFEXTRA);
+  resize_unmanaged_2d_views(sendlist,sendlist.extent(0),BUFFACTOR * n + BUFEXTRA, stream);
   for(int iswaps = 0; iswaps < maxswap; iswaps++) {
     maxsendlist[iswaps] = static_cast<int>(BUFFACTOR * n);
   }

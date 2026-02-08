@@ -10,6 +10,29 @@
 #include "Kokkos_DualView.hpp"
 #include <type_traits>
 #include <cassert>
+#include <cuda_runtime.h>
+#include <cstdio>
+#include <cstdlib>
+
+inline void cudaCheckImpl(cudaError_t err,
+                          const char* file,
+                          int line,
+                          const char* call)
+{
+    if (err != cudaSuccess) {
+        std::fprintf(stderr,
+                     "CUDA error at %s:%d\n"
+                     "  call: %s\n"
+                     "  error: %s (%d)\n",
+                     file, line, call,
+                     cudaGetErrorString(err),
+                     static_cast<int>(err));
+        std::abort();
+    }
+}
+
+#define CUDA_CHECK(call) \
+    cudaCheckImpl((call), __FILE__, __LINE__, #call)
 
 typedef Kokkos::DefaultExecutionSpace DeviceType;
 typedef Kokkos::HostSpace::execution_space HostType;
@@ -111,22 +134,22 @@ void resize_unmanaged_1d_views(
     const size_t old_n0 = view.extent(0);
 
     value_type* new_ptr = nullptr;
-    cudaMallocAsync(&new_ptr,
+    CUDA_CHECK(cudaMallocAsync(&new_ptr,
                     new_n0 * sizeof(value_type),
-                    stream);
+                    stream));
 
     const size_t copy_n0 = std::min(old_n0, new_n0);
     if (copy_n0 > 0) {
-        cudaMemcpyAsync(
+        CUDA_CHECK(cudaMemcpyAsync(
             new_ptr,
             old_ptr,
             copy_n0 * sizeof(value_type),
             cudaMemcpyDeviceToDevice,
-            stream);
+            stream));
     }
 
     if (old_ptr) {
-        cudaFreeAsync(old_ptr, stream);
+        CUDA_CHECK(cudaFreeAsync(old_ptr, stream));
     }
 
     view = ViewType(new_ptr, new_n0);
@@ -162,7 +185,7 @@ void resize_unmanaged_2d_views(
     size_t new_size_bytes = new_n0 * new_n1 * sizeof(value_type);
     
     if (new_size_bytes > 0) {
-        cudaMallocAsync(&new_ptr, new_size_bytes, stream);
+        CUDA_CHECK(cudaMallocAsync(&new_ptr, new_size_bytes, stream));
     }
 
     if (old_ptr && new_ptr && old_n0 > 0 && old_n1 > 0) {
@@ -192,18 +215,17 @@ void resize_unmanaged_2d_views(
             dpitch = new_n0 * sizeof(value_type);
         }
 
-        cudaMemcpy2DAsync(
+        CUDA_CHECK(cudaMemcpy2DAsync(
             new_ptr, dpitch,
             old_ptr, spitch,
             width, height,
             cudaMemcpyDeviceToDevice,
-            stream
-        );
+            stream));
     }
 
     // 3. Free Old Memory
     if (old_ptr) {
-        cudaFreeAsync(old_ptr, stream);
+        CUDA_CHECK(cudaFreeAsync(old_ptr, stream));
     }
 
     // 4. Reconstruct View
