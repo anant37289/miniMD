@@ -288,7 +288,6 @@ void Block::run(){
           integrate.x = atom.x;
           integrate.v = atom.v;
           integrate.f = atom.f;
-          integrate.xold = atom.xold;
           integrate.nlocal = atom.nlocal;
 
           integrate.initialIntegrate();
@@ -316,42 +315,6 @@ void Block::run(){
           if((n + 1) % neighbor.every) {
             comm->communicate(atom, false);            
           } else {
-            if(check_safeexchange) {
-              double d_max = 0;
-
-              for(i = 0; i < atom.nlocal; i++) {
-                double dx = (integrate.x(i,0) - integrate.xold(i,0));
-
-                if(dx > atom.box.xprd) dx -= atom.box.xprd;
-
-                if(dx < -atom.box.xprd) dx += atom.box.xprd;
-
-                double dy = (integrate.x(i,1) - integrate.xold(i,1));
-
-                if(dy > atom.box.yprd) dy -= atom.box.yprd;
-
-                if(dy < -atom.box.yprd) dy += atom.box.yprd;
-
-                double dz = (integrate.x(i,2) - integrate.xold(i,2));
-
-                if(dz > atom.box.zprd) dz -= atom.box.zprd;
-
-                if(dz < -atom.box.zprd) dz += atom.box.zprd;
-
-                double d = dx * dx + dy * dy + dz * dz;
-
-                if(d > d_max) d_max = d;
-              }
-
-          d_max = sqrt(d_max);
-
-          if((d_max > atom.box.xhi - atom.box.xlo) || (d_max > atom.box.yhi - atom.box.ylo) || (d_max > atom.box.zhi - atom.box.zlo))
-            printf("Warning: Atoms move further than your subdomain size, which will eventually cause lost atoms.\n"
-                "Increase reneighboring frequency or choose a different processor grid\n"
-                "Maximum move distance: %lf; Subdomain dimensions: %lf %lf %lf\n",
-                d_max, atom.box.xhi - atom.box.xlo, atom.box.yhi - atom.box.ylo, atom.box.zhi - atom.box.zlo);
-
-        }
           comm->exchange(atom, false);
           if(n+1>=next_sort) {
             atom.sort(neighbor);

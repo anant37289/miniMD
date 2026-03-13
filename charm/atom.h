@@ -35,6 +35,8 @@
 #include "types.h"
 #include "ljs_kokkos.h"
 #include "Kokkos_Sort.hpp"
+#include "pup.h"
+#include "hapi.h"
 
 class Neighbor;
 struct Box {
@@ -80,13 +82,27 @@ class Atom
     int_1d_um_view_type type, new_type, old_type;
     int_1d_host_view_type h_type;
 
-    x_um_view_type xold, new_x, new_v, old_x, old_v;
+    x_um_view_type new_x, new_v, old_x, old_v;
 
     MMD_float virial, mass;
 
     int comm_size, reverse_size, border_size;
 
     Box box;
+
+private:
+    int_1d_view_type binpos;
+    int_2d_view_type bins;
+    x_um_view_type x_copy, v_copy;
+    int_1d_um_view_type type_copy;
+    int copy_size;
+
+    float_1d_view_type buf;
+    int_1d_view_type list;
+    int pbc_flags[4];
+    int first;
+
+public:
 
     Atom() {};
     Atom(int ntypes_);
@@ -97,18 +113,18 @@ class Atom
       nlocal = src.nlocal;
       nghost = src.nghost;
       nmax = src.nmax;
+      ntypes = src.ntypes;
+
       type = src.type;
       x = src.x;
       v = src.v;
       f = src.f;
-      ntypes = src.ntypes;
-      xold = src.xold;
-      new_type = src.new_type;
-      new_x = src.new_x;
-      new_v = src.new_v;
       old_type = src.old_type;
       old_x = src.old_x;
       old_v = src.old_v;
+      new_type = src.new_type;
+      new_x = src.new_x;
+      new_v = src.new_v;
       virial = src.virial;
       mass = src.mass;
       comm_size = src.comm_size;
@@ -139,13 +155,70 @@ class Atom
       box = src.box;
     }
 
+
+    void pup(PUP::er &p)
+    {
+      p| natoms;
+      p| nlocal;
+      p| nghost;
+      p| nmax;
+      p| ntypes;
+      p| virial;
+      p| mass;
+      p| comm_size;
+      p| reverse_size;
+      p| border_size;
+      p| copy_size;
+      p| first;
+      p| pbc_flags[0];
+      p| pbc_flags[1];
+      p| pbc_flags[2];
+      p| pbc_flags[3];
+      p| box.xprd;
+      p| box.yprd;
+      p| box.zprd;
+      p| box.xlo;
+      p| box.xhi;
+      p| box.ylo;
+      p| box.yhi;
+      p| box.zlo;
+      p| box.zhi;
+      if(p.isUnpacking())
+      {
+        //allocate all buffers x, v, f, type, x_copy, v_copy, type_copy (new_, old_, binpos, bins, buf, list are temporary references no need to pup)
+        void *x_ptr, *v_ptr, *f_ptr, *type_ptr, *x_copy_ptr, *v_copy_ptr, *type_copy_ptr;
+        cudaMalloc((void**)&x_ptr, nmax*PAD*sizeof(MMD_float));
+        cudaMalloc((void**)&v_ptr, nmax*PAD*sizeof(MMD_float));
+        cudaMalloc((void**)&f_ptr, nmax*PAD*sizeof(MMD_float));
+        cudaMalloc((void**)&type_ptr, nmax*sizeof(int));
+        cudaMalloc((void**)&x_copy_ptr, nmax*PAD*sizeof(MMD_float));
+        cudaMalloc((void**)&v_copy_ptr, nmax*PAD*sizeof(MMD_float));
+        cudaMalloc((void**)&type_copy_ptr, nmax*sizeof(int));
+
+        x = x_um_view_type((MMD_float*)x_ptr, nmax, PAD);
+        v = x_um_view_type((MMD_float*)v_ptr, nmax, PAD);
+        f = x_um_view_type((MMD_float*)f_ptr, nmax, PAD);
+        type = int_1d_um_view_type((int*)type_ptr, nmax);
+        x_copy = x_um_view_type((MMD_float*)x_copy_ptr, nmax, PAD);
+        v_copy = x_um_view_type((MMD_float*)v_copy_ptr, nmax, PAD);
+        type_copy = int_1d_um_view_type((int*)type_copy_ptr, nmax);
+      }
+      p(x.data(), nmax*PAD, PUP::PUPMode::DEVICE);
+      p(v.data(), nmax*PAD, PUP::PUPMode::DEVICE);
+      p(f.data(), nmax*PAD, PUP::PUPMode::DEVICE);
+      p(type.data(), nmax, PUP::PUPMode::DEVICE);//check if needed!!
+      // scratch buffers so no need to pup 
+      // p(x_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
+      // p(v_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
+      // p(type_copy.data(), nmax, PUP::PUPMode::DEVICE);
+    }
     void addatom(MMD_float, MMD_float, MMD_float, MMD_float, MMD_float, MMD_float);
 
     void pbc();
     KOKKOS_INLINE_FUNCTION
     void operator() (TagAtomPBC, const int& i) const;
 
-    void growarray();
+    void growarray(hapiStream_t stream);
 
     KOKKOS_INLINE_FUNCTION
     void copy(int, int) const;
@@ -196,18 +269,6 @@ class Atom
 
     KOKKOS_INLINE_FUNCTION
     void operator() (TagAtomSort, const int& i, int& sum, bool final) const;
-
-  private:
-    int_1d_view_type binpos;
-    int_2d_view_type bins;
-    x_um_view_type x_copy, v_copy;
-    int_1d_um_view_type type_copy;
-    int copy_size;
-
-    float_1d_view_type buf;
-    int_1d_view_type list;
-    int pbc_flags[4];
-    int first;
 };
 
 struct MiniMDBinOp3D {

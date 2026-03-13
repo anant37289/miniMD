@@ -668,7 +668,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     Kokkos::deep_copy(pack_instance, count_device, nlocal);
 
     if(atom.nlocal>=atom.nmax)
-      atom.growarray();
+      atom.growarray(pack_instance.cuda_stream());
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
     //wait for send to finish to begin next iteration
@@ -840,7 +840,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       n = atom.nlocal + atom.nghost;
 
-      while(n + nrecv > atom.nmax) atom.growarray();
+      while(n + nrecv > atom.nmax) atom.growarray(pack_instance.cuda_stream());
 
       x = atom.x;
       

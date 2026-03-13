@@ -55,7 +55,7 @@ class Integrate
     MMD_float dtforce;
     MMD_int ntimes;
     MMD_int nlocal, nmax;
-    x_view_type x, v, f, xold;
+    x_view_type x, v, f;
     MMD_float mass;
 
     MMD_int sort_every;

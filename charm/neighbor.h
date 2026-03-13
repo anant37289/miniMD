@@ -38,9 +38,7 @@
 class Neighbor
 {
   public:
-
-    typedef int value_type;
-
+    struct TagNeighborBinningCount {};
     struct TagNeighborBinning {};
     template<int HALF_NEIGH,bool STACK_ARRAYS>
     struct TagNeighborBuild {};
@@ -91,7 +89,7 @@ class Neighbor
     KOKKOS_INLINE_FUNCTION
     void operator() (TagNeighborBinning, const int&, int&) const;
     KOKKOS_INLINE_FUNCTION
-    void operator() (TagNeighborBinning, const int& ibin, int& offset, const bool& final) const;
+    void operator() (TagNeighborBinningCount, const int& ibin, int& offset, const bool& final) const;
 
     template<int HALF_NEIGH, bool STACK_ARRAYS>
     KOKKOS_INLINE_FUNCTION
@@ -106,6 +104,8 @@ class Neighbor
     size_t team_shmem_size( int team_size ) const {
       return shared_mem_size;
     }
+
+    void pup(PUP::er &p);
 
   private:
     MMD_float xprd, yprd, zprd;      // box size
@@ -128,8 +128,8 @@ class Neighbor
     KOKKOS_INLINE_FUNCTION
     int coord2bin(MMD_float, MMD_float, MMD_float) const;   // mapping atom coord to a bin
 
-    x_rnd_view_type x;
-    int_1d_rnd_view_type type;
+    x_rnd_view_type x;//temp reference to atom x
+    int_1d_rnd_view_type type;//temp reference to atom type
     int nlocal;
     int_1d_view_type new_maxneighs;
     int_1d_host_view_type h_new_maxneighs;

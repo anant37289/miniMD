@@ -64,6 +64,73 @@ Neighbor::~Neighbor()
 {
 }
 
+void Neighbor::pup(PUP::er& p) {
+  p| every;
+  p| nbinx;
+  p| nbiny;
+  p| nbinz;
+  p| cutneigh;
+  p| ntypes;
+  for(int i=0;i<ntypes*ntypes;i++)
+    p| cutneighsq_stack[i];
+  p| ncalls;
+  p| max_totalneigh;
+  p| nmax;
+  p| maxneighs;
+  p| halfneigh;
+  p| team_neigh_build;
+  p| ghost_newton;
+  p| count;
+  p| mbins;
+  p| mbinx;
+  p| mbiny;
+  p| mbinz;
+  p| atoms_per_bin;
+  p| shared_mem_size;
+  p| xprd;
+  p| yprd;
+  p| zprd;
+  p| nstencil;
+  p| mbinxlo;
+  p| mbinylo;
+  p| mbinzlo;
+  p| nextx;
+  p| nexty;
+  p| nextz;
+  p| binsizex;
+  p| binsizey;
+  p| binsizez;
+  p| bininvx;
+  p| bininvy;
+  p| bininvz;
+  p| resize;
+  p| nlocal;
+
+  int stencil_size = (2*nextz+1)*(2*nexty+1)*(2*nextx+1);
+  if(p.isUnpacking())
+  {
+    cutneighsq = float_1d_view_type("Neighbor::cutneighsq",ntypes*ntypes);
+    numneigh = int_1d_view_type("Neighbor::numneigh",nmax);
+    neighbors = int_2d_view_type("Neighbor::neighbors",nmax , maxneighs);
+    bincount = int_1d_view_type("Neighbor::bincount",mbins);
+    bin_has_local = int_1d_view_type("Neighbor::bin_has_local",mbins);
+    bin_list = int_1d_view_type("Neighbor::bin_list",mbins);
+    bins = int_2d_view_type("Neighbor::bins",mbins , atoms_per_bin);
+    stencil = int_1d_view_type("Neighbor::stencil", stencil_size);
+    new_maxneighs = int_1d_view_type("Neighbor::new_maxneighs",1);
+    h_new_maxneighs = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), new_maxneighs);
+  }
+  p(cutneighsq.data(), ntypes*ntypes, PUP::PUPMode::DEVICE);
+  p(numneigh.data(), nmax, PUP::PUPMode::DEVICE);
+  p(neighbors.data(), nmax*maxneighs, PUP::PUPMode::DEVICE);
+  p(bincount.data(), mbins, PUP::PUPMode::DEVICE);
+  p(bin_has_local.data(), mbins, PUP::PUPMode::DEVICE);
+  p(bin_list.data(), mbins, PUP::PUPMode::DEVICE);
+  p(bins.data(), mbins*atoms_per_bin, PUP::PUPMode::DEVICE);
+  p(new_maxneighs.data(), 1, PUP::PUPMode::DEVICE);
+  p(stencil.data(), stencil_size, PUP::PUPMode::DEVICE);
+}
+
 void Neighbor::dealloc() {
 
 }
@@ -434,7 +501,7 @@ void Neighbor::binatoms(Atom &atom, int count)
   }
 
   Kokkos::deep_copy(compute_instance, bin_list,-1);
-  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,mbins), *this);
+  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinningCount>(compute_instance, 0,mbins), *this);
 }
 
 
@@ -451,7 +518,7 @@ void Neighbor::operator() (TagNeighborBinning, const int& i, int& resize) const{
 }
 
 KOKKOS_INLINE_FUNCTION
-void Neighbor::operator() (TagNeighborBinning, const int& ibin, int& offset, const bool& final) const{
+void Neighbor::operator() (TagNeighborBinningCount, const int& ibin, int& offset, const bool& final) const{
   if(bin_has_local(ibin)) {
     if(final)
       bin_list(offset) = ibin;

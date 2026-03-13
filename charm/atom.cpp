@@ -37,11 +37,6 @@
 
 #define DELTA 20000
 
-int pack_comm_count = 0;
-int unpack_comm_count = 0;
-int pack_comm_self_count = 0;
-int pack_reverse_count = 0;
-int unpack_reverse_count = 0;
 
 Atom::Atom(int ntypes_)
 {
@@ -64,15 +59,14 @@ Atom::~Atom()
 {
 }
 
-void Atom::growarray()
+void Atom::growarray(hapiStream_t stream=0)
 {
   nmax += DELTA;
-  resize_unmanaged_2d_views(x, nmax, x.extent(1));
-  resize_unmanaged_2d_views(v, nmax, v.extent(1));
-  resize_unmanaged_2d_views(f, nmax, f.extent(1));
-  resize_unmanaged_1d_views(type, nmax);
-  resize_unmanaged_2d_views(xold, nmax, xold.extent(1));
-  Kokkos::fence();
+  resize_unmanaged_2d_views(x, nmax, x.extent(1), stream);
+  resize_unmanaged_2d_views(v, nmax, v.extent(1), stream);
+  resize_unmanaged_2d_views(f, nmax, f.extent(1), stream);
+  resize_unmanaged_1d_views(type, nmax, stream);
+  // Kokkos::fence();
   h_x = Kokkos::create_mirror_view(x);
   h_v = Kokkos::create_mirror_view(v);
   h_type = Kokkos::create_mirror_view(type);
@@ -85,7 +79,7 @@ void Atom::addatom(MMD_float x_in, MMD_float y_in, MMD_float z_in,
     Kokkos::deep_copy(x,h_x);
     Kokkos::deep_copy(v,h_v);
     Kokkos::deep_copy(type,h_type);
-    growarray();
+    growarray(0);
     Kokkos::deep_copy(h_x,x);
     Kokkos::deep_copy(h_v,v);
     Kokkos::deep_copy(h_type,type);
@@ -115,7 +109,6 @@ void Atom::pbc()
 
 void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in, int* pbc_flags_in)
 {
-  pack_comm_count++;
   list = list_in;
   buf = buf_in;
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
@@ -136,7 +129,6 @@ void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in,
 
 void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
 {
-  unpack_comm_count++;
   first = first_in;
   buf = buf_in;
 
@@ -150,7 +142,6 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
 
 void Atom::pack_comm_self(int n, int_1d_view_type list_in, int first_in, int* pbc_flags_in)
 {
-  pack_comm_self_count++;
   list = list_in;
   first = first_in;
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
@@ -168,7 +159,6 @@ void Atom::pack_comm_self(int n, int_1d_view_type list_in, int first_in, int* pb
 
 void Atom::pack_reverse(int n, int first_in, float_1d_view_type buf_in)
 {
-  pack_reverse_count++;
   first = first_in;
   buf = buf_in;
 
@@ -186,7 +176,6 @@ void Atom::pack_reverse(int n, int first_in, float_1d_view_type buf_in)
 
 void Atom::unpack_reverse(int n, int_1d_view_type list_in, float_1d_view_type buf_in)
 {
-  unpack_reverse_count++;
   list = list_in;
   buf = buf_in;
 

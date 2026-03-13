@@ -108,7 +108,6 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
       x = atom.x;
       v = atom.v;
       f = atom.f;
-      xold = atom.xold;
       nlocal = atom.nlocal;
 
       initialIntegrate();
@@ -119,42 +118,42 @@ void Integrate::run(Atom &atom, Force* force, Neighbor &neighbor,
 
       } else {
         // TODO: Reneighboring not supported (not converted to async)
-        if(check_safeexchange) {
-          double d_max = 0;
+        // if(check_safeexchange) {
+        //   double d_max = 0;
 
-          for(i = 0; i < atom.nlocal; i++) {
-            double dx = (x(i,0) - xold(i,0));
+        //   for(i = 0; i < atom.nlocal; i++) {
+        //     double dx = (x(i,0) - xold(i,0));
 
-            if(dx > atom.box.xprd) dx -= atom.box.xprd;
+        //     if(dx > atom.box.xprd) dx -= atom.box.xprd;
 
-            if(dx < -atom.box.xprd) dx += atom.box.xprd;
+        //     if(dx < -atom.box.xprd) dx += atom.box.xprd;
 
-            double dy = (x(i,1) - xold(i,1));
+        //     double dy = (x(i,1) - xold(i,1));
 
-            if(dy > atom.box.yprd) dy -= atom.box.yprd;
+        //     if(dy > atom.box.yprd) dy -= atom.box.yprd;
 
-            if(dy < -atom.box.yprd) dy += atom.box.yprd;
+        //     if(dy < -atom.box.yprd) dy += atom.box.yprd;
 
-            double dz = (x(i,2) - xold(i,2));
+        //     double dz = (x(i,2) - xold(i,2));
 
-            if(dz > atom.box.zprd) dz -= atom.box.zprd;
+        //     if(dz > atom.box.zprd) dz -= atom.box.zprd;
 
-            if(dz < -atom.box.zprd) dz += atom.box.zprd;
+        //     if(dz < -atom.box.zprd) dz += atom.box.zprd;
 
-            double d = dx * dx + dy * dy + dz * dz;
+        //     double d = dx * dx + dy * dy + dz * dz;
 
-            if(d > d_max) d_max = d;
-          }
+        //     if(d > d_max) d_max = d;
+        //   }
 
-          d_max = sqrt(d_max);
+        //   d_max = sqrt(d_max);
 
-          if((d_max > atom.box.xhi - atom.box.xlo) || (d_max > atom.box.yhi - atom.box.ylo) || (d_max > atom.box.zhi - atom.box.zlo))
-            printf("Warning: Atoms move further than your subdomain size, which will eventually cause lost atoms.\n"
-                "Increase reneighboring frequency or choose a different processor grid\n"
-                "Maximum move distance: %lf; Subdomain dimensions: %lf %lf %lf\n",
-                d_max, atom.box.xhi - atom.box.xlo, atom.box.yhi - atom.box.ylo, atom.box.zhi - atom.box.zlo);
+        //   if((d_max > atom.box.xhi - atom.box.xlo) || (d_max > atom.box.yhi - atom.box.ylo) || (d_max > atom.box.zhi - atom.box.zlo))
+        //     printf("Warning: Atoms move further than your subdomain size, which will eventually cause lost atoms.\n"
+        //         "Increase reneighboring frequency or choose a different processor grid\n"
+        //         "Maximum move distance: %lf; Subdomain dimensions: %lf %lf %lf\n",
+        //         d_max, atom.box.xhi - atom.box.xlo, atom.box.yhi - atom.box.ylo, atom.box.zhi - atom.box.zlo);
 
-        }
+        // }
 
         comm->exchange(atom, false);
         if(n+1>=next_sort) {
