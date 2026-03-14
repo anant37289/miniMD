@@ -38,7 +38,8 @@
 class Neighbor
 {
   public:
-    struct TagNeighborBinningCount {};
+    typedef int value_type;
+    // struct TagNeighborBinningCount {};
     struct TagNeighborBinning {};
     template<int HALF_NEIGH,bool STACK_ARRAYS>
     struct TagNeighborBuild {};
@@ -89,7 +90,7 @@ class Neighbor
     KOKKOS_INLINE_FUNCTION
     void operator() (TagNeighborBinning, const int&, int&) const;
     KOKKOS_INLINE_FUNCTION
-    void operator() (TagNeighborBinningCount, const int& ibin, int& offset, const bool& final) const;
+    void operator() (TagNeighborBinning, const int& ibin, int& offset, const bool& final) const;
 
     template<int HALF_NEIGH, bool STACK_ARRAYS>
     KOKKOS_INLINE_FUNCTION

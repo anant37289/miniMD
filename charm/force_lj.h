@@ -42,7 +42,7 @@
 class ForceLJ : Force
 {
   public:
-
+    PUPable_decl(ForceLJ);
     typedef eng_virial_type value_type;
 
     struct TagClearForces {};
@@ -59,6 +59,7 @@ class ForceLJ : Force
     };
 
     ForceLJ(int ntypes_);
+    ForceLJ(CkMigrateMessage* msg){}
     virtual ~ForceLJ();
     void setup();
     void compute(Atom &, Neighbor &, Comm*, int);
@@ -92,7 +93,9 @@ class ForceLJ : Force
     template<int EVFLAG, int STACK_PARAMS>
     KOKKOS_INLINE_FUNCTION
     void operator() (TagComputeFullNeigh<EVFLAG,STACK_PARAMS> , const int& i, eng_virial_type& eng_virial ) const;
-
+    void pup(PUP::er &p){
+      Force::pup(p);
+    }
 };
 
 #endif

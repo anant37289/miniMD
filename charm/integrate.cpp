@@ -45,6 +45,17 @@ void Integrate::setup()
   dtforce = 0.5 * dt;
 }
 
+void Integrate::pup(PUP::er &p){
+  p| dt;
+  p| dtforce;
+  p| ntimes;
+  p| nlocal;
+  p| nmax;
+  //no need to pup x,v,f (they are taken from atom.x, atom.v, atom.f)
+  p| mass;
+  p| sort_every;
+  p| index;
+}
 void Integrate::initialIntegrate()
 {
   std::ostringstream os;

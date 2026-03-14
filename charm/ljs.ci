@@ -1,6 +1,14 @@
 mainmodule miniMD {
   extern module block;
   include "types.h";
+  include "force.h";
+  include "force_lj.h";
+  include "force_eam.h";
+
+  //register as pupable for migration
+  PUPable Force;
+  PUPable ForceLJ;
+  PUPable ForceEAM;
 
   readonly CProxy_Main main_proxy;
   readonly CProxy_KokkosManager kokkos_proxy;

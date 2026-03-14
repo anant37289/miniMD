@@ -501,7 +501,7 @@ void Neighbor::binatoms(Atom &atom, int count)
   }
 
   Kokkos::deep_copy(compute_instance, bin_list,-1);
-  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinningCount>(compute_instance, 0,mbins), *this);
+  Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance, 0,mbins), *this);
 }
 
 
@@ -518,7 +518,7 @@ void Neighbor::operator() (TagNeighborBinning, const int& i, int& resize) const{
 }
 
 KOKKOS_INLINE_FUNCTION
-void Neighbor::operator() (TagNeighborBinningCount, const int& ibin, int& offset, const bool& final) const{
+void Neighbor::operator() (TagNeighborBinning, const int& ibin, int& offset, const bool& final) const{
   if(bin_has_local(ibin)) {
     if(final)
       bin_list(offset) = ibin;

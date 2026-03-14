@@ -45,7 +45,7 @@ class ForceEAM : Force
   public:
 
     typedef eng_virial_type value_type;
-
+    PUPable_decl(ForceEAM);
 
     struct TagHalfNeighInitial {};
     template<int EVFLAG>
@@ -85,6 +85,7 @@ class ForceEAM : Force
     int_2d_lr_view_type sendlist;
 
     ForceEAM(int ntypes_);
+    ForceEAM(CkMigrateMessage* msg){}
     virtual ~ForceEAM();
     virtual void compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me);
     virtual void coeff(const char*);
@@ -96,6 +97,12 @@ class ForceEAM : Force
     MMD_int pack_reverse_comm(MMD_int, MMD_int, float_1d_view_type);
     void unpack_reverse_comm(MMD_int, MMD_int*, float_1d_view_type);
     MMD_float memory_usage();
+
+    void pup(PUP::er &p)
+    {
+      //TODO: this is wrong! Change if want to suppport force EAM
+      Force::pup(p);
+    }
 
     KOKKOS_INLINE_FUNCTION
     void operator() (TagHalfNeighInitial , const int& i ) const;

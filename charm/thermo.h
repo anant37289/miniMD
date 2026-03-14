@@ -48,10 +48,10 @@ class Thermo
     MMD_int nstat;
     MMD_int mstat;
     MMD_int ntimes;
-    MMD_int* steparr;
-    MMD_float* tmparr;
-    MMD_float* engarr;
-    MMD_float* prsarr;
+    // MMD_int* steparr;
+    // MMD_float* tmparr;
+    // MMD_float* engarr;
+    // MMD_float* prsarr;
 
     Kokkos::Cuda compute_instance;
     Kokkos::Cuda h2d_instance;
@@ -67,6 +67,7 @@ class Thermo
     MMD_float temperature(Atom &);
     KOKKOS_INLINE_FUNCTION
     void operator() (const int& i, MMD_float& mv) const;
+    void pup(PUP::er &p);
 
     MMD_float energy(Atom &, Neighbor &, Force*);
     MMD_float pressure(MMD_float, Force*);

@@ -46,6 +46,27 @@ Thermo::~Thermo() {
   delete [] prsarr;*/
 }
 
+void Thermo::pup(PUP::er &p){
+  p| nstat;
+  p| mstat;
+  p| ntimes;
+  p| index;
+  p| mass;
+  //no need to pup v(reference to atom.v assigned on temperature calcs)
+  p| rho;
+  p| eng;
+  p| t1;
+  p| virial;
+  p| t_act;
+  p| p_act;
+  p| e_act;
+  p| t_scale;
+  p| e_scale;
+  p| p_scale;
+  p| mvv2e;
+  p| dof_boltz;
+}
+
 void Thermo::setup(MMD_float rho_in, Integrate &integrate, Atom &atom, int units)
 {
   rho = rho_in;
@@ -56,10 +77,10 @@ void Thermo::setup(MMD_float rho_in, Integrate &integrate, Atom &atom, int units
   if(nstat == 0) maxstat = 2;
   else maxstat = ntimes / nstat + 2;
 
-  steparr = new MMD_int[maxstat];
-  tmparr = new MMD_float[maxstat];
-  engarr = new MMD_float[maxstat];
-  prsarr = new MMD_float[maxstat];
+  // steparr = new MMD_int[maxstat];
+  // tmparr = new MMD_float[maxstat];
+  // engarr = new MMD_float[maxstat];
+  // prsarr = new MMD_float[maxstat];
 
   if(units == LJ) {
     mvv2e = 1.0;
@@ -102,10 +123,10 @@ void Thermo::compute(MMD_int iflag, Atom &atom, Neighbor &neighbor, Force* force
 
   if(iflag == 0) mstat = 0;
 
-  steparr[mstat] = istep;
-  tmparr[mstat] = t;
-  engarr[mstat] = eng;
-  prsarr[mstat] = p;
+  // steparr[mstat] = istep;
+  // tmparr[mstat] = t;
+  // engarr[mstat] = eng;
+  // prsarr[mstat] = p;
 
   mstat++;
 
