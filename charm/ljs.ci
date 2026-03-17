@@ -91,7 +91,7 @@ mainmodule miniMD {
 
       when blockInitialized() serial {
         CkPrintf("[Main] Blocks initialized\n");
-        block_proxy.run();
+        block_proxy.preIterate();
       }
 
       when blockDone() serial {
@@ -127,7 +127,9 @@ module block {
     entry [threaded] void contCreateVelocity(double vxtot, double vytot, double vztot);
 
     // Main code flow
-    entry [threaded] void run(); 
+    entry [threaded] void preIterate(); 
+    entry [threaded] void iterate();
+    entry [threaded] void postIterate();
     entry [threaded] void run_neighbour_build(CkCallback cb);
 
     // Allreduce routines for Thermo
@@ -383,102 +385,102 @@ module block {
     entry void comms_recv(int ref, size_t size, nocopydevice char data[size]);
     entry void send_done();
 
-    // Non-blocking communication routines for Comm::communicate
-    entry void comm_all(CkCallback cb) {
-      serial {
-        my_iswap = comm->iswap;
-        my_nswap = comm->nswap;
-        for (my_iswap = 0; my_iswap < my_nswap; my_iswap++) {
-          int tag = my_nswap*comm->iter + my_iswap;
-          if (comm->sendchare[my_iswap] != comm->index) {
-            thisProxy[comm->sendchare[my_iswap]].comm_all_recv(tag,
-                (char*)comm->h_buf_comms_send[my_iswap].data(),
-                comm->comm_send_size[my_iswap] * sizeof(MMD_float));
-          }
-        }
-      }
+//     // Non-blocking communication routines for Comm::communicate
+//     entry void comm_all(CkCallback cb) {
+//       serial {
+//         my_iswap = comm->iswap;
+//         my_nswap = comm->nswap;
+//         for (my_iswap = 0; my_iswap < my_nswap; my_iswap++) {
+//           int tag = my_nswap*comm->iter + my_iswap;
+//           if (comm->sendchare[my_iswap] != comm->index) {
+//             thisProxy[comm->sendchare[my_iswap]].comm_all_recv(tag,
+//                 (char*)comm->h_buf_comms_send[my_iswap].data(),
+//                 comm->comm_send_size[my_iswap] * sizeof(MMD_float));
+//           }
+//         }
+//       }
 
-      forall [my_iswap] (0:my_nswap-1,1) {
-        if (comm->sendchare[my_iswap] != comm->index) {
-          when comm_all_recv[my_nswap*comm->iter+my_iswap](int ref, char data[size], size_t size) serial {
-            memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
+//       forall [my_iswap] (0:my_nswap-1,1) {
+//         if (comm->sendchare[my_iswap] != comm->index) {
+//           when comm_all_recv[my_nswap*comm->iter+my_iswap](int ref, char data[size], size_t size) serial {
+//             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
 
-            // Invoke H2D transfer
-            Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
+//             // Invoke H2D transfer
+//             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
 
-#ifdef PACK_UNPACK_COMPUTE
-            // Enforce h2d -> compute dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
-#else
-            // Enforce h2d -> unpack dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
-#endif
+// #ifdef PACK_UNPACK_COMPUTE
+//             // Enforce h2d -> compute dependency
+//             cudaEvent_t dep_event;
+//             hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
+//             hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
+//             hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
+// #else
+//             // Enforce h2d -> unpack dependency
+//             cudaEvent_t dep_event;
+//             hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
+//             hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
+//             hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
+// #endif
 
-            // Invoke unpacking kernel
-            comm->atom_p->unpack_comm(comm->recvnum[my_iswap], comm->firstrecv[my_iswap], comm->buf_comms_recv[my_iswap]);
-          }
-        }
-      }
+//             // Invoke unpacking kernel
+//             comm->atom_p->unpack_comm(comm->recvnum[my_iswap], comm->firstrecv[my_iswap], comm->buf_comms_recv[my_iswap]);
+//           }
+//         }
+//       }
 
-      serial { cb.send(); }
-    }
+//       serial { cb.send(); }
+//     }
 
-    entry void comm_all_recv(int ref, char data[size], size_t size);
+    // entry void comm_all_recv(int ref, char data[size], size_t size);
 
     // Non-blocking communication routines for Comm::reverse_communicate
-    entry void comm_rev_all(CkCallback cb) {
-      serial {
-        my_iswap = comm->iswap;
-        my_nswap = comm->nswap;
-        for (my_iswap = my_nswap-1; my_iswap >= 0; my_iswap--) {
-          int tag = my_nswap*comm->iter + my_iswap;
-          if (comm->sendchare[my_iswap] != comm->index) {
-            thisProxy[comm->sendchare[my_iswap]].comm_rev_all_recv(tag,
-                (char*)comm->h_buf_comms_send[my_iswap].data(),
-                comm->comm_send_size[my_iswap] * sizeof(MMD_float));
-          }
-        }
-      }
+//     entry void comm_rev_all(CkCallback cb) {
+//       serial {
+//         my_iswap = comm->iswap;
+//         my_nswap = comm->nswap;
+//         for (my_iswap = my_nswap-1; my_iswap >= 0; my_iswap--) {
+//           int tag = my_nswap*comm->iter + my_iswap;
+//           if (comm->sendchare[my_iswap] != comm->index) {
+//             thisProxy[comm->sendchare[my_iswap]].comm_rev_all_recv(tag,
+//                 (char*)comm->h_buf_comms_send[my_iswap].data(),
+//                 comm->comm_send_size[my_iswap] * sizeof(MMD_float));
+//           }
+//         }
+//       }
 
-      forall [my_iswap] (0:my_nswap-1,1) {
-        if (comm->sendchare[my_iswap] != comm->index) {
-          when comm_rev_all_recv[my_nswap*comm->iter+my_iswap](int ref, char data[size], size_t size) serial {
-            memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
+//       forall [my_iswap] (0:my_nswap-1,1) {
+//         if (comm->sendchare[my_iswap] != comm->index) {
+//           when comm_rev_all_recv[my_nswap*comm->iter+my_iswap](int ref, char data[size], size_t size) serial {
+//             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
 
-            // Invoke H2D transfer
-            Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
+//             // Invoke H2D transfer
+//             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
 
-#ifdef PACK_UNPACK_COMPUTE
-            // Enforce h2d -> compute dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
-#else
-            // Enforce h2d -> unpack dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
-#endif
+// #ifdef PACK_UNPACK_COMPUTE
+//             // Enforce h2d -> compute dependency
+//             cudaEvent_t dep_event;
+//             hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
+//             hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
+//             hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
+// #else
+//             // Enforce h2d -> unpack dependency
+//             cudaEvent_t dep_event;
+//             hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
+//             hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
+//             hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
+// #endif
 
-            // Invoke unpacking kernel
-            int_1d_view_type list = Kokkos::subview(comm->sendlist,my_iswap,Kokkos::ALL());
-            comm->atom_p->unpack_reverse(comm->sendnum[my_iswap], list, comm->buf_comms_recv[my_iswap]);
-          }
-        }
-      }
+//             // Invoke unpacking kernel
+//             int_1d_view_type list = Kokkos::subview(comm->sendlist,my_iswap,Kokkos::ALL());
+//             comm->atom_p->unpack_reverse(comm->sendnum[my_iswap], list, comm->buf_comms_recv[my_iswap]);
+//           }
+//         }
+//       }
 
-      serial { cb.send(); }
-    }
+//       serial { cb.send(); }
+//     }
 
-    entry void comm_rev_all_recv(int ref, char data[size], size_t size);
+//     entry void comm_rev_all_recv(int ref, char data[size], size_t size);
   };
 
   // Bound array to Block

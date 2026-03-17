@@ -55,8 +55,81 @@ extern void create_velocity_1(Atom &atom, double& vxtot, double& vytot,
 extern void create_velocity_2(double t_request, Atom &atom, Thermo &thermo,
     double vxtot, double vytot, double vztot);
 
-Block::Block() : atom(ntypes), neighbor(ntypes), integrate(), thermo(thisIndex),
-  comm(nullptr), force(nullptr) {}
+Block::Block() : atom(ntypes), neighbor(ntypes), integrate(), thermo(thisIndex), comm(nullptr), force(nullptr) {
+    usesAtSync = true;
+  }
+
+Block::Block(CkMigrateMessage* msg): thermo(thisIndex), atom(), neighbor(), integrate(), comm(nullptr), force(nullptr) {
+  usesAtSync = true;
+
+  //pup will handle allocation for this
+  // if (in_forcetype == FORCEEAM) {
+  //   force = (Force*) new ForceEAM(ntypes);
+  //   if (ghost_newton == 1) {
+  //     if (thisIndex == 0) {
+  //       CkPrintf("# EAM currently requires '--ghost_newton 0'; Exiting now.\n");
+  //       CkExit();
+  //     }
+  //   }
+  // } else if (in_forcetype == FORCELJ) {
+  //   force = (Force*) new ForceLJ(ntypes);
+  // }
+
+  hapiCheck(cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0));
+  hapiCheck(cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1));
+  hapiCheck(cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1));
+
+  compute_instance = Kokkos::Cuda(compute_stream);
+  h2d_instance = Kokkos::Cuda(h2d_stream);
+  d2h_instance = Kokkos::Cuda(d2h_stream);
+  pack_instance = Kokkos::Cuda(pack_stream);
+  unpack_instance = Kokkos::Cuda(unpack_stream);
+
+  atom.compute_instance = compute_instance;
+  atom.h2d_instance = h2d_instance;
+  atom.d2h_instance = d2h_instance;
+  atom.pack_instance = pack_instance;
+  atom.unpack_instance = unpack_instance;
+
+  neighbor.compute_instance = compute_instance;
+  neighbor.h2d_instance = h2d_instance;
+  neighbor.d2h_instance = d2h_instance;
+  neighbor.pack_instance = pack_instance;
+  neighbor.unpack_instance = unpack_instance;
+
+  integrate.compute_instance = compute_instance;
+  integrate.h2d_instance = h2d_instance;
+  integrate.d2h_instance = d2h_instance;
+  integrate.pack_instance = pack_instance;
+  integrate.unpack_instance = unpack_instance;
+
+  thermo.compute_instance = compute_instance;
+  thermo.h2d_instance = h2d_instance;
+  thermo.d2h_instance = d2h_instance;
+  thermo.pack_instance = pack_instance;
+  thermo.unpack_instance = unpack_instance;
+}
+
+void Block::ResumeFromSync(){
+  ckout<<"resuming from sync at PE: "<<CkMyPe()<<endl; 
+  comm = comm_proxy(thisIndex).ckLocal();
+  
+  comm->compute_instance = compute_instance;
+  comm->h2d_instance = h2d_instance;
+  comm->d2h_instance = d2h_instance;
+  comm->pack_instance = pack_instance;
+  comm->unpack_instance = unpack_instance;
+
+  force->compute_instance = compute_instance;
+  force->h2d_instance = h2d_instance;
+  force->d2h_instance = d2h_instance;
+  force->pack_instance = pack_instance;
+  force->unpack_instance = unpack_instance;
+
+  thisProxy[thisIndex].iterate();
+}
 
 void Block::init() {
   // Save pointer to Comm bound array element
@@ -242,8 +315,7 @@ void Block::init() {
    contribute(3*sizeof(double), vtot, CkReduction::set, cb);
 }
 
-
-void Block::run(){
+void Block::preIterate(){
       thermo.compute(0, atom, neighbor, force, comm);
       // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
@@ -259,64 +331,54 @@ void Block::run(){
       force->compute(atom, neighbor, comm, thisIndex);
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
-      
       thermo.compute(0, atom, neighbor, force, comm);//to check if Init is done correctly
-
       Kokkos::fence();
-      //Main iteration loop
-      // integrate.run(atom, force, neighbor, comm, thermo, thisIndex);
+      iter = 0;
       thisProxy[thisIndex].mark_start(CkCallbackResumeThread());
+      thisProxy[thisIndex].iterate();
+}
+
+void Block::iterate(){
+      if(iter==0)
       {
-        int i, n;
-
-        int check_safeexchange = comm->check_safeexchange;
-
         integrate.mass = atom.mass;
         integrate.dtforce = integrate.dtforce / integrate.mass;
 
-        int next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
+        next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
+      }
 
-        for(n = 0; n < integrate.ntimes; n++) {
-          //start timing with iteration 1
-          if (integrate.index == 0 && (n == 0 || n % 10 == 0)) {
-            CkPrintf("[Block] Starting iteration %d\n", n);
-          }
+      // int check_safeexchange = comm->check_safeexchange;
+      for(; iter < integrate.ntimes;) {
+        //start timing with iteration 1
+        if (integrate.index == 0 && (iter == 0 || iter % 10 == 0)) {
+          CkPrintf("[Block] Starting iteration %d\n", iter);
+        }
+        
+        if(iter%5==0 && shouldDoLB)
+        {
+          // ckout<<"mock calling atSync"<<endl;
+          AtSync();
+          shouldDoLB = false;
+          return;
+        }
+        else
+          shouldDoLB = true;
 
-          // Store iteration counter in Comm
-          comm->iter = n;
+        // Store iteration counter in Comm
+        comm->iter = iter;
 
-          integrate.x = atom.x;
-          integrate.v = atom.v;
-          integrate.f = atom.f;
-          integrate.nlocal = atom.nlocal;
+        integrate.x = atom.x;
+        integrate.v = atom.v;
+        integrate.f = atom.f;
+        integrate.nlocal = atom.nlocal;
 
-          integrate.initialIntegrate();
+        integrate.initialIntegrate();
 
-          if(n==0){
-            //notify comms ready for iteration 0
-            if((n + 1) % neighbor.every){
-              for(int iswap = 0; iswap < comm->nswap; iswap++){
-                if (comm->sendchare[iswap] != thisIndex){
-                    thisProxy[thisIndex].comms_notify_recv_ready(0, iswap, CkCallbackResumeThread());
-                  }
-                }
-            }
-            else {
-              for(int idim=0;idim<3;idim++){
-                if(comm->charegrid[idim] == 1) continue;
-                comm->post_exchange_recv_count[idim] = 0;
-                comm->nrecvexchange[2*idim] = 0;
-                comm->nrecvexchange[2*idim+1] = 0;
-                thisProxy[thisIndex].exchange_notify_recv_ready(0,idim, CkCallbackResumeThread());
-              }
-            }
-          } 
-
-          if((n + 1) % neighbor.every) {
+        if((iter + 1) % neighbor.every) {
             comm->communicate(atom, false);            
           } else {
           comm->exchange(atom, false);
-          if(n+1>=next_sort) {
+          if(iter+1>=next_sort) {
             atom.sort(neighbor);
             next_sort +=  integrate.sort_every;
           }
@@ -324,25 +386,7 @@ void Block::run(){
           neighbor.build(atom);
       }
 
-      //notify buffer to be ready to receive for next iteration
-      suspend(compute_instance);//suspend to ensure comms above are done
-      if((n+2)%neighbor.every){
-          for(int iswap = 0; iswap < comm->nswap; iswap++){
-            if (comm->sendchare[iswap] != thisIndex){
-                thisProxy[thisIndex].comms_notify_recv_ready(n+1, iswap, CkCallbackResumeThread());
-            }
-          }
-      } else {
-          for(int i=0;i<3;i++){
-            if(comm->charegrid[i] == 1) continue;
-            comm->post_exchange_recv_count[i] = 0;
-            comm->nrecvexchange[2*i] = 0;
-            comm->nrecvexchange[2*i+1] = 0;
-            thisProxy[thisIndex].exchange_notify_recv_ready(n+1,i, CkCallbackResumeThread());
-          }
-      }
-
-      force->evflag = (n + 1) % thermo.nstat == 0;
+      force->evflag = (iter + 1) % thermo.nstat == 0;
       force->compute(atom, neighbor, comm, comm->index);
       
       if (neighbor.halfneigh && neighbor.ghost_newton) {
@@ -354,24 +398,20 @@ void Block::run(){
       integrate.nlocal = atom.nlocal;
 
       integrate.finalIntegrate();
-
-      /*
-      if (index == 0) {
-        CkPrintf("[Block] Iteration %d time: %.6lf\n", n, CkWallTimer() - iter_start_time);
-      }
-      */
-
-      // Don't include first iteration time
-    }
+      iter++;
   }
-  // compute_instance.fence();
   suspend(compute_instance);
   thisProxy[thisIndex].mark_done(CkCallbackResumeThread());
-  if(thisIndex==0 && time_segments){
-    ckout<<"[Block 0] comm time "<<comm_time<<endl;
-    ckout<<"[Block 0] neigh time "<<neigh_time<<endl;
-    ckout<<"[Block 0] force time "<<force_time<<endl;
-  }
+  thisProxy[thisIndex].postIterate();
+}
+
+
+void Block::postIterate(){
+      if(thisIndex==0 && time_segments){
+        ckout<<"[Block 0] comm time "<<comm_time<<endl;
+        ckout<<"[Block 0] neigh time "<<neigh_time<<endl;
+        ckout<<"[Block 0] force time "<<force_time<<endl;
+      }
 
       force->evflag = 1;
       force->compute(atom, neighbor, comm, thisIndex);
