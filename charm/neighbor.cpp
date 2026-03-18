@@ -72,7 +72,8 @@ void Neighbor::pup(PUP::er& p) {
   p| cutneigh;
   p| ntypes;
   for(int i=0;i<ntypes*ntypes;i++)
-    p| cutneighsq_stack[i];
+    if(i<MAX_STACK_TYPES*MAX_STACK_TYPES)
+      p| cutneighsq_stack[i];
   p| ncalls;
   p| max_totalneigh;
   p| nmax;

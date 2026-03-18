@@ -63,22 +63,52 @@ Comm::Comm()
   buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;
-  maxnlocal = 0;
-  count = Kokkos::DualView<int*>("comm::count",1);
+  // maxnlocal = 0;
+  // count = Kokkos::DualView<int*>("comm::count",1);
   count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 3);
   count_device = Kokkos::View<int*>("comm::count_device", 3);
   hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
   post_exchange_recv_count = new size_t[3];
   nrecvexchange = new size_t[6];
   h_exc_alloc = false;
-  h_buf_alloc = false;
+  // h_buf_alloc = false;
 
   // Save pointer to Block bound array element
   iter = 0;
   comm_time=0.0;
 }
 
-Comm::~Comm() {}
+Comm::Comm(CkMigrateMessage* msg){
+  //do nothing
+}
+
+Comm::~Comm() {
+  // if(started_lb)
+  // {
+  //   if(sendlist.extent(0)>0){
+  //     CUDA_CHECK(cudaFree((void*)sendlist.data()));
+  //   }
+  //   if(exc_sendlist.extent(0)>0){
+  //     CUDA_CHECK(cudaFree((void*)exc_sendlist.data()));
+  //   }
+  //   if(exc_copylist.extent(0)>0){
+  //     CUDA_CHECK(cudaFree((void*)exc_copylist.data()));
+  //   }
+  //   if(replacement_indices.extent(0)>0){
+  //     CUDA_CHECK(cudaFree((void*)replacement_indices.data()));
+  //   }
+  //   CUDA_CHECK(cudaFree((void*)buf_comm_dummy));
+  //   CUDA_CHECK(cudaFree((void*)buf_send.data()));
+  //   CUDA_CHECK(cudaFree((void*)buf_recv.data()));
+  //   for(int i = 0; i < maxswap_static; i++) {
+  //     if(buf_comms_recv[i].extent(0)>0){
+  //       CUDA_CHECK(cudaFree((void*)buf_comms_recv[i].data()));
+  //     }
+  //   }
+  //   delete[] post_exchange_recv_count;
+  //   delete[] nrecvexchange;
+  // }
+}
 
 int Comm::setup(MMD_float cutneigh, Atom &atom)
 {
@@ -315,6 +345,138 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
   return 0;
 }
 
+void Comm::pup(PUP::er &p)
+{
+  p| iter;
+  p| nswap;
+  p| nlocal_new;
+  p| nsend_atoms;
+  p| h_exc_alloc;
+  if(p.isPacking())
+  {
+    //set these sizes only used dutring migratiin
+    exc_sendflag_size = exc_sendflag.extent(0);
+    exc_sendlist_size = exc_sendlist.extent(0);
+    exc_copylist_size = exc_copylist.extent(0);
+    replacement_indices_size = replacement_indices.extent(0);
+    sendlist_width = sendlist.extent(1);
+  }
+  p| exc_sendflag_size;
+  p| exc_sendlist_size;
+  p| exc_copylist_size;
+  p| sendlist_width;
+  p| maxsend;
+  p| maxrecv;
+  p| replacement_indices_size;
+  p| check_safeexchange;
+  p| do_safeexchange;
+  p| maxswap_static;
+  p| pbc_flags[0];
+  p| pbc_flags[1];
+  p| pbc_flags[2];
+  p| pbc_flags[3];
+  p| comm_time;
+  p| index;
+  // no need to pup nrecv_atoms, nsend, nrecv, nrecv1, nrecv2, nlocal, isim, n, iswap, atom, atom_p, lo, hi
+
+
+  if(p.isUnpacking())
+  {
+    pbc_any = int_1d_host_view_type("Comm::pbc_any",maxswap_static);
+    pbc_flagx = int_1d_host_view_type("Comm::pbc_flagx",maxswap_static);
+    pbc_flagy = int_1d_host_view_type("Comm::pbc_flagy",maxswap_static);
+    pbc_flagz = int_1d_host_view_type("Comm::pbc_flagz",maxswap_static);
+    sendnum = int_1d_host_view_type("Comm::sendnum",maxswap_static);
+    recvnum = int_1d_host_view_type("Comm::recvnum",maxswap_static);
+    comm_send_size = int_1d_host_view_type("Comm::comm_send_size",maxswap_static);
+    comm_recv_size = int_1d_host_view_type("Comm::comm_recv_size",maxswap_static);
+    reverse_send_size = int_1d_host_view_type("Comm::reverse_send_size",maxswap_static);
+    reverse_recv_size = int_1d_host_view_type("Comm::reverse_recv_size",maxswap_static);
+    sendchare = int_1d_host_view_type("Comm::sendchare", maxswap_static);
+    recvchare = int_1d_host_view_type("Comm::recvchare", maxswap_static);
+    firstrecv = int_1d_host_view_type("Comm::firstrecv",maxswap_static);
+    maxsendlist = int_1d_host_view_type("Comm::maxsendlist",maxswap_static);
+    buf_comms_recv = new float_1d_um_view_type[maxswap_static];
+    maxrecvcomm = new int[maxswap_static];
+    //buf_comms_send is not being used right now(no multiple send buffers)
+    slablo = float_1d_host_view_type("Comm::slablo",maxswap_static);
+    slabhi = float_1d_host_view_type("Comm::slabhi",maxswap_static);
+    post_exchange_recv_count = new size_t[3];
+    nrecvcomm = new int[maxswap_static];
+    nrecvexchange = new size_t[6];
+    count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 3);
+    count_device = Kokkos::View<int*, Kokkos::CudaSpace>("comm::count_device", 3);
+  }
+  p(pbc_any.data(), maxswap_static);
+  p(pbc_flagx.data(), maxswap_static);
+  p(pbc_flagy.data(), maxswap_static);
+  p(pbc_flagz.data(), maxswap_static);
+  p(sendnum.data(), maxswap_static);
+  p(recvnum.data(), maxswap_static);
+  p(comm_send_size.data(), maxswap_static);
+  p(comm_recv_size.data(), maxswap_static);
+  p(reverse_send_size.data(), maxswap_static);
+  p(reverse_recv_size.data(), maxswap_static);
+  p(sendchare.data(), maxswap_static);
+  p(recvchare.data(), maxswap_static);
+  p(firstrecv.data(), maxswap_static);
+  p(maxsendlist.data(), maxswap_static);
+  
+  p(maxrecvcomm, maxswap_static);
+  p(nrecvcomm, maxswap_static);
+  for(int i=0;i<3;i++){
+    for(int j=0;j<2;j++)
+      p| chareneigh[i][j];
+    p| charegrid[i];
+    p| need[i];
+  }
+  p(slablo.data(), maxswap_static);
+  p(slabhi.data(), maxswap_static);
+
+  if(p.isUnpacking())
+  {
+    //no need to copy curr_buf_recv, buf, x -> temp reference
+    for(int i=0;i<6;i++)
+      ckout<<"maxsendlist "<<i<<" : "<<maxsendlist[i]<<" ";
+    ckout<<endl;
+    
+    int *sendlist_ptr, *exc_sendflag_ptr, *exc_sendlist_ptr, *exc_copylist_ptr, *replacement_indices_ptr;
+    cudaMalloc((void**)&sendlist_ptr, maxswap_static*(maxsendlist[0] + BUFEXTRA)*sizeof(int));
+    sendlist = int_2d_um_lr_view_type(sendlist_ptr, maxswap_static, maxsendlist[0] + BUFEXTRA);
+    cudaMalloc((void**)&exc_sendflag_ptr, exc_sendflag_size*sizeof(int));
+    exc_sendflag = int_1d_um_view_type(exc_sendflag_ptr, exc_sendflag_size);
+    cudaMalloc((void**)&exc_sendlist_ptr, exc_sendlist_size*sizeof(int));
+    exc_sendlist = int_1d_um_view_type(exc_sendlist_ptr, exc_sendlist_size);
+    cudaMalloc((void**)&exc_copylist_ptr, exc_copylist_size*sizeof(int));
+    exc_copylist = int_1d_um_view_type(exc_copylist_ptr, exc_copylist_size);
+    cudaMalloc((void**)&replacement_indices_ptr, replacement_indices_size*sizeof(int));
+    replacement_indices = int_1d_um_view_type(replacement_indices_ptr, replacement_indices_size);
+    hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
+    MMD_float* buf_send_ptr, *buf_recv_ptr;
+    hapiCheck(hapiMalloc((void**)&buf_send_ptr, (maxsend+BUFEXTRA)*sizeof(MMD_float)));
+    hapiCheck(hapiMalloc((void**)&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
+    buf_send = float_1d_um_view_type(buf_send_ptr, maxsend+BUFEXTRA);
+    buf_recv = float_1d_um_view_type(buf_recv_ptr, maxrecv);
+    for(int i = 0; i < maxswap_static; i++) {
+      MMD_float* buf_new;
+      hapiCheck(hapiMalloc((void**)&buf_new, maxrecvcomm[i]*sizeof(MMD_float)));
+      buf_comms_recv[i] = float_1d_um_view_type(buf_new, maxrecvcomm[i]);
+    }
+  }
+
+  p(sendlist.data(), maxswap_static*(maxsendlist[0] + BUFEXTRA), PUP::PUPMode::DEVICE);
+  p(exc_sendflag.data(), exc_sendflag_size, PUP::PUPMode::DEVICE);
+  p(exc_sendlist.data(), exc_sendlist_size, PUP::PUPMode::DEVICE);
+  p(exc_copylist.data(), exc_copylist_size, PUP::PUPMode::DEVICE);
+  p(replacement_indices.data(), replacement_indices_size, PUP::PUPMode::DEVICE);
+  p(count_host.data(), 3, PUP::PUPMode::DEVICE);
+  p(buf_send.data(), maxsend+BUFEXTRA, PUP::PUPMode::DEVICE);
+  p(buf_recv.data(), maxrecv, PUP::PUPMode::DEVICE);
+  for(int i = 0; i < maxswap_static; i++) {
+    p(buf_comms_recv[i].data(), maxrecvcomm[i], PUP::PUPMode::DEVICE);
+  }
+}
+
 /* communication of atom info every timestep */
 
 void Comm::communicate(Atom &atom, bool preprocess)
@@ -324,6 +486,11 @@ void Comm::communicate(Atom &atom, bool preprocess)
 
   //push the pack unpack depencency
   wait(compute_instance, pack_instance);
+  for(int iswap = 0; iswap < nswap; iswap++){
+    if (sendchare[iswap] != thisIndex){
+        block_proxy[thisIndex].comms_notify_recv_ready(iter, iswap, CkCallbackResumeThread());
+      }
+  }
   // Send and recv one buffer at a time
   for(iswap = 0; iswap < nswap; iswap++) {
 
@@ -378,19 +545,19 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
   // Kokkos::Profiling::pushRegion("Comm::reverse_communicate");
 
   // Create host mirrors for integrate loop
-  if (!preprocess && !h_buf_alloc) {
-    h_buf_alloc = true;
-    buf_comms_send = new float_1d_view_type[nswap];
-    // buf_comms_recv = new float_1d_view_type[nswap];
-    h_buf_comms_send = new float_1d_host_view_type[nswap];
-    h_buf_comms_recv = new float_1d_host_view_type[nswap];
-    for (int i = 0; i < nswap; i++) {
-      buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
-      buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
-      h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
-      h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
-    }
-  }
+  // if (!preprocess && !h_buf_alloc) {
+  //   h_buf_alloc = true;
+  //   buf_comms_send = new float_1d_view_type[nswap];
+  //   // buf_comms_recv = new float_1d_view_type[nswap];
+  //   h_buf_comms_send = new float_1d_host_view_type[nswap];
+  //   h_buf_comms_recv = new float_1d_host_view_type[nswap];
+  //   for (int i = 0; i < nswap; i++) {
+  //     buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
+  //     buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
+  //     h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
+  //     h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
+  //   }
+  // }
 
   int iswap;
 
@@ -408,19 +575,19 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
       if(sendchare[iswap] != index) {
 
         // Move data on device to host for communication
-        h_buf_send = Kokkos::create_mirror_view(buf_send);
-        h_buf_recv = Kokkos::create_mirror_view(buf_recv);
-        Kokkos::deep_copy(h_buf_send, buf_send);
+        // h_buf_send = Kokkos::create_mirror_view(buf_send);
+        // h_buf_recv = Kokkos::create_mirror_view(buf_recv);
+        // Kokkos::deep_copy(h_buf_send, buf_send);
 
         // Send and suspend
-        send1 = h_buf_send.data();
+        // send1 = h_buf_send.data();
         send1_size = reverse_send_size[iswap] * sizeof(MMD_float);
         send1_chare = recvchare[iswap];
-        recv1 = h_buf_recv.data();
+        // recv1 = h_buf_recv.data();
         // block_proxy[thisIndex].comms(iswap, CkCallbackResumeThread());
 
         // Move received data to device
-        Kokkos::deep_copy(h2d_instance, buf_recv, h_buf_recv);
+        // Kokkos::deep_copy(h2d_instance, buf_recv, h_buf_recv);
 
         buf = buf_recv;
       } else buf = buf_send;
@@ -446,11 +613,11 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
       atom.pack_reverse(recvnum[iswap], firstrecv[iswap], buf_comms_send[iswap]);
       if(buf_comms_send[iswap].size()<buf_send.size()){
           buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_send.size());
-          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
+          // h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
         }
         if(buf_comms_recv[iswap].size()<buf_recv.size()){
           buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_recv.size());
-          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
+          // h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
       }
 
 #ifdef PACK_UNPACK_COMPUTE
@@ -468,7 +635,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
 #endif
 
       if (sendchare[iswap] != index) {
-        Kokkos::deep_copy(d2h_instance, h_buf_comms_send[iswap], buf_comms_send[iswap]);
+        // Kokkos::deep_copy(d2h_instance, h_buf_comms_send[iswap], buf_comms_send[iswap]);
       }
     }
 
@@ -490,7 +657,7 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
     // All buffers copied to host, send to neighbors
     // After receiving, move buffers to device and unpack
     atom_p = &atom;
-    block_proxy[thisIndex].comm_rev_all(CkCallbackResumeThread());
+    // block_proxy[thisIndex].comm_rev_all(CkCallbackResumeThread());
 
 #if !defined PACK_UNPACK_COMPUTE
     // Enforce unpack -> compute dependency
@@ -521,6 +688,15 @@ void Comm::exchange(Atom &atom_, bool preprocess)
   /* enforce PBC */
 
   wait(compute_instance, pack_instance);
+
+  for(int i=0;i<3;i++){
+    if(charegrid[i] == 1) continue;
+    post_exchange_recv_count[i] = 0;
+    nrecvexchange[2*i] = 0;
+    nrecvexchange[2*i+1] = 0;
+    block_proxy[thisIndex].exchange_notify_recv_ready(iter,i, CkCallbackResumeThread());
+  }
+
   atom.pbc();//wrap around atoms going out of boundry
 
   for(idim = 0; idim < 3; idim++) {
@@ -728,13 +904,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
   //NVTXTracer("Comm::borders", NVTXColor::Carrot);
   // Kokkos::Profiling::pushRegion("Comm::borders");
 
-  // Create host mirrors for integrate loop
-  // if (!preprocess && !h_buf_alloc) {
-    // h_buf_alloc = true;
-    // h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
-    // h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
-  // }
-
   atom = atom_;
   int ineed, nsend, nrecv, nfirst, nlast;
 
@@ -747,11 +916,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
   iswap = 0;
 
 
-  if(atom.nlocal > maxnlocal) {
-    send_flag = int_1d_view_type("Comm::sendflag",atom.nlocal);
-    maxnlocal = atom.nlocal;
-  }
-
+  //TODO: confirm this is useless
+  // if(atom.nlocal > maxnlocal) {
+  //   send_flag = int_1d_view_type("Comm::sendflag",atom.nlocal);
+  //   maxnlocal = atom.nlocal;
+  // }
   wait(compute_instance, pack_instance);
 
   for(int iswap_=0;iswap_<maxswap_static;iswap_++){

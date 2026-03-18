@@ -67,6 +67,7 @@ class Neighbor
 
     MMD_int ghost_newton;
     int count;
+    Neighbor() {}
     Neighbor(int ntypes_);
     ~Neighbor();
     void dealloc();

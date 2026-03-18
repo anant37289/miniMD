@@ -17,7 +17,7 @@ class Block : public CBase_Block {
   Block_SDAG_CODE
 
 public:
-  KokkosManager* kokkos_manager;
+  // KokkosManager* kokkos_manager;
   Atom atom;
   Neighbor neighbor;
   Integrate integrate;
@@ -51,11 +51,46 @@ public:
   // For comms_all
   int my_iswap;
   int my_nswap;
+  bool shouldDoLB = false;
+
+  int iter;
+  int next_sort;
 
   double vtot[3];
 
 public:
   Block();
+
+  void pup(PUP::er& p){
+    p| atom;
+    p| neighbor;
+    p| integrate;
+    p| thermo;
+    p| force;
+    p| reductionCount;
+    p| reductionSum;
+    p| total_time;
+    p| start_time;
+    p| iter_start_time;
+    p| comm_time;
+    p| force_time;
+    p| neigh_time;
+    p| i;
+    p| my_iswap;
+    p| my_nswap;
+    p| iter;
+    p| next_sort;
+    p| shouldDoLB;
+    p| vtot[0];
+    p| vtot[1];
+    p| vtot[2];
+  }
+
+  Block(CkMigrateMessage* msg);
+  void ResumeFromSync();
+  void iterate();
+  void preIterate();
+  void postIterate();
 
   ~Block(){
     //may want to delete instances[?]
@@ -71,7 +106,6 @@ public:
   void init();
   void contCreateVelocity(double vxtot, double vytot, double vztot);
   void run_neighbour_build(CkCallback cb);
-  void run();
   void printConfig();
   void suspend(Kokkos::Cuda instance){
     hapiAddCallback(instance.cuda_stream(), CkCallbackResumeThread());

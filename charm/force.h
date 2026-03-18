@@ -135,10 +135,10 @@ class Force: public PUP::able
           CmiAbort("Force style not supported");
         }
       }
-      p(cutforcesq.data(), ntypes*ntypes, PUP::PUPMode::DEVICE);
-      p(epsilon.data(), ntypes*ntypes, PUP::PUPMode::DEVICE);
-      p(sigma6.data(), ntypes*ntypes, PUP::PUPMode::DEVICE);
-      p(sigma.data(), ntypes*ntypes, PUP::PUPMode::DEVICE);
+      p(const_cast<MMD_float*>(cutforcesq.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
+      p(const_cast<MMD_float*>(epsilon.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
+      p(const_cast<MMD_float*>(sigma6.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
+      p(const_cast<MMD_float*>(sigma.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
     }
 };
 

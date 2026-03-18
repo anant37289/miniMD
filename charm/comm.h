@@ -77,6 +77,7 @@ class Comm : public CBase_Comm
 
     Comm();
     ~Comm();
+    Comm(CkMigrateMessage* msg);
     void init();
     int setup(MMD_float, Atom &);
     void communicate(Atom &, bool);
@@ -90,6 +91,7 @@ class Comm : public CBase_Comm
     void growlist(int, int,cudaStream_t);
     void suspend(Kokkos::Cuda);
     void wait(Kokkos::Cuda, Kokkos::Cuda);
+    void pup(PUP::er &p);
 
   public:
     int iter;
@@ -117,10 +119,10 @@ class Comm : public CBase_Comm
     int_1d_um_view_type replacement_indices;
     int nlocal_new;
     int nsend_atoms;
-    int_1d_host_view_type h_exc_sendflag;
-    int_1d_host_view_type h_exc_sendlist;
-    int_1d_host_view_type h_exc_copylist;
-    int_1d_dual_view_type count;
+    // int_1d_host_view_type h_exc_sendflag;
+    // int_1d_host_view_type h_exc_sendlist;
+    // int_1d_host_view_type h_exc_copylist;
+    // int_1d_dual_view_type count;
     int_1d_host_view_type count_host;
     int_1d_view_type count_device;
     bool h_exc_alloc;
@@ -130,16 +132,16 @@ class Comm : public CBase_Comm
     float_1d_view_type cur_buf_recv;
     MMD_float* buf_comm_dummy;
     float_1d_view_type buf;
-    float_1d_host_view_type h_buf_send;
-    float_1d_host_view_type h_buf_recv;
+    // float_1d_host_view_type h_buf_send;
+    // float_1d_host_view_type h_buf_recv;
 
     // Buffers for commnunicate and reverse_communicate
     float_1d_view_type* buf_comms_send;
     float_1d_um_view_type* buf_comms_recv;
-    float_1d_host_view_type* h_buf_comms_send;
-    float_1d_host_view_type* h_buf_comms_recv;
+    // float_1d_host_view_type* h_buf_comms_send;
+    // float_1d_host_view_type* h_buf_comms_recv;
 
-    bool h_buf_alloc;
+    // bool h_buf_alloc;
     int maxsend;
     int maxrecv;
     int* maxrecvcomm;
@@ -152,9 +154,9 @@ class Comm : public CBase_Comm
     int check_safeexchange;           // if sets give warnings if an atom moves further than subdomain size
     int do_safeexchange;		    // exchange atoms with all subdomains within neighbor cutoff
 
-    int copy_size;
-    int_1d_view_type send_flag;
-    int maxnlocal;
+    // int copy_size;
+    // int_1d_view_type send_flag;
+    // int maxnlocal;
     int nrecv_atoms;
     size_t *post_exchange_recv_count;  //used to coordinate posts in exchange which happen to the same buffer.
 
@@ -168,17 +170,19 @@ class Comm : public CBase_Comm
     int maxswap_static;
     CkCallbackResumeThread* resume_cb;
     
-
-  public:
     Atom atom;
     Atom* atom_p;
     int idim,n,iswap;
-    MMD_float lo, hi, value;
+    MMD_float lo, hi;
     x_view_type x;
     int pbc_flags[4];
-    int_1d_atomic_view_type send_count;
+    // int_1d_atomic_view_type send_count;
     double comm_time;
-    double iter_strat_time;
+    std::size_t exc_sendflag_size;
+    std::size_t exc_sendlist_size;
+    std::size_t exc_copylist_size;
+    std::size_t replacement_indices_size;
+    std::size_t sendlist_width;
 };
 
 #endif

@@ -39,7 +39,7 @@
 #include "comm.h"
 
 
-class ForceLJ : Force
+class ForceLJ : public Force
 {
   public:
     PUPable_decl(ForceLJ);

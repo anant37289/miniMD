@@ -319,6 +319,8 @@ void Block::preIterate(){
       thermo.compute(0, atom, neighbor, force, comm);
       // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
+      if(thisIndex==0)
+        CkPrintf("[Block] Preiterate\n");
       if (sort > 0)
           atom.sort(neighbor);
       comm->borders(atom, true);
@@ -336,6 +338,8 @@ void Block::preIterate(){
       iter = 0;
       thisProxy[thisIndex].mark_start(CkCallbackResumeThread());
       thisProxy[thisIndex].iterate();
+      if(thisIndex==0)
+        CkPrintf("[Block] Preiterate done\n");
 }
 
 void Block::iterate(){
@@ -345,24 +349,30 @@ void Block::iterate(){
         integrate.dtforce = integrate.dtforce / integrate.mass;
 
         next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
+        CkPrintf("[Block] Starting iteration %d\n", iter);
       }
 
       // int check_safeexchange = comm->check_safeexchange;
       for(; iter < integrate.ntimes;) {
         //start timing with iteration 1
-        if (integrate.index == 0 && (iter == 0 || iter % 10 == 0)) {
+        //&& (iter == 0 || iter % 10 == 0)
+        if (integrate.index == 0 ) {
           CkPrintf("[Block] Starting iteration %d\n", iter);
         }
         
-        if(iter%5==0 && shouldDoLB)
+        if((iter+1)%10==0 && shouldDoLB)
         {
-          // ckout<<"mock calling atSync"<<endl;
+          thermo.compute(iter, atom, neighbor, force, comm);
+          Kokkos::fence();
           AtSync();
           shouldDoLB = false;
           return;
         }
         else
+        {
+          thermo.compute(iter, atom, neighbor, force, comm);
           shouldDoLB = true;
+        }
 
         // Store iteration counter in Comm
         comm->iter = iter;
