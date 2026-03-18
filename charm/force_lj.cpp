@@ -101,9 +101,9 @@ void ForceLJ::setup()
 
 void ForceLJ::compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me)
 {
-  std::ostringstream os;
-  os << "ForceLJ::compute " << index;
-  NVTXTracer(os.str(), NVTXColor::GreenSea);
+  // std::ostringstream os;
+  // os << "ForceLJ::compute " << index;
+  // NVTXTracer(os.str(), NVTXColor::GreenSea);
   eng_vdwl = 0;
   virial = 0;
 
@@ -336,9 +336,11 @@ void ForceLJ::compute_fullneigh(Atom &atom, Neighbor &neighbor, int me)
 
   if(ntypes>MAX_STACK_TYPES) {
     if(EVFLAG)
+    {
       Kokkos::parallel_reduce(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<1,0> >(compute_instance,0,nlocal),
             Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this, t_eng_virial);
+    }
     else
       Kokkos::parallel_for(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<0,0> >(compute_instance,0,nlocal),

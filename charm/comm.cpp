@@ -352,15 +352,15 @@ void Comm::pup(PUP::er &p)
   p| nlocal_new;
   p| nsend_atoms;
   p| h_exc_alloc;
-  if(p.isPacking())
-  {
-    //set these sizes only used dutring migratiin
-    exc_sendflag_size = exc_sendflag.extent(0);
-    exc_sendlist_size = exc_sendlist.extent(0);
-    exc_copylist_size = exc_copylist.extent(0);
-    replacement_indices_size = replacement_indices.extent(0);
-    sendlist_width = sendlist.extent(1);
-  }
+  exc_sendflag_size = exc_sendflag.extent(0);
+  exc_sendlist_size = exc_sendlist.extent(0);
+  exc_copylist_size = exc_copylist.extent(0);
+  replacement_indices_size = replacement_indices.extent(0);
+  sendlist_width = sendlist.extent(1);
+  // if(p.isPacking())
+  // {
+  //   //set these sizes only used dutring migratiin
+  // }
   p| exc_sendflag_size;
   p| exc_sendlist_size;
   p| exc_copylist_size;
@@ -441,8 +441,8 @@ void Comm::pup(PUP::er &p)
     ckout<<endl;
     
     int *sendlist_ptr, *exc_sendflag_ptr, *exc_sendlist_ptr, *exc_copylist_ptr, *replacement_indices_ptr;
-    cudaMalloc((void**)&sendlist_ptr, maxswap_static*(maxsendlist[0] + BUFEXTRA)*sizeof(int));
-    sendlist = int_2d_um_lr_view_type(sendlist_ptr, maxswap_static, maxsendlist[0] + BUFEXTRA);
+    cudaMalloc((void**)&sendlist_ptr, maxswap_static*(sendlist_width)*sizeof(int));
+    sendlist = int_2d_um_lr_view_type(sendlist_ptr, maxswap_static, sendlist_width);
     cudaMalloc((void**)&exc_sendflag_ptr, exc_sendflag_size*sizeof(int));
     exc_sendflag = int_1d_um_view_type(exc_sendflag_ptr, exc_sendflag_size);
     cudaMalloc((void**)&exc_sendlist_ptr, exc_sendlist_size*sizeof(int));
@@ -464,12 +464,13 @@ void Comm::pup(PUP::er &p)
     }
   }
 
-  p(sendlist.data(), maxswap_static*(maxsendlist[0] + BUFEXTRA), PUP::PUPMode::DEVICE);
+  p(sendlist.data(), maxswap_static*(sendlist_width), PUP::PUPMode::DEVICE);
   p(exc_sendflag.data(), exc_sendflag_size, PUP::PUPMode::DEVICE);
   p(exc_sendlist.data(), exc_sendlist_size, PUP::PUPMode::DEVICE);
   p(exc_copylist.data(), exc_copylist_size, PUP::PUPMode::DEVICE);
   p(replacement_indices.data(), replacement_indices_size, PUP::PUPMode::DEVICE);
-  p(count_host.data(), 3, PUP::PUPMode::DEVICE);
+  p(count_host.data(), 3);
+  p(count_device.data(), 3, PUP::PUPMode::DEVICE);
   p(buf_send.data(), maxsend+BUFEXTRA, PUP::PUPMode::DEVICE);
   p(buf_recv.data(), maxrecv, PUP::PUPMode::DEVICE);
   for(int i = 0; i < maxswap_static; i++) {

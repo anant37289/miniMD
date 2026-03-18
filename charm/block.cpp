@@ -360,7 +360,7 @@ void Block::iterate(){
           CkPrintf("[Block] Starting iteration %d\n", iter);
         }
         
-        if((iter+1)%10==0 && shouldDoLB)
+        if((iter+1)%5==0 && shouldDoLB)
         {
           thermo.compute(iter, atom, neighbor, force, comm);
           Kokkos::fence();
@@ -383,6 +383,14 @@ void Block::iterate(){
         integrate.nlocal = atom.nlocal;
 
         integrate.initialIntegrate();
+
+        if((iter+1)%5==0)
+        {
+            ckout<<"v after initial integrate: "<<endl;
+            Kokkos::fence();
+            auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
+            ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
+        }
 
         if((iter + 1) % neighbor.every) {
             comm->communicate(atom, false);            
@@ -408,6 +416,15 @@ void Block::iterate(){
       integrate.nlocal = atom.nlocal;
 
       integrate.finalIntegrate();
+
+      if((iter+1)%5==0)
+        {
+            ckout<<"v after final integrate: "<<endl;
+            Kokkos::fence();
+            auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
+            ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
+        }
+
       iter++;
   }
   suspend(compute_instance);
