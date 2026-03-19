@@ -57,6 +57,15 @@ Atom::Atom(int ntypes_)
 
 Atom::~Atom()
 {
+  if(!doing_lb)
+    return;
+  
+  hapiFree(x.data());
+  hapiFree(v.data());
+  hapiFree(f.data());
+  hapiFree(type.data());
+
+  doing_lb = false;
 }
 
 void Atom::growarray(hapiStream_t stream=0)

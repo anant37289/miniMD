@@ -47,6 +47,7 @@
 /* readonly */ extern MMD_float in_neigh_cut;
 /* readonly */ extern int in_thermo_nstat;
 /* readonly */ extern bool time_segments;
+/* readonly */ extern int lb_every;
 
 extern void create_box(Atom& atom, int nx, int ny, int nz, double rho);
 extern int create_atoms(Atom& atom, int nx, int ny, int nz, double rho);
@@ -113,7 +114,7 @@ Block::Block(CkMigrateMessage* msg): thermo(thisIndex), atom(), neighbor(), inte
 }
 
 void Block::ResumeFromSync(){
-  ckout<<"resuming from sync at PE: "<<CkMyPe()<<endl; 
+  // ckout<<"resuming from sync at PE: "<<CkMyPe()<<endl; 
   comm = comm_proxy(thisIndex).ckLocal();
   
   comm->compute_instance = compute_instance;
@@ -349,20 +350,17 @@ void Block::iterate(){
         integrate.dtforce = integrate.dtforce / integrate.mass;
 
         next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
-        CkPrintf("[Block] Starting iteration %d\n", iter);
+        // CkPrintf("[Block] Starting iteration %d\n", iter);
       }
 
       // int check_safeexchange = comm->check_safeexchange;
       for(; iter < integrate.ntimes;) {
-        //start timing with iteration 1
-        //&& (iter == 0 || iter % 10 == 0)
-        if (integrate.index == 0 ) {
+        if (integrate.index == 0 && (iter == 0 || iter % 10 == 0)) {
           CkPrintf("[Block] Starting iteration %d\n", iter);
         }
         
-        if((iter+1)%5==0 && shouldDoLB)
+        if((iter+1)%(neighbor.every)==0 && shouldDoLB)
         {
-          thermo.compute(iter, atom, neighbor, force, comm);
           Kokkos::fence();
           AtSync();
           shouldDoLB = false;
@@ -370,7 +368,6 @@ void Block::iterate(){
         }
         else
         {
-          thermo.compute(iter, atom, neighbor, force, comm);
           shouldDoLB = true;
         }
 
@@ -384,13 +381,13 @@ void Block::iterate(){
 
         integrate.initialIntegrate();
 
-        if((iter+1)%5==0)
-        {
-            ckout<<"v after initial integrate: "<<endl;
-            Kokkos::fence();
-            auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
-            ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
-        }
+        // if((iter+1)%5==0)
+        // {
+            // ckout<<"v after initial integrate: "<<endl;
+            // Kokkos::fence();
+            // auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
+            // ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
+        // }
 
         if((iter + 1) % neighbor.every) {
             comm->communicate(atom, false);            
@@ -417,13 +414,13 @@ void Block::iterate(){
 
       integrate.finalIntegrate();
 
-      if((iter+1)%5==0)
-        {
-            ckout<<"v after final integrate: "<<endl;
-            Kokkos::fence();
-            auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
-            ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
-        }
+      // if((iter+1)%5==0)
+      //   {
+      //       ckout<<"v after final integrate: "<<endl;
+      //       Kokkos::fence();
+      //       auto v_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), atom.v);
+      //       ckout << "v(0) = " << v_h(0,0) << " " << v_h(0,1) << " " << v_h(0,2) << endl;
+      //   }
 
       iter++;
   }

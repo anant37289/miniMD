@@ -83,31 +83,20 @@ Comm::Comm(CkMigrateMessage* msg){
 }
 
 Comm::~Comm() {
-  // if(started_lb)
-  // {
-  //   if(sendlist.extent(0)>0){
-  //     CUDA_CHECK(cudaFree((void*)sendlist.data()));
-  //   }
-  //   if(exc_sendlist.extent(0)>0){
-  //     CUDA_CHECK(cudaFree((void*)exc_sendlist.data()));
-  //   }
-  //   if(exc_copylist.extent(0)>0){
-  //     CUDA_CHECK(cudaFree((void*)exc_copylist.data()));
-  //   }
-  //   if(replacement_indices.extent(0)>0){
-  //     CUDA_CHECK(cudaFree((void*)replacement_indices.data()));
-  //   }
-  //   CUDA_CHECK(cudaFree((void*)buf_comm_dummy));
-  //   CUDA_CHECK(cudaFree((void*)buf_send.data()));
-  //   CUDA_CHECK(cudaFree((void*)buf_recv.data()));
-  //   for(int i = 0; i < maxswap_static; i++) {
-  //     if(buf_comms_recv[i].extent(0)>0){
-  //       CUDA_CHECK(cudaFree((void*)buf_comms_recv[i].data()));
-  //     }
-  //   }
-  //   delete[] post_exchange_recv_count;
-  //   delete[] nrecvexchange;
-  // }
+  if(!doing_lb)
+    return;
+
+  cudaFree(sendlist.data());
+  cudaFree(exc_sendflag.data());
+  cudaFree(exc_sendlist.data());
+  cudaFree(exc_copylist.data());
+  cudaFree(replacement_indices.data());
+  cudaFree(buf_send.data());
+  cudaFree(buf_recv.data());
+  for(int i=0;i<maxswap_static;i++)
+  {
+    cudaFree(buf_comms_recv[i].data());
+  }
 }
 
 int Comm::setup(MMD_float cutneigh, Atom &atom)
@@ -436,9 +425,9 @@ void Comm::pup(PUP::er &p)
   if(p.isUnpacking())
   {
     //no need to copy curr_buf_recv, buf, x -> temp reference
-    for(int i=0;i<6;i++)
-      ckout<<"maxsendlist "<<i<<" : "<<maxsendlist[i]<<" ";
-    ckout<<endl;
+    // for(int i=0;i<6;i++)
+    //   ckout<<"maxsendlist "<<i<<" : "<<maxsendlist[i]<<" ";
+    // ckout<<endl;
     
     int *sendlist_ptr, *exc_sendflag_ptr, *exc_sendlist_ptr, *exc_copylist_ptr, *replacement_indices_ptr;
     cudaMalloc((void**)&sendlist_ptr, maxswap_static*(sendlist_width)*sizeof(int));
@@ -475,6 +464,15 @@ void Comm::pup(PUP::er &p)
   p(buf_recv.data(), maxrecv, PUP::PUPMode::DEVICE);
   for(int i = 0; i < maxswap_static; i++) {
     p(buf_comms_recv[i].data(), maxrecvcomm[i], PUP::PUPMode::DEVICE);
+  }
+
+  if(p.isPacking())
+  {
+    doing_lb = true;
+  }
+  if(p.isUnpacking())
+  {
+    doing_lb = false;
   }
 }
 
@@ -767,7 +765,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(pack_instance, 0, nsend_atoms), *this);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(pack_instance, 0,count_host(0)), *this);
+    // Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(pack_instance, 0,count_host(0)), *this);
     atom.nlocal -= count_host(0);
 
     nsend = count_host(0) * 7;
@@ -866,13 +864,13 @@ void Comm::operator() (TagExchangeSendlist, const int& i) const {
   } else
     exc_sendflag(i) = 0;
 }
-KOKKOS_INLINE_FUNCTION
-void Comm::operator() (TagExchangePack, const int& i ) const {
-  atom.pack_exchange(exc_sendlist(i),&buf_send[7*i]);
+// KOKKOS_INLINE_FUNCTION
+// void Comm::operator() (TagExchangePack, const int& i ) const {
+//   atom.pack_exchange(exc_sendlist(i),&buf_send[7*i]);
 
-  if(exc_copylist(i) > 0)
-    atom.copy(exc_copylist(i),exc_sendlist(i));
-}
+//   if(exc_copylist(i) > 0)
+//     atom.copy(exc_copylist(i),exc_sendlist(i));
+// }
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeCountRecv, const int& i, int& sum) const {
   const MMD_float value = cur_buf_recv[i * 7 + idim];

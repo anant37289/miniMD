@@ -63,7 +63,6 @@ typedef Kokkos::View<MMD_float,Kokkos::MemoryTraits<Kokkos::Atomic> > float_atom
 typedef Kokkos::View<MMD_int*,Kokkos::MemoryTraits<Kokkos::Atomic> > int_1d_atomic_view_type;
 typedef Kokkos::View<MMD_int**,Kokkos::MemoryTraits<Kokkos::Atomic> > int_2d_atomic_view_type;
 
-typedef Kokkos::View<MMD_float*[PAD],Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Atomic|Kokkos::Unmanaged> > x_atomic_um_view_type;
 typedef Kokkos::View<MMD_float*,Kokkos::MemoryTraits<Kokkos::Atomic|Kokkos::Unmanaged> > float_1d_atomic_um_view_type;
 
 typedef Kokkos::View<const MMD_float*[PAD],Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::RandomAccess> > x_rnd_view_type;
@@ -74,9 +73,11 @@ typedef Kokkos::View<const MMD_int**,Kokkos::MemoryTraits<Kokkos::RandomAccess> 
 
 typedef Kokkos::View<MMD_float*[PAD],Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged>> x_um_view_type;
 typedef Kokkos::View<MMD_int*,Kokkos::MemoryTraits<Kokkos::Unmanaged> > int_1d_um_view_type;
+typedef Kokkos::View<MMD_int*,Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>> int_1d_rnd_um_view_type;
 typedef Kokkos::View<MMD_float*, Kokkos::MemoryTraits<Kokkos::Unmanaged>> float_1d_um_view_type;
 typedef Kokkos::View<MMD_int**,Kokkos::LayoutRight, Kokkos::MemoryTraits<Kokkos::Unmanaged>> int_2d_um_lr_view_type;
 typedef Kokkos::View<const MMD_float*[PAD],Kokkos::LayoutRight,  Kokkos::MemoryTraits<Kokkos::RandomAccess | Kokkos::Unmanaged>> x_rnd_um_view_type;
+typedef Kokkos::View<MMD_float*[PAD],Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Atomic|Kokkos::Unmanaged> > x_atomic_um_view_type;
 
 typedef typename x_view_type::host_mirror_type x_host_view_type;
 typedef typename float_1d_view_type::host_mirror_type float_1d_host_view_type;

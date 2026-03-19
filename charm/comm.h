@@ -174,7 +174,7 @@ class Comm : public CBase_Comm
     Atom* atom_p;
     int idim,n,iswap;
     MMD_float lo, hi;
-    x_view_type x;
+    x_um_view_type x;
     int pbc_flags[4];
     // int_1d_atomic_view_type send_count;
     double comm_time;
@@ -183,6 +183,8 @@ class Comm : public CBase_Comm
     std::size_t exc_copylist_size;
     std::size_t replacement_indices_size;
     std::size_t sendlist_width;
+
+    bool doing_lb = false;
 };
 
 #endif

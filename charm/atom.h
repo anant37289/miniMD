@@ -87,6 +87,11 @@ class Atom
     MMD_float virial, mass;
 
     int comm_size, reverse_size, border_size;
+    /**
+     * bool to mark lb has started
+     * otherwise the kokkos calls which copy this will try to free atom and it will be double freed
+     */
+    bool doing_lb = false;
 
     Box box;
 
@@ -152,6 +157,8 @@ public:
       pbc_flags[3] = src.pbc_flags[3];
       first = src.first;
 
+      doing_lb = src.doing_lb;
+
       box = src.box;
     }
 
@@ -211,6 +218,15 @@ public:
       // p(x_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
       // p(v_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
       // p(type_copy.data(), nmax, PUP::PUPMode::DEVICE);
+      if(p.isPacking())
+      {
+        doing_lb = true;
+      }
+
+      if(p.isUnpacking())
+      {
+        doing_lb = false;
+      }
     }
     void addatom(MMD_float, MMD_float, MMD_float, MMD_float, MMD_float, MMD_float);
 

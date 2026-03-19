@@ -85,10 +85,10 @@ class Force: public PUP::able
     int_1d_const_view_type numneigh;                   // # of neighbors for each atom
     int_2d_const_view_type neighbors;                  // array of neighbors of each atom
 
-    x_rnd_view_type x;
-    x_view_type f;
-    x_atomic_view_type f_a;
-    int_1d_rnd_view_type type;
+    x_rnd_um_view_type x;
+    x_um_view_type f;
+    x_atomic_um_view_type f_a;
+    int_1d_rnd_um_view_type type;
 
     MMD_int me;
   public:

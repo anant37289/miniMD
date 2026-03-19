@@ -88,6 +88,8 @@ class Neighbor
     int atoms_per_bin;
     int shared_mem_size;
 
+    bool doing_lb;
+
     KOKKOS_INLINE_FUNCTION
     void operator() (TagNeighborBinning, const int&, int&) const;
     KOKKOS_INLINE_FUNCTION
@@ -130,8 +132,8 @@ class Neighbor
     KOKKOS_INLINE_FUNCTION
     int coord2bin(MMD_float, MMD_float, MMD_float) const;   // mapping atom coord to a bin
 
-    x_rnd_view_type x;//temp reference to atom x
-    int_1d_rnd_view_type type;//temp reference to atom type
+    x_rnd_um_view_type x;//temp reference to atom x
+    int_1d_rnd_um_view_type type;//temp reference to atom type
     int nlocal;
     int_1d_view_type new_maxneighs;
     int_1d_host_view_type h_new_maxneighs;
