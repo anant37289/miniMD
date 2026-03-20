@@ -62,13 +62,13 @@ Atom::~Atom()
 
   // printf("called ~Atom\n");
   
-  hapiFree(x.data());
-  hapiFree(v.data());
-  hapiFree(f.data());
-  hapiFree(type.data());
-  hapiFree(x_copy.data());
-  hapiFree(v_copy.data());
-  hapiFree(type_copy.data());
+  CUDA_CHECK(hapiFree(x.data()));
+  CUDA_CHECK(hapiFree(v.data()));
+  CUDA_CHECK(hapiFree(f.data()));
+  CUDA_CHECK(hapiFree(type.data()));
+  CUDA_CHECK(hapiFree(x_copy.data()));
+  CUDA_CHECK(hapiFree(v_copy.data()));
+  CUDA_CHECK(hapiFree(type_copy.data()));
 }
 
 void Atom::growarray(hapiStream_t stream=0)

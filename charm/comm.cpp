@@ -85,22 +85,24 @@ Comm::Comm(CkMigrateMessage* msg){
 Comm::~Comm() {
   if(!doing_lb)
     return;
-
-  // cudaDeviceSynchronize();
+   
+  //TODO: a very specific bug in -lb 50 -s 130 it breaks at the first load balancing wihout this fence
+  Kokkos::fence();
   // ckout<<"called ~comm"<<endl;
-  cudaFree(sendlist.data());
-  cudaFree(exc_sendflag.data());
-  cudaFree(exc_sendlist.data());
-  cudaFree(exc_copylist.data());
-  cudaFree(replacement_indices.data());
-  cudaFree(buf_send.data());
+  CUDA_CHECK(cudaFree(sendlist.data()));
+  CUDA_CHECK(cudaFree(exc_sendflag.data()));
+  CUDA_CHECK(cudaFree(exc_sendlist.data()));
+  CUDA_CHECK(cudaFree(exc_copylist.data()));
+  CUDA_CHECK(cudaFree(replacement_indices.data()));
+  CUDA_CHECK(cudaFree(buf_send.data()));
   // cudaFree(buf_recv.data());
-  hapiFree(buf_comm_dummy);
+  CUDA_CHECK(hapiFree(buf_comm_dummy));
   for(int i=0;i<maxswap_static;i++)
   {
-    cudaFree(buf_comms_recv[i].data());
+    CUDA_CHECK(cudaFree(buf_comms_recv[i].data()));
   }
-  cudaDeviceSynchronize();
+
+  // cudaDeviceSynchronize();
 }
 
 int Comm::setup(MMD_float cutneigh, Atom &atom)
@@ -847,7 +849,7 @@ void Comm::exchange(Atom &atom, bool preprocess)
     count_host(0) = nlocal;
     Kokkos::deep_copy(pack_instance, count_device, nlocal);
 
-    if(atom.nlocal>=atom.nmax)
+    while(atom.nlocal>=atom.nmax)
     {
       atom.growarray(pack_instance.cuda_stream());
       x = atom.x;
