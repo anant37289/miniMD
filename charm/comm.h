@@ -129,9 +129,9 @@ class Comm : public CBase_Comm
 
     float_1d_um_view_type buf_send;                 // send buffer for all comm
     float_1d_um_view_type buf_recv;                 // recv buffer for all comm
-    float_1d_view_type cur_buf_recv;
+    float_1d_um_view_type cur_buf_recv;
     MMD_float* buf_comm_dummy;
-    float_1d_view_type buf;
+    float_1d_um_view_type buf;
     // float_1d_host_view_type h_buf_send;
     // float_1d_host_view_type h_buf_recv;
 
@@ -170,11 +170,14 @@ class Comm : public CBase_Comm
     int maxswap_static;
     CkCallbackResumeThread* resume_cb;
     
-    Atom atom;
+    // Atom atom;
     Atom* atom_p;
     int idim,n,iswap;
     MMD_float lo, hi;
     x_um_view_type x;
+    x_um_view_type v;
+    int_1d_um_view_type type;
+    Box atom_box;
     int pbc_flags[4];
     // int_1d_atomic_view_type send_count;
     double comm_time;

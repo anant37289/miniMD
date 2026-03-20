@@ -308,7 +308,7 @@ int main(int argc, char** argv)
 
   Kokkos::InitializationSettings args_kokkos;
   if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
-  args_kokkos.set_device_id(me);
+  args_kokkos.set_device_id(0);
   Kokkos::initialize(args_kokkos);
   // Scope Guard
   {

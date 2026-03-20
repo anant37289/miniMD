@@ -94,11 +94,15 @@ public:
 
   ~Block(){
     //may want to delete instances[?]
+    // ckout<<"called ~Block"<<endl;
     cudaStreamDestroy(compute_stream);
     cudaStreamDestroy(h2d_stream);
     cudaStreamDestroy(d2h_stream);
     cudaStreamDestroy(pack_stream);
     cudaStreamDestroy(unpack_stream);
+
+    delete force;
+
   }
 
 

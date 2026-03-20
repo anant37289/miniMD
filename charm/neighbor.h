@@ -88,7 +88,7 @@ class Neighbor
     int atoms_per_bin;
     int shared_mem_size;
 
-    bool doing_lb;
+    // bool doing_lb = false;
 
     KOKKOS_INLINE_FUNCTION
     void operator() (TagNeighborBinning, const int&, int&) const;

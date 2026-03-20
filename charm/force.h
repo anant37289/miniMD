@@ -55,6 +55,7 @@ class Force: public PUP::able
     MMD_float virial;
     int ntypes;
     int index;
+    // bool doing_lb = false;
 
     Force() {};
     Force(CkMigrateMessage* msg){}
@@ -139,6 +140,11 @@ class Force: public PUP::able
       p(const_cast<MMD_float*>(epsilon.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
       p(const_cast<MMD_float*>(sigma6.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
       p(const_cast<MMD_float*>(sigma.data()), ntypes*ntypes, PUP::PUPMode::DEVICE);
+
+      // if(p.isPacking())
+      //   doing_lb = true;
+      // if(p.isUnpacking())
+      //   doing_lb = false;
     }
 };
 

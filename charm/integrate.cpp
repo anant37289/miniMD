@@ -38,7 +38,12 @@
 #include <sstream>
 
 Integrate::Integrate() {sort_every=20;}
-Integrate::~Integrate() {}
+Integrate::~Integrate() {
+  // if(!doing_lb)
+  //   return;
+  // printf("called ~Integrate\n");
+  // ckout<<"called ~Integrate"<<endl;
+}
 
 void Integrate::setup()
 {
@@ -55,6 +60,11 @@ void Integrate::pup(PUP::er &p){
   p| mass;
   p| sort_every;
   p| index;
+
+  // if(p.isPacking())
+  //   doing_lb = true;
+  // if(p.isUnpacking())
+  //   doing_lb = false;
 }
 void Integrate::initialIntegrate()
 {

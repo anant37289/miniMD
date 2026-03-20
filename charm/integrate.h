@@ -59,6 +59,7 @@ class Integrate
     MMD_float mass;
 
     MMD_int sort_every;
+    // bool doing_lb = false;
 
     int index;
     // CkCallbackResumeThread* resume_cb;

@@ -359,7 +359,7 @@ void Block::iterate(){
           CkPrintf("[Block] Starting iteration %d\n", iter);
         }
         
-        if((iter+1)%(neighbor.every)==0 && shouldDoLB)
+        if((iter+1)%(lb_every)==0 && shouldDoLB)
         {
           Kokkos::fence();
           AtSync();

@@ -60,7 +60,7 @@ Comm::Comm()
   maxrecv = BUFMIN;
   MMD_float* buf_recv_ptr;
   hapiCheck(cudaMalloc(&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
-  buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
+  // buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;
   // maxnlocal = 0;
@@ -86,17 +86,21 @@ Comm::~Comm() {
   if(!doing_lb)
     return;
 
+  // cudaDeviceSynchronize();
+  // ckout<<"called ~comm"<<endl;
   cudaFree(sendlist.data());
   cudaFree(exc_sendflag.data());
   cudaFree(exc_sendlist.data());
   cudaFree(exc_copylist.data());
   cudaFree(replacement_indices.data());
   cudaFree(buf_send.data());
-  cudaFree(buf_recv.data());
+  // cudaFree(buf_recv.data());
+  hapiFree(buf_comm_dummy);
   for(int i=0;i<maxswap_static;i++)
   {
     cudaFree(buf_comms_recv[i].data());
   }
+  cudaDeviceSynchronize();
 }
 
 int Comm::setup(MMD_float cutneigh, Atom &atom)
@@ -441,11 +445,11 @@ void Comm::pup(PUP::er &p)
     cudaMalloc((void**)&replacement_indices_ptr, replacement_indices_size*sizeof(int));
     replacement_indices = int_1d_um_view_type(replacement_indices_ptr, replacement_indices_size);
     hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
-    MMD_float* buf_send_ptr, *buf_recv_ptr;
+    MMD_float* buf_send_ptr;//, *buf_recv_ptr;
     hapiCheck(hapiMalloc((void**)&buf_send_ptr, (maxsend+BUFEXTRA)*sizeof(MMD_float)));
-    hapiCheck(hapiMalloc((void**)&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
+    // hapiCheck(hapiMalloc((void**)&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
     buf_send = float_1d_um_view_type(buf_send_ptr, maxsend+BUFEXTRA);
-    buf_recv = float_1d_um_view_type(buf_recv_ptr, maxrecv);
+    // buf_recv = float_1d_um_view_type(buf_recv_ptr, maxrecv);
     for(int i = 0; i < maxswap_static; i++) {
       MMD_float* buf_new;
       hapiCheck(hapiMalloc((void**)&buf_new, maxrecvcomm[i]*sizeof(MMD_float)));
@@ -461,7 +465,7 @@ void Comm::pup(PUP::er &p)
   p(count_host.data(), 3);
   p(count_device.data(), 3, PUP::PUPMode::DEVICE);
   p(buf_send.data(), maxsend+BUFEXTRA, PUP::PUPMode::DEVICE);
-  p(buf_recv.data(), maxrecv, PUP::PUPMode::DEVICE);
+  // p(buf_recv.data(), maxrecv, PUP::PUPMode::DEVICE);
   for(int i = 0; i < maxswap_static; i++) {
     p(buf_comms_recv[i].data(), maxrecvcomm[i], PUP::PUPMode::DEVICE);
   }
@@ -677,12 +681,15 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
    atoms exchanged with all 6 stencil neighbors
 */
 
-void Comm::exchange(Atom &atom_, bool preprocess)
+void Comm::exchange(Atom &atom, bool preprocess)
 {
   //NVTXTracer("Comm::exchange", NVTXColor::WetAsphalt);
   // Kokkos::Profiling::pushRegion("exchange");
   // ckout<<"comm::exchange"<<endl;
-  atom = atom_;
+  // atom = atom_;
+  x = atom.x;
+  v = atom.v;
+  type = atom.type;
 
   /* enforce PBC */
 
@@ -718,8 +725,6 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       lo = atom.box.zlo;
       hi = atom.box.zhi;
     }
-
-    x = atom.x;
 
     nlocal = atom.nlocal;
 
@@ -765,7 +770,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeFillCopyList>(pack_instance, 0, nsend_atoms), *this);
 
-    // Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(pack_instance, 0,count_host(0)), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangePack>(pack_instance, 0,count_host(0)), *this);
     atom.nlocal -= count_host(0);
 
     nsend = count_host(0) * 7;
@@ -843,14 +848,18 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     Kokkos::deep_copy(pack_instance, count_device, nlocal);
 
     if(atom.nlocal>=atom.nmax)
+    {
       atom.growarray(pack_instance.cuda_stream());
+      x = atom.x;
+      v = atom.v;
+      type = atom.type;
+    }
 
     Kokkos::parallel_for(Kokkos::RangePolicy<TagExchangeUnpack>(pack_instance, 0,nrecv_atoms), *this);
     //wait for send to finish to begin next iteration
     block_proxy[thisIndex].send_done_wait(idim, CkCallbackResumeThread());
   }
   wait(pack_instance, compute_instance);
-  atom_ = atom;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -864,13 +873,33 @@ void Comm::operator() (TagExchangeSendlist, const int& i) const {
   } else
     exc_sendflag(i) = 0;
 }
-// KOKKOS_INLINE_FUNCTION
-// void Comm::operator() (TagExchangePack, const int& i ) const {
-//   atom.pack_exchange(exc_sendlist(i),&buf_send[7*i]);
+KOKKOS_INLINE_FUNCTION
+void Comm::operator() (TagExchangePack, const int& i ) const {
+  // atom.pack_exchange(exc_sendlist(i),&buf_send[7*i]);
+    int idx = exc_sendlist(i);
+    auto base_ptr = &buf_send[7*i];
+    base_ptr[0] = x(idx,0);
+    base_ptr[1] = x(idx,1);
+    base_ptr[2] = x(idx,2);
+    base_ptr[3] = v(idx,0);
+    base_ptr[4] = v(idx,1);
+    base_ptr[5] = v(idx,2);
+    base_ptr[6] = type[idx];
 
-//   if(exc_copylist(i) > 0)
-//     atom.copy(exc_copylist(i),exc_sendlist(i));
-// }
+  if(exc_copylist(i) > 0)
+    // atom.copy(exc_copylist(i),exc_sendlist(i));
+    {
+        int j = exc_sendlist(i);
+        int idx_copy = exc_copylist(i);
+        x(j,0) = x(idx_copy,0);
+        x(j,1) = x(idx_copy,1);
+        x(j,2) = x(idx_copy,2);
+        v(j,0) = v(idx_copy,0);
+        v(j,1) = v(idx_copy,1);
+        v(j,2) = v(idx_copy,2);
+        type[j] = type[idx_copy];
+    }
+}
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagExchangeCountRecv, const int& i, int& sum) const {
   const MMD_float value = cur_buf_recv[i * 7 + idim];
@@ -882,7 +911,18 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
   double value = cur_buf_recv[i * 7 + idim];
 
   if(value >= lo && value < hi)
-    atom.unpack_exchange(Kokkos::atomic_fetch_add(&count_device(0),1), &cur_buf_recv[i * 7]);
+   // atom.unpack_exchange(Kokkos::atomic_fetch_add(&count_device(0),1), &cur_buf_recv[i * 7]);
+    {
+      int idx = Kokkos::atomic_fetch_add(&count_device(0),1);
+      auto base_ptr = &cur_buf_recv[i*7];
+      x(idx,0) = base_ptr[0];
+      x(idx,1) = base_ptr[1];
+      x(idx,2) = base_ptr[2];
+      v(idx,0) = base_ptr[3];
+      v(idx,1) = base_ptr[4];
+      v(idx,2) = base_ptr[5];
+      type[idx] = base_ptr[6];
+    }
 }
 
 /* borders:
@@ -898,12 +938,17 @@ void Comm::operator() (TagExchangeUnpack, const int& i ) const {
 //this is ordered in dimension so that things travelling along diagonals can do so
 //also reuse the send and recv buffers for all swaps growing them whenever needed so the same 
 
-void Comm::borders(Atom &atom_, bool preprocess)
+void Comm::borders(Atom &atom, bool preprocess)
 {
   //NVTXTracer("Comm::borders", NVTXColor::Carrot);
   // Kokkos::Profiling::pushRegion("Comm::borders");
 
-  atom = atom_;
+  // atom = atom_;
+  x = atom.x;
+  v = atom.v;
+  type = atom.type;
+  atom_box = atom.box;
+
   int ineed, nsend, nrecv, nfirst, nlast;
 
   /* erase all ghost atoms */
@@ -1008,9 +1053,12 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       n = atom.nlocal + atom.nghost;
 
-      while(n + nrecv > atom.nmax) atom.growarray(pack_instance.cuda_stream());
-
-      x = atom.x;
+      while(n + nrecv > atom.nmax) {
+        atom.growarray(pack_instance.cuda_stream());
+        x = atom.x;
+        v = atom.v;
+        type = atom.type;
+      }
       
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderUnpack>(pack_instance, 0,nrecv),*this);
       // set all pointers & counters
@@ -1047,7 +1095,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
     
     growrecv(max2, compute_instance.cuda_stream());
   }
-  atom_ = atom;
+  // atom_ = atom;
 
 }
 
@@ -1095,13 +1143,34 @@ void Comm::operator() (TagBorderSendlist, const int& i) const {
 
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagBorderPack, const int& k) const {
-  atom.pack_border(exc_sendlist(k), &buf_send[k * 4], pbc_flags);
+  // atom.pack_border(exc_sendlist(k), &buf_send[k * 4], pbc_flags);
+  int idx = exc_sendlist(k);
+  auto base_ptr = &buf_send[k*4];
+
+  if(pbc_flags[0] == 0) {
+      base_ptr[0] = x(idx,0);
+      base_ptr[1] = x(idx,1);
+      base_ptr[2] = x(idx,2);
+      base_ptr[3] = type[idx];
+    } else {
+      base_ptr[0] = x(idx,0) + atom_box.xprd * pbc_flags[1];
+      base_ptr[1] = x(idx,1) + atom_box.yprd * pbc_flags[2];
+      base_ptr[2] = x(idx,2) + atom_box.zprd * pbc_flags[3];
+      base_ptr[3] = type[idx];
+    }
+  
   sendlist(iswap,k) = exc_sendlist(k);
 }
 
 KOKKOS_INLINE_FUNCTION
 void Comm::operator() (TagBorderUnpack, const int& i) const {
-  atom.unpack_border(n + i, &buf[i * 4]);
+  // atom.unpack_border(n + i, &buf[i * 4]);
+    // int m = 0;
+  auto base_ptr = &buf[i*4];
+  x(n+i,0) = base_ptr[0];
+  x(n+i,1) = base_ptr[1];
+  x(n+i,2) = base_ptr[2];
+  type[n+i] = base_ptr[3];
 }
 
 /* realloc the size of the send buffer as needed with BUFFACTOR & BUFEXTRA */

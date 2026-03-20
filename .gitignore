@@ -3,3 +3,9 @@
 *.a
 *.swp
 kokkos_install
+baseline_charm
+build*
+data*
+*output*
+*.def.h
+*.decl.h

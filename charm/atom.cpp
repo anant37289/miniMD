@@ -59,13 +59,16 @@ Atom::~Atom()
 {
   if(!doing_lb)
     return;
+
+  // printf("called ~Atom\n");
   
   hapiFree(x.data());
   hapiFree(v.data());
   hapiFree(f.data());
   hapiFree(type.data());
-
-  doing_lb = false;
+  hapiFree(x_copy.data());
+  hapiFree(v_copy.data());
+  hapiFree(type_copy.data());
 }
 
 void Atom::growarray(hapiStream_t stream=0)

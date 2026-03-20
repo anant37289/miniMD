@@ -81,7 +81,11 @@ ForceLJ::ForceLJ(int ntypes_)
   nthreads = Kokkos::DefaultHostExecutionSpace().concurrency();
 }
 
-ForceLJ::~ForceLJ() {}
+ForceLJ::~ForceLJ() {
+  // if(!doing_lb)
+  //   return;
+  // printf("called ~forcel\n");
+}
 
 void ForceLJ::setup()
 {

@@ -62,6 +62,9 @@ Neighbor::Neighbor(int ntypes_)
 
 Neighbor::~Neighbor()
 {
+  // if(!doing_lb)
+  //   return;
+  // ckout<<"called ~Neigbor"<<endl;
 }
 
 void Neighbor::pup(PUP::er& p) {
@@ -130,6 +133,11 @@ void Neighbor::pup(PUP::er& p) {
   p(bins.data(), mbins*atoms_per_bin, PUP::PUPMode::DEVICE);
   p(new_maxneighs.data(), 1, PUP::PUPMode::DEVICE);
   p(stencil.data(), stencil_size, PUP::PUPMode::DEVICE);
+
+  // if(p.isPacking())
+  //   doing_lb = true;
+  // if(p.isUnpacking())
+  //   doing_lb = false;
 }
 
 void Neighbor::dealloc() {
