@@ -95,6 +95,12 @@ public:
   ~Block(){
     //may want to delete instances[?]
     // ckout<<"called ~Block"<<endl;
+    compute_instance = Kokkos::Cuda();
+    h2d_instance = Kokkos::Cuda();
+    d2h_instance = Kokkos::Cuda();
+    pack_instance = Kokkos::Cuda();
+    unpack_instance = Kokkos::Cuda();
+    
     cudaStreamDestroy(compute_stream);
     cudaStreamDestroy(h2d_stream);
     cudaStreamDestroy(d2h_stream);

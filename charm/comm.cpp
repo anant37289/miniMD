@@ -87,7 +87,9 @@ Comm::~Comm() {
     return;
    
   //TODO: a very specific bug in -lb 50 -s 130 it breaks at the first load balancing wihout this fence
-  Kokkos::fence();
+  // cudaError_t err = cudaDeviceSynchronize();
+  // if (err != cudaSuccess)
+  //     printf("[PE %d] Pre-destructor sync error: %s\n", CkMyPe(), cudaGetErrorString(err));
   // ckout<<"called ~comm"<<endl;
   CUDA_CHECK(cudaFree(sendlist.data()));
   CUDA_CHECK(cudaFree(exc_sendflag.data()));
@@ -96,7 +98,7 @@ Comm::~Comm() {
   CUDA_CHECK(cudaFree(replacement_indices.data()));
   CUDA_CHECK(cudaFree(buf_send.data()));
   // cudaFree(buf_recv.data());
-  CUDA_CHECK(hapiFree(buf_comm_dummy));
+  CUDA_CHECK(cudaFree(buf_comm_dummy));
   for(int i=0;i<maxswap_static;i++)
   {
     CUDA_CHECK(cudaFree(buf_comms_recv[i].data()));

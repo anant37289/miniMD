@@ -341,23 +341,29 @@ void ForceLJ::compute_fullneigh(Atom &atom, Neighbor &neighbor, int me)
   if(ntypes>MAX_STACK_TYPES) {
     if(EVFLAG)
     {
-      Kokkos::parallel_reduce(Kokkos::Experimental::require(
+      CUPTI_LAUNCH_WRAPPER(Kokkos::parallel_reduce(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<1,0> >(compute_instance,0,nlocal),
-            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this, t_eng_virial);
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this, t_eng_virial))
     }
     else
-      Kokkos::parallel_for(Kokkos::Experimental::require(
+    {
+      CUPTI_LAUNCH_WRAPPER(Kokkos::parallel_for(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<0,0> >(compute_instance,0,nlocal),
-            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this))
+    }
   } else {
     if(EVFLAG)
-      Kokkos::parallel_reduce(Kokkos::Experimental::require(
+    {
+      CUPTI_LAUNCH_WRAPPER(Kokkos::parallel_reduce(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<1,1> >(compute_instance,0,nlocal),
-            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this, t_eng_virial);
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this, t_eng_virial))
+    }
     else
-      Kokkos::parallel_for(Kokkos::Experimental::require(
+    {
+      CUPTI_LAUNCH_WRAPPER(Kokkos::parallel_for(Kokkos::Experimental::require(
             Kokkos::RangePolicy<TagComputeFullNeigh<0,1> >(compute_instance,0,nlocal),
-            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
+            Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this))
+    }
   }
   t_eng_virial.eng *= 4.0;
   t_eng_virial.virial *= 0.5;
