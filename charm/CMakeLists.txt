@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 project(miniMD)
+#if(NOT CMAKE_BUILD_TYPE)
+#    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+#endif()
+
+#message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+#set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 include(${CMAKE_SOURCE_DIR}/config.cmake)
 
