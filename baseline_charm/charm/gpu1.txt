@@ -1,0 +1,26 @@
+#0  0x00007f0f5d215d77 in pthread_spin_lock@GLIBC_2.2.5 () from /lib64/libc.so.6
+#1  0x00007f0f5ceff364 in cxip_ep_progress () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#2  0x00007f0f5cf09621 in cxip_util_cq_progress () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#3  0x00007f0f5cee1364 in ofi_cq_readfrom () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#4  0x00007f0f5d104a38 in fi_cq_read () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#5  0x00007f0f5d104c22 in lci::ofi_device_impl_t::poll_comp_impl(lci::net_status_t*, unsigned long) () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#6  0x00007f0f5d0dfe83 in lci::device_impl_t::poll_comp(lci::net_status_t*, unsigned long) () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#7  0x00007f0f5d0fa64a in lci::progress_x::call_impl(lci::runtime_t, lci::device_t, lci::endpoint_t) const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#8  0x00007f0f5d0db228 in lci::progress_x::call() const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#9  0x00007f0f5d6f347c in comm_backend::lci2_impl::CommBackendLCI2::progress() () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#10 0x00007f0f5d6e3e65 in CsdScheduler() () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#11 0x00007f0f5d6dfcb5 in converseRunPe(int, int) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#12 0x00007f0f5d6e00a3 in ConverseInit(int, char**, void (*)(int, char**), int, int) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#13 0x000000000082e627 in charm_main ()
+#14 0x00007f0f5d1ae590 in __libc_start_call_main () from /lib64/libc.so.6
+#15 0x00007f0f5d1ae640 in __libc_start_main_impl () from /lib64/libc.so.6
+#16 0x00000000006714d5 in _start ()
+(gdb) info threads
+  Id   Target Id                                           Frame 
+* 1    Thread 0x7f0f5cb8c000 (LWP 11872) "miniMD"          0x00007f0f5d215d77 in pthread_spin_lock@GLIBC_2.2.5 () from /lib64/libc.so.6
+  2    Thread 0x7f0f5ba33000 (LWP 11874) "cuda0000240000a" 0x00007f0f5d286a1f in poll () from /lib64/libc.so.6
+  3    Thread 0x7f0f2d9f9000 (LWP 11878) "cuda-EvtHandlr"  0x00007f0f5d286a1f in poll () from /lib64/libc.so.6
+  4    Thread 0x7f0f2c9ce000 (LWP 11879) "miniMD"          0x00007f0f5d215d85 in pthread_spin_lock@GLIBC_2.2.5 () from /lib64/libc.so.6
+(gdb) 
+quit
+A debugging session is active.

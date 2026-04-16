@@ -1,0 +1,102 @@
+(gdb) thread apply all bt
+
+Thread 4 (Thread 0x7f41623f5000 (LWP 1761820) "miniMD"):
+#0  0x00007f4193e27920 in __lll_lock_wait () from /lib64/libc.so.6
+#1  0x00007f4193e2dff2 in pthread_mutex_lock@@GLIBC_2.2.5 () from /lib64/libc.so.6
+#2  0x00007f4193b097d3 in ofi_intercept_handler () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#3  0x00007f4193b09ac5 in ofi_intercept_mmap () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#4  0x00007f41951fc144 in ?? () from /lib64/libcuda.so.1
+#5  0x00007f4194918e8e in ?? () from /lib64/libcuda.so.1
+#6  0x00007f419488feea in ?? () from /lib64/libcuda.so.1
+#7  0x00007f41948910b4 in ?? () from /lib64/libcuda.so.1
+#8  0x00007f4194891b63 in ?? () from /lib64/libcuda.so.1
+#9  0x00007f419489366a in ?? () from /lib64/libcuda.so.1
+#10 0x00007f4194894fa0 in ?? () from /lib64/libcuda.so.1
+#11 0x00007f41947564f9 in ?? () from /lib64/libcuda.so.1
+#12 0x00007f41948e0797 in ?? () from /lib64/libcuda.so.1
+#13 0x00007f419478ef63 in ?? () from /lib64/libcuda.so.1
+#14 0x00007f419475214d in ?? () from /lib64/libcuda.so.1
+#15 0x00007f41952037b3 in ?? () from /lib64/libcuda.so.1
+#16 0x00007f419466ae45 in ?? () from /lib64/libcuda.so.1
+#17 0x00007f419466b61c in ?? () from /lib64/libcuda.so.1
+#18 0x00007f419466d143 in ?? () from /lib64/libcuda.so.1
+#19 0x00007f41948151f7 in ?? () from /lib64/libcuda.so.1
+#20 0x00007f419897ee89 in ?? () from /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/12.8/lib64/libcudart.so.12
+#21 0x00007f41989e502b in cudaLaunchKernel () from /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/12.8/lib64/libcudart.so.12
+#22 0x0000000000768044 in cudaLaunchKernel<char> (func=0x7681fe <Kokkos::Impl::cuda_parallel_launch_constant_memory<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda> >()> "UH\211\345\350\200\357\377\377\220]\303UH\211", <incomplete sequence \345\277>, gridDim=..., blockDim=..., args=0x7f4140632420, sharedMem=520, stream=0x7f4140060860) at /opt/nvidia/hpc_sdk/Linux_x86_64/25.3/cuda/12.8/include/cuda_runtime.h:217
+#23 0x0000000000767149 in __device_stub__ZN6Kokkos4Impl36cuda_parallel_launch_constant_memoryINS0_12ParallelScanI8NeighborNS_11RangePolicyIJNS3_18TagNeighborBinningEEEENS_4CudaEEEEEvv () at /tmp/tmpxft_0006656a_00000000-6_neighbor.cudafe1.stub.c:123
+--Type <RET> for more, q to quit, c to continue without paging--
+#24 0x0000000000767190 in Kokkos::Impl::__wrapper__device_stub_cuda_parallel_launch_constant_memory<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda> > () at /tmp/tmpxft_0006656a_00000000-6_neighbor.cudafe1.stub.c:126
+#25 0x0000000000768207 in Kokkos::Impl::cuda_parallel_launch_constant_memory<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda> > () at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Cuda/Kokkos_Cuda_KernelLaunch.hpp:68
+#26 0x0000000000777294 in Kokkos::Impl::CudaParallelLaunchKernelInvoker<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda>, Kokkos::LaunchBounds<0u, 0u>, (Kokkos::Impl::CudaLaunchMechanism)1>::invoke_kernel (driver=..., grid=..., block=..., shmem=520, cuda_instance=0x1944670) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Cuda/Kokkos_Cuda_KernelLaunch.hpp:604
+#27 0x0000000000775cc8 in Kokkos::Impl::CudaParallelLaunchImpl<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda>, Kokkos::LaunchBounds<0u, 0u>, (Kokkos::Impl::CudaLaunchMechanism)1>::launch_kernel (driver=..., grid=..., block=..., shmem=520, cuda_instance=0x1944670) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Cuda/Kokkos_Cuda_KernelLaunch.hpp:683
+#28 0x0000000000773e12 in Kokkos::Impl::CudaParallelLaunch<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda>, Kokkos::LaunchBounds<0u, 0u>, (Kokkos::Impl::CudaLaunchMechanism)1, false>::CudaParallelLaunch<Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda>&, dim3&, dim3&, int const&, Kokkos::Impl::CudaInternal*> (this=0x7f41406325a7) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Cuda/Kokkos_Cuda_KernelLaunch.hpp:723
+#29 0x00000000007711c3 in Kokkos::Impl::ParallelScan<Neighbor, Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Kokkos::Cuda>::execute (this=0x7f4140632630) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Cuda/Kokkos_Cuda_Parallel_Range.hpp:674
+#30 0x000000000076ec04 in Kokkos::parallel_scan<Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Neighbor, void> (str="", policy=..., functor=...) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Kokkos_Parallel.hpp:364
+#31 0x000000000076986a in Kokkos::parallel_scan<Kokkos::RangePolicy<Neighbor::TagNeighborBinning>, Neighbor> (policy=..., functor=...) at /u/ajain18/hapi_hip/shogo/charm/kokkos/install/include/Kokkos_Parallel.hpp:373
+#32 0x0000000000764d78 in Neighbor::binatoms (this=0x7f41400568e8, atom=..., count=-1) at /u/ajain18/miniMD/baseline_charm/charm/neighbor.cpp:440
+#33 0x0000000000763fae in Neighbor::build (this=0x7f41400568e8, atom=...) at /u/ajain18/miniMD/baseline_charm/charm/neighbor.cpp:91
+#34 0x000000000069bd7e in Block::run_neighbour_build (this=0x7f41400564c0, cb=...) at /u/ajain18/miniMD/baseline_charm/charm/block.cpp:459
+#35 0x00000000006a1387 in CkIndex_Block::_callthr_run_neighbour_build_marshall5 (impl_arg=0x7f41404740d0) at /u/ajain18/miniMD/baseline_charm/charm/block.def.h:2853
+#36 0x00007f41943045f5 in CthStartThread () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#37 0x00007f419431068f in make_fcontext () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#38 0x0000000000000000 in ?? ()
+
+Thread 3 (Thread 0x7f41645f5000 (LWP 1761819) "cuda-EvtHandlr"):
+#0  0x00007f4193e27920 in __lll_lock_wait () from /lib64/libc.so.6
+--Type <RET> for more, q to quit, c to continue without paging--
+#1  0x00007f4193e2e04d in pthread_mutex_lock@@GLIBC_2.2.5 () from /lib64/libc.so.6
+#2  0x00007f419478746d in ?? () from /lib64/libcuda.so.1
+#3  0x00007f419485f4e5 in ?? () from /lib64/libcuda.so.1
+#4  0x00007f419478cd13 in ?? () from /lib64/libcuda.so.1
+#5  0x00007f4193e2ac0a in start_thread () from /lib64/libc.so.6
+#6  0x00007f4193eafc60 in clone3 () from /lib64/libc.so.6
+
+Thread 2 (Thread 0x7f4192676000 (LWP 1761815) "cuda0000240000a"):
+#0  0x00007f4193ea2a1f in poll () from /lib64/libc.so.6
+#1  0x00007f419479c707 in ?? () from /lib64/libcuda.so.1
+#2  0x00007f419485f36f in ?? () from /lib64/libcuda.so.1
+#3  0x00007f419478cd13 in ?? () from /lib64/libcuda.so.1
+#4  0x00007f4193e2ac0a in start_thread () from /lib64/libc.so.6
+#5  0x00007f4193eafc60 in clone3 () from /lib64/libc.so.6
+
+Thread 1 (Thread 0x7f41937a8000 (LWP 1761813) "miniMD"):
+#0  0x00007f4193e27920 in __lll_lock_wait () from /lib64/libc.so.6
+#1  0x00007f4193e2e04d in pthread_mutex_lock@@GLIBC_2.2.5 () from /lib64/libc.so.6
+#2  0x00007f41948921dc in ?? () from /lib64/libcuda.so.1
+#3  0x00007f4194670a54 in ?? () from /lib64/libcuda.so.1
+#4  0x00007f41947d7b52 in ?? () from /lib64/libcuda.so.1
+#5  0x00007f4193b0ad53 in cuda_mm_valid () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#6  0x00007f4193b0a6a8 in ofi_mr_cache_find () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#7  0x00007f4193b430dd in cxip_map () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#8  0x00007f4193b1da0d in cxip_ep_obj_map () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#9  0x00007f4193b29770 in cxip_rma_common () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#10 0x00007f4193b2a3ab in cxip_rma_readmsg () from /opt/cray/libfabric/1.22.0/lib64/libfabric.so.1
+#11 0x00007f4193d20b5f in fi_readmsg () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#12 0x00007f4193d223b3 in lci::ofi_endpoint_impl_t::post_get_impl(int, void*, unsigned long, lci::mr_t, unsigned long, lci::rmr_t, void*, bool) () from /u/ajain18/reconverse_charm_integratio--Type <RET> for more, q to quit, c to continue without paging--
+n/lci_install/lib64/liblci.so
+#13 0x00007f4193cfcc8e in lci::endpoint_impl_t::post_get(int, void*, unsigned long, lci::mr_t, unsigned long, lci::rmr_t, void*, bool, bool) () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#14 0x00007f4193d12c94 in lci::post_network_op(lci::post_comm_args_t const&, lci::post_comm_traits_t const&, lci::post_comm_state_t&) () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#15 0x00007f4193d132b6 in lci::post_comm_x::call_impl(lci::direction_t, int, void*, unsigned long, lci::comp_t, lci::runtime_t, lci::device_t, lci::endpoint_t, lci::packet_pool_t, lci::matching_engine_t, lci::comp_semantic_t, lci::mr_t, unsigned long, lci::rmr_t, unsigned long, unsigned int, void*, lci::matching_policy_t, bool, bool, bool) const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#16 0x00007f4193cf6534 in lci::post_comm_x::call() const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#17 0x00007f4193d14493 in lci::post_comm_x::operator()() const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#18 0x00007f4193d13b80 in lci::post_get_x::call_impl(int, void*, unsigned long, lci::comp_t, unsigned long, lci::rmr_t, lci::runtime_t, lci::device_t, lci::endpoint_t, lci::packet_pool_t, lci::comp_semantic_t, lci::mr_t, unsigned long, unsigned int, void*, bool, bool, bool) const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#19 0x00007f4193cf7186 in lci::post_get_x::call() const () from /u/ajain18/reconverse_charm_integration/lci_install/lib64/liblci.so
+#20 0x00007f419430fe7b in comm_backend::lci2_impl::CommBackendLCI2::issueRget(int, void const*, unsigned long, void*, unsigned long, void*, void (*)(comm_backend::Status), void*) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#21 0x00007f41943038e4 in comm_backend::issueRget(int, void const*, unsigned long, void*, unsigned long, void*, void (*)(comm_backend::Status), void*) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#22 0x00007f41943071da in CmiIssueRget(ncpystruct*) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#23 0x0000000000810a03 in CkRdmaDeviceIssueRgets(envelope*, int, void**, int*, CkDeviceBufferPost*) ()
+#24 0x00000000006aa70e in CkIndex_Block::_call_borders_recv_2_marshall34 (impl_msg=0x2772c70, impl_obj_void=0x2553670) at /u/ajain18/miniMD/baseline_charm/charm/block.def.h:5012
+#25 0x00000000007898af in CkDeliverMessageFree ()
+#26 0x00000000007ceeab in CkLocRec::invokeEntry(CkMigratable*, void*, int, bool) ()
+#27 0x000000000078d64b in _processHandler(void*, CkCoreState*) ()
+#28 0x00007f41942ffeb8 in CsdScheduler() () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#29 0x00007f41942fbcb5 in converseRunPe(int, int) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#30 0x00007f41942fc0a3 in ConverseInit(int, char**, void (*)(int, char**), int, int) () from /u/ajain18/reconverse_charm_integration/charm/lib/libreconverse.so
+#31 0x000000000082e627 in charm_main ()
+#32 0x00007f4193dca590 in __libc_start_call_main () from /lib64/libc.so.6
+#33 0x00007f4193dca640 in __libc_start_main_impl () from /lib64/libc.so.6
+--Type <RET> for more, q to quit, c to continue without paging--
+#34 0x00000000006714d5 in _start ()
+(gdb) 
+(gdb) 
