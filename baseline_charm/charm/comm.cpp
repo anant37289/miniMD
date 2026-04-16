@@ -746,11 +746,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   iswap = 0;
 
-  if(thisIndex==0)
-  {
-    printf("ckpt1.1\n");
-    fflush(stdout);
-  }
+  // if(thisIndex==0)
+  // {
+  //   printf("ckpt1.1\n");
+  //   fflush(stdout);
+  // }
 
   if(atom.nlocal > maxnlocal) {
     send_flag = int_1d_view_type("Comm::sendflag",atom.nlocal);
@@ -767,11 +767,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
     }
   }
 
-  if(thisIndex==0)
-  {
-    printf("ckpt1.2 and count_recv %d\n", count_recv);
-    fflush(stdout);
-  }
+  // if(thisIndex==0)
+  // {
+  //   printf("ckpt1.2 and count_recv %d\n", count_recv);
+  //   fflush(stdout);
+  // }
 
   for(idim = 0; idim < 3; idim++) {
     nlast = 0;
@@ -838,30 +838,30 @@ void Comm::borders(Atom &atom_, bool preprocess)
           send1 = static_cast<void*>(buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
           send1_chare = sendchare[iswap];
-          if(thisIndex==0)
-          {
-            printf("ckpt1.3.1.%d\n", sendchare[iswap]);
-            fflush(stdout);
-          }
+          // if(thisIndex==0)
+          // {
+          //   printf("ckpt1.3.1.%d\n", sendchare[iswap]);
+          //   fflush(stdout);
+          // }
           block_proxy[thisIndex].borders_recv_ready_wait(iswap, CkCallbackResumeThread());
-          if(thisIndex==0)
-          {
-            printf("ckpt1.3.2.%d\n", sendchare[iswap]);
-            fflush(stdout);
-          }
+          // if(thisIndex==0)
+          // {
+          //   printf("ckpt1.3.2.%d\n", sendchare[iswap]);
+          //   fflush(stdout);
+          // }
           
-          if(thisIndex==0)
-          {
-            printf("ckpt1.3.3.%d\n", sendchare[iswap]);
-            fflush(stdout);
-          }
+          // if(thisIndex==0)
+          // {
+          //   printf("ckpt1.3.3.%d\n", sendchare[iswap]);
+          //   fflush(stdout);
+          // }
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
 
-          if(thisIndex==0)
-          {
-            printf("ckpt1.3.4.%d\n", sendchare[iswap]);
-            fflush(stdout);
-          }
+          // if(thisIndex==0)
+          // {
+          //   printf("ckpt1.3.4.%d\n", sendchare[iswap]);
+          //   fflush(stdout);
+          // }
           
           nrecv = this->nrecvcomm[iswap];
           buf = buf_comms_recv[iswap];

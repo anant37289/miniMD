@@ -117,6 +117,8 @@ void resize_unmanaged_1d_views(
     size_t new_n0,
     cudaStream_t stream = 0)
 {
+
+    cudaStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged,
                   "Requires unmanaged view");
 
@@ -163,6 +165,7 @@ void resize_unmanaged_2d_views(
     size_t new_n1, // New Cols
     cudaStream_t stream = 0)
 {
+    cudaStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged, "Requires unmanaged view");
     static_assert(std::is_same_v<typename ViewType::memory_space, Kokkos::CudaSpace>, "Only supports CudaSpace");
     static_assert(ViewType::rank == 2, "Only rank-2 supported");

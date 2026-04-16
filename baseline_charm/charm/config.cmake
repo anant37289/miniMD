@@ -7,7 +7,7 @@ set(BASE_DIR "/u/ajain18/miniMD/baseline_charm/charm")
 
 set(Charm_ENABLE_GPU ON)
 
-#set(GPU_OPTS "-O3 -std=c++20 -extended-lambda -Wext-lambda-captures-this -Xcompiler -fsanitize=address -Xcompiler -fno-omit-frame-pointer")
-#set(GPU_LINK_OPTS "-O3 -std=c++20 -lcudart -lcuda -L${KOKKOS_DIR}/lib64 -lkokkoscore -lkokkoscontainers -lkokkosalgorithms -lkokkossimd -fsanitize=address")
-set(GPU_OPTS "-O3 -std=c++20 -extended-lambda -Wext-lambda-captures-this")
-set(GPU_LINK_OPTS "-O3 -std=c++20 -lcudart -lcuda -L${KOKKOS_DIR}/lib64 -lkokkoscore -lkokkoscontainers -lkokkosalgorithms -lkokkossimd")
+#set(GPU_OPTS "-O3 -g -std=c++20 -extended-lambda -Wext-lambda-captures-this")
+#set(GPU_LINK_OPTS "-O3 -std=c++20 -lcudart -lcuda -L${KOKKOS_DIR}/lib64 -lkokkoscore -lkokkoscontainers -lkokkosalgorithms -lkokkossimd")
+set(GPU_OPTS "-O3 -extended-lambda -Wext-lambda-captures-this")
+set(GPU_LINK_OPTS "-O3 -lcudart -lcuda -L${KOKKOS_DIR}/lib64 -lkokkoscore -lkokkoscontainers -lkokkosalgorithms -lkokkossimd")

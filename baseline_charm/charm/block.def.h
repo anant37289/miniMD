@@ -7402,7 +7402,7 @@ void Block::_serial_0(Closure_Block::reducesum_6_closure* gen0) {
     int& iter = gen0->getP0();
     MMD_float& temp = gen0->getP1();
     { // begin serial block
-#line 111 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 112 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         reductionSum+=temp;
         if(++reductionCount==num_chares){
@@ -7474,7 +7474,7 @@ void Block::_serial_1(Closure_Block::temperature_allreduce_7_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 121 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 122 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->iter;
         thisProxy[0].reducesum(tag, thermo.t_act);
@@ -7539,7 +7539,7 @@ void Block::_serial_2(Closure_Block::temperature_allreduce_7_closure* gen0, Clos
       int& iter = gen1->getP0();
       double& t1 = gen1->getP1();
       { // begin serial block
-#line 125 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 126 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         thermo.t1 = t1;
       
@@ -7560,7 +7560,7 @@ void Block::_serial_3(Closure_Block::temperature_allreduce_7_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 128 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 129 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -7627,7 +7627,7 @@ void Block::_serial_4(Closure_Block::energy_allreduce_9_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 134 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 135 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->iter;
         CkCallback allreduce_cb = CkCallback(CkIndex_Block::energy_recv(NULL), thisProxy);
@@ -7700,7 +7700,7 @@ void Block::_serial_5(Closure_Block::energy_allreduce_9_closure* gen0, CkReducti
     {
       CkReductionMsg*& msg = gen1;
       { // begin serial block
-#line 140 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 141 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         thermo.eng = *(MMD_float*)msg->getData();
       
@@ -7721,7 +7721,7 @@ void Block::_serial_6(Closure_Block::energy_allreduce_9_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 143 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 144 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -7788,7 +7788,7 @@ void Block::_serial_7(Closure_Block::pressure_allreduce_11_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 149 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 150 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->iter;
         CkCallback allreduce_cb = CkCallback(CkIndex_Block::pressure_recv(NULL), thisProxy);
@@ -7861,7 +7861,7 @@ void Block::_serial_8(Closure_Block::pressure_allreduce_11_closure* gen0, CkRedu
     {
       CkReductionMsg*& msg = gen1;
       { // begin serial block
-#line 155 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 156 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         thermo.virial = *(MMD_float*)msg->getData();
       
@@ -7882,7 +7882,7 @@ void Block::_serial_9(Closure_Block::pressure_allreduce_11_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 158 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 159 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -7949,7 +7949,7 @@ void Block::_serial_10(Closure_Block::mark_start_13_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 164 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 165 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         CkCallback cb_start(CkReductionTarget(Block, markstart_recv), thisProxy[0]);
         contribute(cb_start);
@@ -7996,7 +7996,7 @@ void Block::_serial_11(Closure_Block::mark_start_13_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 168 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 169 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -8045,7 +8045,7 @@ void Block::_serial_12() {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_12()), CkMyPe(), 0, &projID, this); 
   { // begin serial block
-#line 174 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 175 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         start_time = CkWallTimer();
         thisProxy.start_iterations();
@@ -8112,7 +8112,7 @@ void Block::_serial_13(Closure_Block::mark_done_16_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 180 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 181 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         CkCallback cb_done(CkReductionTarget(Block, markdone_recv), thisProxy[0]);
         contribute(cb_done);
@@ -8159,7 +8159,7 @@ void Block::_serial_14(Closure_Block::mark_done_16_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 184 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 185 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -8208,7 +8208,7 @@ void Block::_serial_15() {
   CmiObjId projID = this->ckGetArrayIndex().getProjectionID();
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Block_serial_15()), CkMyPe(), 0, &projID, this); 
   { // begin serial block
-#line 190 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 191 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         total_time = CkWallTimer() - start_time;
         CkPrintf("[Block %d] Total time (exclude 1st iteration): %.6lf s\n", thisIndex, total_time);
@@ -8274,7 +8274,7 @@ void Block::_serial_16(Closure_Block::exchange_notify_recv_ready_19_closure* gen
     int& idim = gen0->getP1();
     CkCallback& cb = gen0->getP2();
     { // begin serial block
-#line 198 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 199 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = 3*iter + idim;
         thisProxy[comm->chareneigh[idim][0]].exchange_1_recv_1(tag);
@@ -8488,7 +8488,7 @@ void Block::_serial_19(Closure_Block::exchange_recv_ready_wait_20_closure* gen0)
     int& idim = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 214 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 215 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -8550,7 +8550,7 @@ void Block::_serial_20(Closure_Block::exchange_2_send_1_21_closure* gen0) {
     int& idim = gen0->getP0();
     CkCallback& cb_thread = gen0->getP1();
     { // begin serial block
-#line 219 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 220 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = 3*comm->iter + idim;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
@@ -8619,7 +8619,7 @@ void Block::_serial_21(Closure_Block::exchange_2_send_2_22_closure* gen0) {
     int& idim = gen0->getP0();
     CkCallback& cb_thread = gen0->getP1();
     { // begin serial block
-#line 231 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 232 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
           int tag = 3*comm->iter + idim;
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
@@ -8744,7 +8744,7 @@ void Block::_serial_22(Closure_Block::exchange_2_recv_1_wait_23_closure* gen0, C
       CkDeviceBuffer & deviceBuffer_data = gen1->getP4();
       char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
-#line 243 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 244 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -8863,7 +8863,7 @@ void Block::_serial_23(Closure_Block::exchange_2_recv_2_wait_24_closure* gen0, C
       CkDeviceBuffer & deviceBuffer_data = gen1->getP4();
       char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
-#line 248 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 249 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -9057,7 +9057,7 @@ void Block::_serial_24(Closure_Block::send_done_wait_25_closure* gen0) {
     int& idim = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 259 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 260 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -9119,7 +9119,7 @@ void Block::_serial_25(Closure_Block::borders_notify_recv_ready_30_closure* gen0
     int& iswap = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 268 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 269 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->maxswap_static*comm->iter + iswap;
         thisProxy[comm->recvchare[iswap]].borders_recv_1(tag);
@@ -9234,7 +9234,7 @@ void Block::_serial_26(Closure_Block::borders_recv_ready_wait_31_closure* gen0, 
     {
       int& ref = gen1->getP0();
       { // begin serial block
-#line 275 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 276 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -9304,7 +9304,7 @@ void Block::_serial_27(Closure_Block::borders_2_32_closure* gen0) {
     int& iswap = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 280 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 281 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->maxswap_static*comm->iter + iswap;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
@@ -9403,7 +9403,7 @@ void Block::_serial_28(Closure_Block::borders_2_32_closure* gen0, Closure_Block:
       CkDeviceBuffer & deviceBuffer_data = gen1->getP3();
       char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
-#line 287 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 288 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
             cb.send();
         
@@ -9468,7 +9468,7 @@ void Block::_serial_29(Closure_Block::comms_notify_recv_ready_35_closure* gen0) 
     int& iswap = gen0->getP1();
     CkCallback& cb = gen0->getP2();
     { // begin serial block
-#line 294 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 295 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         int tag = comm->nswap*iter + iswap;
         thisProxy[comm->recvchare[iswap]].comms_recv_1(tag);
@@ -9583,7 +9583,7 @@ void Block::_serial_30(Closure_Block::comms_recv_ready_wait_36_closure* gen0, Cl
     {
       int& ref = gen1->getP0();
       { // begin serial block
-#line 301 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 302 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         cb.send();
       
@@ -9653,7 +9653,7 @@ void Block::_serial_31(Closure_Block::comms_send_38_closure* gen0) {
     int& iswap = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 307 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 308 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
           int tag = comm->nswap*comm->iter + iswap;
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
@@ -9703,7 +9703,7 @@ void Block::_serial_32(Closure_Block::comms_send_38_closure* gen0) {
     int& iswap = gen0->getP0();
     CkCallback& cb = gen0->getP1();
     { // begin serial block
-#line 313 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 314 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
           cb.send();
         
@@ -9820,7 +9820,7 @@ void Block::_serial_33(Closure_Block::comms_recv_wait_39_closure* gen0, Closure_
       CkDeviceBuffer & deviceBuffer_data = gen1->getP3();
       char* data = (char*) (deviceBuffer_data.ptr);
       { // begin serial block
-#line 318 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 319 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
           cb.send();
         
@@ -9888,7 +9888,7 @@ void Block::_serial_34(Closure_Block::comm_all_42_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 325 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 326 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -10060,7 +10060,7 @@ void Block::_serial_35(Closure_Block::comm_all_42_closure* gen0, SDAG::ForallClo
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 339 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 340 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -10089,7 +10089,7 @@ void Block::_serial_36(Closure_Block::comm_all_42_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 350 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 351 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
  cb.send(); 
 #line 10095 "block.def.h"
     } // end serial block
@@ -10154,7 +10154,7 @@ void Block::_serial_37(Closure_Block::comm_rev_all_44_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 354 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 355 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         my_iswap = comm->iswap;
         my_nswap = comm->nswap;
@@ -10326,7 +10326,7 @@ void Block::_serial_38(Closure_Block::comm_rev_all_44_closure* gen0, SDAG::Foral
           char*& data = gen3->getP1();
           size_t& size = gen3->getP2();
           { // begin serial block
-#line 368 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 369 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
             memcpy(comm->h_buf_comms_recv[my_iswap].data(), data, size);
             Kokkos::deep_copy(comm->h2d_instance, comm->buf_comms_recv[my_iswap], comm->h_buf_comms_recv[my_iswap]);
@@ -10356,7 +10356,7 @@ void Block::_serial_39(Closure_Block::comm_rev_all_44_closure* gen0) {
   {
     CkCallback& cb = gen0->getP0();
     { // begin serial block
-#line 380 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 381 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
  cb.send(); 
 #line 10362 "block.def.h"
     } // end serial block

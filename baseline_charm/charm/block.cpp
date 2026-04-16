@@ -247,48 +247,49 @@ void Block::run(){
       thermo.compute(0, atom, neighbor, force, comm);
       // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
-      if(thisIndex==0)
-        {
-          printf("ckpt1\n");
-          fflush(stdout);
-        }
+      // if(thisIndex==0)
+      //   {
+      //     printf("ckpt1\n");
+      //     fflush(stdout);
+      //   }
       if (sort > 0)
           atom.sort(neighbor);
       comm->borders(atom, true);
 
-      if(thisIndex==0)
-      {
-        printf("ckpt2\n");
-        fflush(stdout);
-      }
+      // if(thisIndex==0)
+      // {
+      //   printf("ckpt2\n");
+      //   fflush(stdout);
+      // }
 
       force->evflag = 1;
       
-      thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      // thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      neighbor.build(atom);
 
-      if(thisIndex==0)
-      {
-        printf("ckpt3\n");
-        fflush(stdout);
-      }
+      // if(thisIndex==0)
+      // {
+      //   printf("ckpt3\n");
+      //   fflush(stdout);
+      // }
       Kokkos::fence();
       // neighbor.build(atom);
       force->compute(atom, neighbor, comm, thisIndex);
       
-      if(thisIndex==0)
-      {
-        printf("ckpt4\n");
-        fflush(stdout);
-      }
+      // if(thisIndex==0)
+      // {
+      //   printf("ckpt4\n");
+      //   fflush(stdout);
+      // }
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
       
       thermo.compute(0, atom, neighbor, force, comm);//to check if Init is done correctly
-      if(thisIndex==0)
-      {
-        printf("ckpt5\n");
-        fflush(stdout);
-      }
+      // if(thisIndex==0)
+      // {
+      //   printf("ckpt5\n");
+      //   fflush(stdout);
+      // }
 
       Kokkos::fence();
       //Main iteration loop
@@ -305,6 +306,8 @@ void Block::run(){
         int next_sort = integrate.sort_every>0?integrate.sort_every:integrate.ntimes+1;
 
         for(n = 0; n < integrate.ntimes; n++) {
+          // printf("integrate.ntimes %d and curr iter %d\n", integrate.ntimes, n);
+          // fflush(stdout);
           //start timing with iteration 1
           if (integrate.index == 0 && (n == 0 || n % 10 == 0)) {
             printf("[Block] Starting iteration %d\n", n);
@@ -383,7 +386,8 @@ void Block::run(){
         }
           comm->exchange(atom, false);
           if(n+1>=next_sort) {
-            atom.sort(neighbor);
+            if(sort>0)
+              atom.sort(neighbor);
             next_sort +=  integrate.sort_every;
           }
           comm->borders(atom, false);
@@ -445,13 +449,14 @@ void Block::run(){
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, false);
 
-      thermo.compute(-1, atom, neighbor, force, comm);
+      // thermo.compute(-1, atom, neighbor, force, comm);
 
       // XXX: Missing performance summary and yaml output
 
-      neighbor.dealloc();
+      // neighbor.dealloc();
       // delete force;
-
+      printf("PE %d done till here\n", CkMyPe());
+      fflush(stdout);
       contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
 }
 

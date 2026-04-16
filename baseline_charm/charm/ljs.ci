@@ -88,7 +88,8 @@ mainmodule miniMD {
       }
 
       when blockDone() serial {
-        CkPrintf("[Main] Blocks complete\n");
+        printf("[Main] Blocks complete\n");
+        fflush(stdout);
         kokkos_proxy.finalize();
       }
 

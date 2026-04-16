@@ -1221,10 +1221,11 @@ void Main::_serial_3() {
   { // begin serial block
 #line 81 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
-        CkPrintf("[Main] Blocks complete\n");
+        printf("[Main] Blocks complete\n");
+        fflush(stdout);
         kokkos_proxy.finalize();
       
-#line 1228 "miniMD.def.h"
+#line 1229 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_3_end();
@@ -1261,12 +1262,12 @@ void Main::_when_4_end() {
 void Main::_serial_4() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_4()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 85 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 86 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos finalized\n");
         CkExit();
       
-#line 1270 "miniMD.def.h"
+#line 1271 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_4_end();
