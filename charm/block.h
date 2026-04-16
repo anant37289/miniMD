@@ -32,6 +32,7 @@ public:
   double comm_time=0;
   double force_time=0;
   double neigh_time=0;
+  double lb_start_time = 0;
 
   Kokkos::Cuda compute_instance;
   Kokkos::Cuda h2d_instance;
@@ -51,7 +52,7 @@ public:
   // For comms_all
   int my_iswap;
   int my_nswap;
-  bool shouldDoLB = false;
+  bool shouldDoLB = true;
 
   int iter;
   int next_sort;

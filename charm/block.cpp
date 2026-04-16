@@ -4,6 +4,7 @@
 #include "block.h"
 #include "force_eam.h"
 #include "force_lj.h"
+#include <cupti.h>
 
 /* readonly */ extern CProxy_Main main_proxy;
 /* readonly */ extern CProxy_KokkosManager kokkos_proxy;
@@ -355,21 +356,30 @@ void Block::iterate(){
 
       // int check_safeexchange = comm->check_safeexchange;
       for(; iter < integrate.ntimes;) {
+        // if((iter+1)%50==0 && CkMyPe() == CmiNodeFirst(CmiMyNode()))
+        // {
+        //   ckout<<"["<<CkMyPe()<<"]"<<"CmiNodeFirst(CmiMyNode()) "<<CmiNodeFirst(CmiMyNode())<<endl;
+        //   cuptiActivityFlushAll(CUPTI_ACTIVITY_FLAG_FLUSH_FORCED);//sync flush cupti records which are finished, does not wait for partial records
+        //   hapiProcessCuptiBuffers();
+        //   hapiClearCuptiData();
+        // }
         if (integrate.index == 0 && (iter == 0 || iter % 10 == 0)) {
           CkPrintf("[Block] Starting iteration %d\n", iter);
         }
         
-        if((iter+1)%(lb_every)==0 && shouldDoLB)
-        {
-          Kokkos::fence();
-          AtSync();
-          shouldDoLB = false;
-          return;
-        }
-        else
-        {
-          shouldDoLB = true;
-        }
+        if((iter+1)%(lb_every)==0)
+          if(shouldDoLB) {
+            Kokkos::fence();
+            thisProxy[thisIndex].mark_lb_start(CkCallbackResumeThread());
+            AtSync();
+            shouldDoLB = false;
+            return;
+          }
+          else
+          {
+            thisProxy[thisIndex].mark_lb_end(CkCallbackResumeThread());
+            shouldDoLB = true;
+          }
 
         // Store iteration counter in Comm
         comm->iter = iter;

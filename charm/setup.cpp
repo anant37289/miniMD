@@ -52,6 +52,8 @@ char line[MAXLINE];
 char keyword[MAXLINE];
 FILE* fp;
 
+extern bool atom_count_gradient;
+
 /*
 void read_lammps_parse_keyword(int first)
 {
@@ -361,7 +363,7 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
 
   int iflag = 0;
 
-  int count_atoms = 0;
+  size_t count_atoms = 0;
   while(oz * subboxdim <= khi) {
     k = oz * subboxdim + sz;
     j = oy * subboxdim + sy;
@@ -408,7 +410,21 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
     }
   }
 
+  //make a gradient of atom counts
+  // CmiPrintf("ilo %d, ihi %d, jlo %d, jhi %d, %klo %d, %khi %d", ilo, ihi, jlo, jhi, klo, khi);
+  auto icentre = (ilo + ihi)/2;
+  auto jcentre = (jlo + jhi)/2;
+  auto kcentre = (klo + khi)/2;
+  auto orig_count = count_atoms;
+  if(atom_count_gradient)
+  {
+    count_atoms = (size_t)(((float)icentre*jcentre*kcentre*count_atoms)/((2*nx - 1)*(2*ny -1)*(2*nz -1)));
+  }
+  printf("changing count from %d to %d\n", orig_count, count_atoms);
+
+
   atom.nmax = count_atoms;
+  size_t count = 0;
   if (atom.nmax > 0) {
       // Kokkos::resize(atom.x, atom.nmax);
       // Kokkos::resize(atom.v, atom.nmax);
@@ -449,7 +465,7 @@ int create_atoms(Atom &atom, int nx, int ny, int nz, double rho)
 
       if(xtmp >= atom.box.xlo && xtmp < atom.box.xhi &&
           ytmp >= atom.box.ylo && ytmp < atom.box.yhi &&
-          ztmp >= atom.box.zlo && ztmp < atom.box.zhi) {
+          ztmp >= atom.box.zlo && ztmp < atom.box.zhi && ++count <= count_atoms) {
         n = k * (2 * ny) * (2 * nx) + j * (2 * nx) + i + 1;
 
         for(m = 0; m < 5; m++) random(&n);

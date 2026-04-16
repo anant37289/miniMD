@@ -51,6 +51,7 @@ mainmodule miniMD {
   readonly MMD_float in_force_cut;
   readonly MMD_float in_neigh_cut;
   readonly int in_thermo_nstat;
+  readonly int lb_every;
 
   mainchare Main {
     entry Main(CkArgMsg* m);
@@ -212,6 +213,7 @@ module block {
     entry [reductiontarget]  void markstart_recv(){
       serial {
         start_time = CkWallTimer();
+        lb_start_time = CkWallTimer();
         thisProxy.start_iterations();
       }
     }
@@ -236,6 +238,52 @@ module block {
         thisProxy.end_iterations();
       }
     }
+
+    entry void mark_lb_start(CkCallback cb)
+    {
+      serial {
+        CkCallback cb_done(CkReductionTarget(Block, mark_lb_start_recv), thisProxy[0]);
+        contribute(cb_done);
+      }
+
+      when start_lb() serial {
+        cb.send();
+      }
+    }
+
+    entry void start_lb();
+    entry [reductiontarget]  void mark_lb_start_recv(){
+      serial {
+        total_time = CkWallTimer() - lb_start_time;
+        CkPrintf("[Block %d] time for last set of iteratons(per iteration), %f\n", thisIndex, total_time/lb_every);
+        thisProxy.start_lb();
+      }
+    }
+
+
+    entry void mark_lb_end(CkCallback cb)
+    {
+      serial {
+        CkCallback cb_done(CkReductionTarget(Block, mark_lb_end_recv), thisProxy[0]);
+        contribute(cb_done);
+      }
+
+      when end_lb() serial {
+        cb.send();
+      }
+    }
+
+    entry void end_lb();
+    entry [reductiontarget]  void mark_lb_end_recv(){
+      serial {
+        // total_time = CkWallTimer() - lb_start_time;
+        lb_start_time  = CkWallTimer();
+        // CkPrintf("[Block %d] time for last set of iteratons(per iteration), %f\n", thisIndex, total_time/lb_every);
+        thisProxy.end_lb();
+      }
+    }
+
+
 
 
     // Non-blocking communication routines for Comm:exchange

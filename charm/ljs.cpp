@@ -53,6 +53,7 @@
 /* readonly */ int in_thermo_nstat;
 /* readonly */ bool time_segments;
 /* readonly */ int lb_every;
+/* readonly */ bool atom_count_gradient;
 
 extern int input(const char* filename, int& in_nx, int& in_ny, int& in_nz,
     MMD_float& in_t_request, MMD_float& in_rho, int& in_units,
@@ -63,6 +64,7 @@ extern int input(const char* filename, int& in_nx, int& in_ny, int& in_nz,
 
 class Main : public CBase_Main {
   Main_SDAG_CODE
+  do
 
 public:
   Main(CkArgMsg* m) {
@@ -85,6 +87,7 @@ public:
     yaml_screen = 0;
     ghost_newton = 1;
     lb_every = 50;
+    atom_count_gradient = false;
 
     // Process input file
     for (int i = 0; i < m->argc; i++) {
@@ -232,6 +235,10 @@ public:
       }
       if(strcmp(m->argv[i], "-lb") == 0) {
         lb_every = atoi(m->argv[++i]);
+        continue;
+      }
+      if(strcmp(m->argv[i], "--imbalance")==0) {
+        atom_count_gradient = true;
         continue;
       }
     }
