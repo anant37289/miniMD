@@ -55,11 +55,13 @@ Comm::Comm()
   index = thisIndex;
   maxsend = BUFMIN;
   MMD_float* buf_send_ptr;
-  hapiCheck(cudaMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float)));
+  hapiCheck(cudaMallocAsync(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float), 0));
+  cudaDeviceSynchronize();
   buf_send = float_1d_um_view_type(buf_send_ptr,maxsend + BUFMIN);
   maxrecv = BUFMIN;
   MMD_float* buf_recv_ptr;
-  hapiCheck(cudaMalloc(&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
+  hapiCheck(cudaMallocAsync(&buf_recv_ptr, maxrecv*sizeof(MMD_float), 0));
+  cudaDeviceSynchronize();
   buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;

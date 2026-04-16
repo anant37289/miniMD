@@ -244,7 +244,7 @@ void Block::init() {
 
 
 void Block::run(){
-      thermo.compute(0, atom, neighbor, force, comm);
+      // thermo.compute(0, atom, neighbor, force, comm);
       // comm->exchange(atom, true);
       // ckout<<"["<<thisIndex<<"]"<<" num atoms "<<atom.nlocal<<endl;
       // if(thisIndex==0)
@@ -449,14 +449,14 @@ void Block::run(){
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, false);
 
-      // thermo.compute(-1, atom, neighbor, force, comm);
+      thermo.compute(-1, atom, neighbor, force, comm);
 
       // XXX: Missing performance summary and yaml output
 
       // neighbor.dealloc();
       // delete force;
-      printf("PE %d done till here\n", CkMyPe());
-      fflush(stdout);
+      // printf("PE %d done till here\n", CkMyPe());
+      // fflush(stdout);
       contribute(CkCallback(CkReductionTarget(Main, blockDone), main_proxy));
 }
 
