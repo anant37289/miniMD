@@ -1197,9 +1197,11 @@ void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
   maxrecvcomm[iswap] = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
   MMD_float* buf_old = buf_comms_recv[iswap].data();
   MMD_float* buf_new;
-  hapiCheck(cudaMallocAsync((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float), stream));
-  hapiCheck(cudaMemcpyAsync((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice, stream));
-  hapiCheck(cudaFreeAsync((void*)buf_old, stream));
+  cudaStreamSynchronize(stream);
+  hapiCheck(cudaMalloc((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float)));
+  hapiCheck(cudaMemcpy((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice));
+  cudaDeviceSynchronize();
+  hapiCheck(cudaFree((void*)buf_old));
   buf_comms_recv[iswap] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, maxrecvcomm[iswap]);
 }
 

@@ -118,6 +118,7 @@ void resize_unmanaged_1d_views(
     size_t new_n0,
     cudaStream_t stream = 0)
 {
+    cudaStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged,
                   "Requires unmanaged view");
 
@@ -135,28 +136,26 @@ void resize_unmanaged_1d_views(
     const size_t old_n0 = view.extent(0);
 
     value_type* new_ptr = nullptr;
-    CUDA_CHECK(cudaMallocAsync(&new_ptr,
-                    new_n0 * sizeof(value_type),
-                    stream));
+    CUDA_CHECK(cudaMalloc(&new_ptr,
+                    new_n0 * sizeof(value_type)));
 
     const size_t copy_n0 = std::min(old_n0, new_n0);
     if (copy_n0 > 0) {
-        CUDA_CHECK(cudaMemcpyAsync(
+        CUDA_CHECK(cudaMemcpy(
             new_ptr,
             old_ptr,
             copy_n0 * sizeof(value_type),
-            cudaMemcpyDeviceToDevice,
-            stream));
+            cudaMemcpyDeviceToDevice));
     }
 
     if (old_ptr) {
-        CUDA_CHECK(cudaFreeAsync(old_ptr, stream));
+        CUDA_CHECK(cudaFree(old_ptr));
     }
 
     view = ViewType(new_ptr, new_n0);
 
-    if(stream==0)
-      Kokkos::fence();
+    // if(stream==0)
+    Kokkos::fence();
 }
 
 template <class ViewType>
@@ -166,6 +165,7 @@ void resize_unmanaged_2d_views(
     size_t new_n1, // New Cols
     cudaStream_t stream = 0)
 {
+    cudaStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged, "Requires unmanaged view");
     static_assert(std::is_same_v<typename ViewType::memory_space, Kokkos::CudaSpace>, "Only supports CudaSpace");
     static_assert(ViewType::rank == 2, "Only rank-2 supported");
@@ -186,7 +186,7 @@ void resize_unmanaged_2d_views(
     size_t new_size_bytes = new_n0 * new_n1 * sizeof(value_type);
     
     if (new_size_bytes > 0) {
-        CUDA_CHECK(cudaMallocAsync(&new_ptr, new_size_bytes, stream));
+        CUDA_CHECK(cudaMalloc(&new_ptr, new_size_bytes));
     }
 
     if (old_ptr && new_ptr && old_n0 > 0 && old_n1 > 0) {
@@ -216,17 +216,16 @@ void resize_unmanaged_2d_views(
             dpitch = new_n0 * sizeof(value_type);
         }
 
-        CUDA_CHECK(cudaMemcpy2DAsync(
+        CUDA_CHECK(cudaMemcpy2D(
             new_ptr, dpitch,
             old_ptr, spitch,
             width, height,
-            cudaMemcpyDeviceToDevice,
-            stream));
+            cudaMemcpyDeviceToDevice));
     }
 
     // 3. Free Old Memory
     if (old_ptr) {
-        CUDA_CHECK(cudaFreeAsync(old_ptr, stream));
+        CUDA_CHECK(cudaFree(old_ptr));
     }
 
     // 4. Reconstruct View

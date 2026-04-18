@@ -307,8 +307,13 @@ int main(int argc, char** argv)
   }
 
   Kokkos::InitializationSettings args_kokkos;
+  int visible_devices;
+  cudaGetDeviceCount(&visible_devices);//number of devices on a node
+  int my_local_rank = me % visible_devices;
+  int my_device =  my_local_rank;
+  printf("rank %d takes gpu %d\n", me, my_device);
   if (num_threads > 0) args_kokkos.set_num_threads(num_threads);
-  args_kokkos.set_device_id(0);
+  args_kokkos.set_device_id(my_device);
   Kokkos::initialize(args_kokkos);
   // Scope Guard
   {

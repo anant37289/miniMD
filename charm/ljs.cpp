@@ -64,7 +64,6 @@ extern int input(const char* filename, int& in_nx, int& in_ny, int& in_nz,
 
 class Main : public CBase_Main {
   Main_SDAG_CODE
-  do
 
 public:
   Main(CkArgMsg* m) {
