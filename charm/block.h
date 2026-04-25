@@ -12,6 +12,8 @@
 #include "comm.h"
 #include "force.h"
 
+CkpvExtern(int, _lb_obj_index);
+
 // Virtualization of a process in the MPI version
 class Block : public CBase_Block {
   Block_SDAG_CODE
@@ -92,6 +94,15 @@ public:
   void iterate();
   void preIterate();
   void postIterate();
+
+  // Returns the total size (bytes) of GPU buffers that will be allocated on the
+  // destination PE after migration (atom + neighbor + comm + force).
+  size_t getAllocSize() const {
+    return atom.getAllocSize() +
+           neighbor.getAllocSize() +
+           comm->getAllocSize() +
+           force->getAllocSize();
+  }
 
   ~Block(){
     //may want to delete instances[?]

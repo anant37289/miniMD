@@ -64,6 +64,12 @@ class Force: public PUP::able
     virtual void finalise() {};
     virtual void compute(Atom &, Neighbor &, Comm*, int) {};
 
+    // Returns the total size (bytes) of GPU buffers allocated on the destination
+    // after migration: cutforcesq, epsilon, sigma6, sigma (ntypes*ntypes floats each).
+    virtual size_t getAllocSize() const {
+      return 4 * (size_t)ntypes * ntypes * sizeof(MMD_float);
+    }
+
     int use_sse;
     int use_oldcompute;
     int nthreads;

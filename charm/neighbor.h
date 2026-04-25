@@ -111,6 +111,20 @@ class Neighbor
 
     void pup(PUP::er &p);
 
+    // Returns the total size (bytes) of GPU buffers allocated on the destination
+    // after migration: cutneighsq, numneigh, neighbors, bincount, bin_has_local,
+    // bin_list, bins, new_maxneighs, stencil.
+    size_t getAllocSize() const {
+      int stencil_size = (2*nextz+1)*(2*nexty+1)*(2*nextx+1);
+      return (size_t)ntypes * ntypes * sizeof(MMD_float) +    // cutneighsq
+             (size_t)nmax * sizeof(int) +                      // numneigh
+             (size_t)nmax * maxneighs * sizeof(int) +          // neighbors
+             3 * (size_t)mbins * sizeof(int) +                 // bincount, bin_has_local, bin_list
+             (size_t)mbins * atoms_per_bin * sizeof(int) +     // bins
+             sizeof(int) +                                      // new_maxneighs
+             (size_t)stencil_size * sizeof(int);               // stencil
+    }
+
   private:
     MMD_float xprd, yprd, zprd;      // box size
 

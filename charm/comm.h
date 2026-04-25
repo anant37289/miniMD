@@ -93,6 +93,25 @@ class Comm : public CBase_Comm
     void wait(Kokkos::Cuda, Kokkos::Cuda);
     void pup(PUP::er &p);
 
+    // Returns the total size (bytes) of GPU buffers allocated on the destination
+    // after migration: sendlist, exc_sendflag, exc_sendlist, exc_copylist,
+    // replacement_indices, count_device, buf_comm_dummy, buf_send,
+    // and each buf_comms_recv[i].
+    size_t getAllocSize() const {
+      size_t total =
+          (size_t)maxswap_static * sendlist.extent(1) * sizeof(int) + // sendlist
+          exc_sendflag.extent(0) * sizeof(int) +                        // exc_sendflag
+          exc_sendlist.extent(0) * sizeof(int) +                        // exc_sendlist
+          exc_copylist.extent(0) * sizeof(int) +                        // exc_copylist
+          replacement_indices.extent(0) * sizeof(int) +                 // replacement_indices
+          3 * sizeof(int) +                                        // count_device
+          4 * sizeof(MMD_float) +                                  // buf_comm_dummy
+          buf_send.size() * sizeof(MMD_float);                     // buf_send
+      for(int i = 0; i < maxswap_static; i++)
+        total += (size_t)maxrecvcomm[i] * sizeof(MMD_float);      // buf_comms_recv[i]
+      return total;
+    }
+
   public:
     int iter;
 

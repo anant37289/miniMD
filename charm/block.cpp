@@ -329,9 +329,9 @@ void Block::preIterate(){
 
       force->evflag = 1;
       
-      thisProxy[thisIndex].run_neighbour_build(CkCallbackResumeThread());
+      
+      neighbor.build(atom);
       Kokkos::fence();
-      // neighbor.build(atom);
       force->compute(atom, neighbor, comm, thisIndex);
       if (neighbor.halfneigh && neighbor.ghost_newton)
         comm->reverse_communicate(atom, true);
@@ -371,6 +371,8 @@ void Block::iterate(){
           if(shouldDoLB) {
             Kokkos::fence();
             thisProxy[thisIndex].mark_lb_start(CkCallbackResumeThread());
+            void *data = getObjUserData(CkpvAccess(_lb_obj_index)); 
+            *(size_t*)data = getAllocSize();
             AtSync();
             shouldDoLB = false;
             return;

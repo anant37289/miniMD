@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 project(miniMD)
 
-#if(NOT CMAKE_BUILD_TYPE)
-#    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
-#endif()
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
 
-#message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-#set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 include(${CMAKE_SOURCE_DIR}/config.cmake)
 
 set(Kokkos_ROOT ${KOKKOS_DIR})
-find_package(Kokkos REQUIRED CONFIG)
+find_package(Kokkos 4.5 REQUIRED CONFIG)
 
 if(Charm_ENABLE_GPU)
     message(STATUS "Building for a GPU backend")

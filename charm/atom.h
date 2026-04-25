@@ -214,10 +214,7 @@ public:
       p(v.data(), nmax*PAD, PUP::PUPMode::DEVICE);
       p(f.data(), nmax*PAD, PUP::PUPMode::DEVICE);
       p(type.data(), nmax, PUP::PUPMode::DEVICE);//check if needed!!
-      // scratch buffers so no need to pup 
-      // p(x_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
-      // p(v_copy.data(), nmax*PAD, PUP::PUPMode::DEVICE);
-      // p(type_copy.data(), nmax, PUP::PUPMode::DEVICE);
+      // scratch buffers so no need to pup x_copy,v_copy and type_copy
       if(p.isPacking())
       {
         doing_lb = true;
@@ -228,6 +225,14 @@ public:
         doing_lb = false;
       }
     }
+    // Returns the total size (bytes) of GPU buffers allocated on the destination
+    // after migration: x, v, f, x_copy, v_copy (nmax*PAD floats each) +
+    // type, type_copy (nmax ints each).
+    size_t getAllocSize() const {
+      return 5 * (size_t)nmax * PAD * sizeof(MMD_float) +
+             2 * (size_t)nmax * sizeof(int);
+    }
+
     void addatom(MMD_float, MMD_float, MMD_float, MMD_float, MMD_float, MMD_float);
 
     void pbc();
