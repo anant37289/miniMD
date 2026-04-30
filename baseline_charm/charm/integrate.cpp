@@ -34,7 +34,7 @@
 #include "integrate.h"
 #include "math.h"
 #include "hapi.h"
-#include "hapi_nvtx.h"
+//#include "hapi_nvtx.h"
 #include <sstream>
 
 Integrate::Integrate() {sort_every=20;}
@@ -49,7 +49,7 @@ void Integrate::initialIntegrate()
 {
   std::ostringstream os;
   os << "Integrate::initialIntegrate " << index;
-  NVTXTracer(os.str(), NVTXColor::Turquoise);
+  //NVTXTracer(os.str(), NVTXColor::Turquoise);
   // Should be invoked as separate kernels because of the dependency on v
   Kokkos::parallel_for(Kokkos::Experimental::require(
         Kokkos::RangePolicy<TagInitialIntegrate>(compute_instance,0,nlocal),
@@ -70,7 +70,7 @@ void Integrate::finalIntegrate()
 {
   std::ostringstream os;
   os << "Integrate::finalIntegrate " << index;
-  NVTXTracer(os.str(), NVTXColor::Turquoise);
+  //NVTXTracer(os.str(), NVTXColor::Turquoise);
   Kokkos::parallel_for(Kokkos::Experimental::require(
         Kokkos::RangePolicy<TagFinalIntegrate>(compute_instance,0,nlocal),
         Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);

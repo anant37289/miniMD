@@ -32,7 +32,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "comm.h"
-#include "hapi_nvtx.h"
+//#include "hapi_nvtx.h"
 
 #define BUFFACTOR 2
 #define BUFMIN 10000

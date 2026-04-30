@@ -32,7 +32,7 @@
 #include "stdio.h"
 #include "math.h"
 #include "force_lj.h"
-#include "hapi_nvtx.h"
+//#include "hapi_nvtx.h"
 
 #ifndef VECTORLENGTH
 #define VECTORLENGTH 4
@@ -103,7 +103,7 @@ void ForceLJ::compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me)
 {
   std::ostringstream os;
   os << "ForceLJ::compute " << index;
-  NVTXTracer(os.str(), NVTXColor::GreenSea);
+ //NVTXTracer(os.str(), NVTXColor::GreenSea);
   eng_vdwl = 0;
   virial = 0;
 
