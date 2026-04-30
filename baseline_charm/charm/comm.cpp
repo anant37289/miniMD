@@ -55,19 +55,18 @@ Comm::Comm()
   index = thisIndex;
   maxsend = BUFMIN;
   MMD_float* buf_send_ptr;
-  hapiCheck(cudaMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float)));
-  cudaDeviceSynchronize();
+  hapiCheck(hapiMalloc(&buf_send_ptr, (maxsend + BUFMIN)*sizeof(MMD_float)));
+  hapiDeviceSynchronize();
   buf_send = float_1d_um_view_type(buf_send_ptr,maxsend + BUFMIN);
   maxrecv = BUFMIN;
   MMD_float* buf_recv_ptr;
-  hapiCheck(cudaMalloc(&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
-  cudaDeviceSynchronize();
+  hapiCheck(hapiMalloc(&buf_recv_ptr, maxrecv*sizeof(MMD_float)));
+  hapiDeviceSynchronize();
   buf_recv = float_1d_um_view_type(buf_recv_ptr,maxrecv);
   check_safeexchange = 0;
   do_safeexchange = 0;
   maxnlocal = 0;
-  count = Kokkos::DualView<int*>("comm::count",1);
-  count_host = Kokkos::View<int*, Kokkos::CudaHostPinnedSpace>("comm::count_host", 3);
+  count_host = Kokkos::View<int*,HostPinnedSpace>("comm::count_host", 3);
   count_device = Kokkos::View<int*>("comm::count_device", 3);
   hapiCheck(hapiMalloc((void**)&buf_comm_dummy, 4*sizeof(MMD_float)));
   post_exchange_recv_count = new size_t[3];
@@ -225,14 +224,14 @@ int Comm::setup(MMD_float cutneigh, Atom &atom)
 
 
   int* sendlist_ptr;
-  cudaMalloc(&sendlist_ptr, maxswap*BUFMIN*sizeof(int));
+  hapiMalloc(&sendlist_ptr, maxswap*BUFMIN*sizeof(int));
   sendlist = int_2d_um_lr_view_type(sendlist_ptr,maxswap,BUFMIN);
 
   buf_comms_recv = new float_1d_um_view_type[maxswap];
   
   for (int i = 0; i < maxswap; i++) {
     MMD_float* device_ptr;
-    cudaMalloc(&device_ptr, BUFMIN*sizeof(MMD_float));
+    hapiMalloc(&device_ptr, BUFMIN*sizeof(MMD_float));
     buf_comms_recv[i] = float_1d_um_view_type(device_ptr, BUFMIN);
   }
 
@@ -389,8 +388,8 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
     for (int i = 0; i < nswap; i++) {
       buf_comms_send[i] = float_1d_view_type("Comm::buf_comms_send", maxsend + BUFEXTRA);
       buf_comms_recv[i] = float_1d_view_type("Comm::buf_comms_recv", maxrecv);
-      h_buf_comms_send[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[i]);
-      h_buf_comms_recv[i] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[i]);
+      h_buf_comms_send[i] = Kokkos::create_mirror_view(HostPinnedSpace(), buf_comms_send[i]);
+      h_buf_comms_recv[i] = Kokkos::create_mirror_view(HostPinnedSpace(), buf_comms_recv[i]);
     }
   }
 
@@ -434,10 +433,10 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
   } else {
 #if !defined PACK_UNPACK_COMPUTE
     // Enforce compute -> pack dependency
-    cudaEvent_t dep_event_1;
-    hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
-    hapiCheck(cudaEventRecord(dep_event_1, compute_instance.cuda_stream()));
-    hapiCheck(cudaStreamWaitEvent(pack_instance.cuda_stream(), dep_event_1, 0));
+    hapiEvent_t dep_event_1;
+    hapiCheck(hapiEventCreateWithFlags(&dep_event_1, hapiEventDisableTiming));
+    hapiCheck(hapiEventRecord(dep_event_1, hapi_stream(compute_instance)));
+    hapiCheck(hapiStreamWaitEvent(hapi_stream(pack_instance), dep_event_1, 0));
 #endif
 
     // XXX: Don't need to iterate backwards?
@@ -448,25 +447,25 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
       atom.pack_reverse(recvnum[iswap], firstrecv[iswap], buf_comms_send[iswap]);
       if(buf_comms_send[iswap].size()<buf_send.size()){
           buf_comms_send[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_send.size());
-          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_send[iswap]);
+          h_buf_comms_send[iswap] = Kokkos::create_mirror_view(HostPinnedSpace(), buf_comms_send[iswap]);
         }
         if(buf_comms_recv[iswap].size()<buf_recv.size()){
           buf_comms_recv[iswap] = float_1d_view_type("Comm::buf_comms_send", buf_recv.size());
-          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_comms_recv[iswap]);
+          h_buf_comms_recv[iswap] = Kokkos::create_mirror_view(HostPinnedSpace(), buf_comms_recv[iswap]);
       }
 
 #ifdef PACK_UNPACK_COMPUTE
       // Enforce compute -> d2h dependency
-      cudaEvent_t dep_event;
-      hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-      hapiCheck(cudaEventRecord(dep_event, compute_instance.cuda_stream()));
-      hapiCheck(cudaStreamWaitEvent(d2h_instance.cuda_stream(), dep_event, 0));
+      hapiEvent_t dep_event;
+      hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+      hapiCheck(hapiEventRecord(dep_event, hapi_stream(compute_instance)));
+      hapiCheck(hapiStreamWaitEvent(hapi_stream(d2h_instance), dep_event, 0));
 #else
       // Enforce pack -> d2h dependency
-      cudaEvent_t dep_event;
-      hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-      hapiCheck(cudaEventRecord(dep_event, pack_instance.cuda_stream()));
-      hapiCheck(cudaStreamWaitEvent(d2h_instance.cuda_stream(), dep_event, 0));
+      hapiEvent_t dep_event;
+      hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+      hapiCheck(hapiEventRecord(dep_event, hapi_stream(pack_instance)));
+      hapiCheck(hapiStreamWaitEvent(hapi_stream(d2h_instance), dep_event, 0));
 #endif
 
       if (sendchare[iswap] != index) {
@@ -496,10 +495,10 @@ void Comm::reverse_communicate(Atom &atom, bool preprocess)
 
 #if !defined PACK_UNPACK_COMPUTE
     // Enforce unpack -> compute dependency
-    cudaEvent_t dep_event;
-    hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-    hapiCheck(cudaEventRecord(dep_event, unpack_instance.cuda_stream()));
-    hapiCheck(cudaStreamWaitEvent(compute_instance.cuda_stream(), dep_event, 0));
+    hapiEvent_t dep_event;
+    hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+    hapiCheck(hapiEventRecord(dep_event, hapi_stream(unpack_instance)));
+    hapiCheck(hapiStreamWaitEvent(hapi_stream(compute_instance), dep_event, 0));
 #endif
   }
 
@@ -551,7 +550,7 @@ void Comm::exchange(Atom &atom_, bool preprocess)
     nlocal = atom.nlocal;
 
     if (exc_sendflag.extent(0)<nlocal) {
-      resize_unmanaged_1d_views(exc_sendflag, nlocal, pack_instance.cuda_stream());
+      resize_unmanaged_1d_views(exc_sendflag, nlocal, hapi_stream(pack_instance));
     }
   
     count_host(0) = exc_sendlist.extent(0);//force entry to the loop
@@ -571,13 +570,13 @@ void Comm::exchange(Atom &atom_, bool preprocess)
       if ((count_host(0)>=exc_sendlist.extent(0)) ||
           (count_host(0)>=exc_copylist.extent(0)) ) {
         
-        resize_unmanaged_1d_views(exc_sendlist,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
-        resize_unmanaged_1d_views(exc_copylist,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
-        resize_unmanaged_1d_views(replacement_indices,(count_host(0)+1)*1.5, pack_instance.cuda_stream());
+        resize_unmanaged_1d_views(exc_sendlist,(count_host(0)+1)*1.5, hapi_stream(pack_instance));
+        resize_unmanaged_1d_views(exc_copylist,(count_host(0)+1)*1.5, hapi_stream(pack_instance));
+        resize_unmanaged_1d_views(replacement_indices,(count_host(0)+1)*1.5, hapi_stream(pack_instance));
         count_host(0)=exc_sendlist.extent(0);//this is a failed operation as the sendlist could not have stored everything(segfault?) so redo
       }
       if (count_host(0)*7>=maxsend) {
-        growsend(count_host(0)*7, pack_instance.cuda_stream());
+        growsend(count_host(0)*7, hapi_stream(pack_instance));
       }
     }
     nsend_atoms = count_host(0);
@@ -730,13 +729,6 @@ void Comm::borders(Atom &atom_, bool preprocess)
   //NVTXTracer("Comm::borders", NVTXColor::Carrot);
   // Kokkos::Profiling::pushRegion("Comm::borders");
 
-  // Create host mirrors for integrate loop
-  // if (!preprocess && !h_buf_alloc) {
-    // h_buf_alloc = true;
-    // h_buf_send = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_send);
-    // h_buf_recv = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), buf_recv);
-  // }
-
   atom = atom_;
   int ineed, nsend, nrecv, nfirst, nlast;
 
@@ -748,11 +740,7 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   iswap = 0;
 
-  // if(thisIndex==0)
-  // {
-  //   printf("ckpt1.1\n");
-  //   fflush(stdout);
-  // }
+
 
   if(atom.nlocal > maxnlocal) {
     send_flag = int_1d_view_type("Comm::sendflag",atom.nlocal);
@@ -769,23 +757,11 @@ void Comm::borders(Atom &atom_, bool preprocess)
     }
   }
 
-  // if(thisIndex==0)
-  // {
-  //   printf("ckpt1.2 and count_recv %d\n", count_recv);
-  //   fflush(stdout);
-  // }
 
   for(idim = 0; idim < 3; idim++) {
     nlast = 0;
 
     for(ineed = 0; ineed < 2 * need[idim]; ineed++) {
-
-      // find atoms within slab boundaries lo/hi using <= and >=
-      // check atoms between nfirst and nlast
-      //   for first swaps in a dim, check owned and ghost
-      //   for later swaps in a dim, only check newly arrived ghosts
-      // store sent atom indices in list for use in future timesteps
-
       lo = slablo[iswap];
       hi = slabhi[iswap];
       pbc_flags[0] = pbc_any[iswap];
@@ -813,9 +789,9 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       nsend = count_host(0);
       if(nsend > exc_sendlist.extent(0)) {        
-        resize_unmanaged_1d_views(exc_sendlist , nsend, pack_instance.cuda_stream());
+        resize_unmanaged_1d_views(exc_sendlist , nsend, hapi_stream(pack_instance));
 
-        growlist(iswap, nsend, pack_instance.cuda_stream());
+        growlist(iswap, nsend, hapi_stream(pack_instance));
 
         Kokkos::deep_copy(pack_instance, count_device, 0);
 
@@ -826,13 +802,10 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
       if(nsend * 4 > maxsend) {
         
-        growsend(nsend * 4, pack_instance.cuda_stream());
+        growsend(nsend * 4, hapi_stream(pack_instance));
       }
 
       Kokkos::parallel_for(Kokkos::RangePolicy<TagBorderPack>(pack_instance, 0,nsend),*this);
-      // swap atoms with other proc
-      // put incoming ghosts at end of my atom arrays
-      // if swapping with self, simply copy, no messages
 
 
         if(sendchare[iswap] != index) {
@@ -840,39 +813,14 @@ void Comm::borders(Atom &atom_, bool preprocess)
           send1 = static_cast<void*>(buf_send.data());
           send1_size = nsend * atom.border_size * sizeof(MMD_float);
           send1_chare = sendchare[iswap];
-          // if(thisIndex==0)
-          // {
-          //   printf("ckpt1.3.1.%d\n", sendchare[iswap]);
-          //   fflush(stdout);
-          // }
           block_proxy[thisIndex].borders_recv_ready_wait(iswap, CkCallbackResumeThread());
-          // if(thisIndex==0)
-          // {
-          //   printf("ckpt1.3.2.%d\n", sendchare[iswap]);
-          //   fflush(stdout);
-          // }
-          
-          // if(thisIndex==0)
-          // {
-          //   printf("ckpt1.3.3.%d\n", sendchare[iswap]);
-          //   fflush(stdout);
-          // }
           block_proxy[thisIndex].borders_2(iswap, CkCallbackResumeThread());
-
-          // if(thisIndex==0)
-          // {
-          //   printf("ckpt1.3.4.%d\n", sendchare[iswap]);
-          //   fflush(stdout);
-          // }
-          
           nrecv = this->nrecvcomm[iswap];
           buf = buf_comms_recv[iswap];
         } else {
           nrecv = nsend;
           buf = buf_send;
         }
-
-      // unpack buffer
 
       n = atom.nlocal + atom.nghost;
 
@@ -908,12 +856,12 @@ void Comm::borders(Atom &atom_, bool preprocess)
 
   if(max1 > maxsend) {
     
-    growsend(max1, compute_instance.cuda_stream());
+    growsend(max1, hapi_stream(compute_instance));
   }
 
   if(max2 > maxrecv) {
     
-    growrecv(max2, compute_instance.cuda_stream());
+    growrecv(max2, hapi_stream(compute_instance));
   }
   atom_ = atom;
 
@@ -974,7 +922,7 @@ void Comm::operator() (TagBorderUnpack, const int& i) const {
 
 /* realloc the size of the send buffer as needed with BUFFACTOR & BUFEXTRA */
 
-void Comm::growsend(int n, cudaStream_t stream)
+void Comm::growsend(int n, hapiStream_t stream)
 {
   resize_unmanaged_1d_views(buf_send,static_cast<int>(BUFFACTOR * n) + BUFEXTRA, stream);
   maxsend = static_cast<int>(BUFFACTOR * n);
@@ -982,25 +930,25 @@ void Comm::growsend(int n, cudaStream_t stream)
 
 /* free/malloc the size of the recv buffer as needed with BUFFACTOR */
 
-void Comm::growrecv(int n, cudaStream_t stream)
+void Comm::growrecv(int n, hapiStream_t stream)
 {
   maxrecv = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
   resize_unmanaged_1d_views(buf_recv, maxrecv, stream);
 }
 
-void Comm::growrecvcomm(int iswap, int n, cudaStream_t stream){
+void Comm::growrecvcomm(int iswap, int n, hapiStream_t stream){
   maxrecvcomm[iswap] = static_cast<int>(BUFFACTOR * n) + BUFEXTRA;
   MMD_float* buf_old = buf_comms_recv[iswap].data();
   MMD_float* buf_new;
-  hapiCheck(cudaMalloc((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float)));
-  hapiCheck(cudaMemcpy((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),cudaMemcpyDeviceToDevice));
-  hapiCheck(cudaFree((void*)buf_old));
-  buf_comms_recv[iswap] = Kokkos::View<MMD_float*, Kokkos::CudaSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, maxrecvcomm[iswap]);
+  hapiCheck(hapiMalloc((void**)&buf_new, maxrecvcomm[iswap]*sizeof(MMD_float)));
+  hapiCheck(hapiMemcpy((void*)buf_new, (void*)buf_old, buf_comms_recv[iswap].size()*sizeof(MMD_float),hapiMemcpyDeviceToDevice));
+  hapiCheck(hapiFree((void*)buf_old));
+  buf_comms_recv[iswap] = Kokkos::View<MMD_float*, ExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(buf_new, maxrecvcomm[iswap]);
 }
 
 /* realloc the size of the iswap sendlist as needed with BUFFACTOR */
 
-void Comm::growlist(int iswap, int n, cudaStream_t stream)
+void Comm::growlist(int iswap, int n, hapiStream_t stream)
 {
   if(n<=maxsendlist[iswap]) return;
   int maxswap = sendlist.extent(0);
@@ -1010,16 +958,16 @@ void Comm::growlist(int iswap, int n, cudaStream_t stream)
   }
 }
 
-void Comm::suspend(Kokkos::Cuda instance) {
+void Comm::suspend(ExecSpace instance) {
   resume_cb = new CkCallbackResumeThread();
-  hapiAddCallback(instance.cuda_stream(), resume_cb);
+  hapiAddCallback(hapi_stream(instance), resume_cb);
   delete resume_cb;
 }
 
 //insert a instance1->instance2 event in streams
-void Comm::wait(Kokkos::Cuda instance1, Kokkos::Cuda instance2){
-    cudaEvent_t dep_event_1;
-    hapiCheck(cudaEventCreateWithFlags(&dep_event_1, cudaEventDisableTiming));
-    hapiCheck(cudaEventRecord(dep_event_1, instance1.cuda_stream()));
-    hapiCheck(cudaStreamWaitEvent(instance2.cuda_stream(), dep_event_1, 0));
+void Comm::wait(ExecSpace instance1, ExecSpace instance2){
+    hapiEvent_t dep_event_1;
+    hapiCheck(hapiEventCreateWithFlags(&dep_event_1, hapiEventDisableTiming));
+    hapiCheck(hapiEventRecord(dep_event_1, hapi_stream(instance1)));
+    hapiCheck(hapiStreamWaitEvent(hapi_stream(instance2), dep_event_1, 0));
 }

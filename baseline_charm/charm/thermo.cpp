@@ -174,7 +174,7 @@ MMD_float Thermo::temperature(Atom &atom)
   v = atom.v;
   mass = atom.mass;
 
-  Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::Cuda>(compute_instance, 0 , atom.nlocal), *this, t);
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpace>(compute_instance, 0 , atom.nlocal), *this, t);
   // t_act+=t;
   // compute_instance.fence();
   // ckout<<"["<<index<<"] "<<atom.nlocal<<" "<<t<<"\n";

@@ -34,7 +34,7 @@
 
 #include "types.h"
 #include "ljs_kokkos.h"
-#include "Kokkos_Sort.hpp"
+// #include "Kokkos_Sort.hpp"
 
 class Neighbor;
 struct Box {
@@ -58,11 +58,11 @@ class Atom
     struct TagAtomUnpackReverse {};
     struct TagAtomSort {};
 
-    Kokkos::Cuda compute_instance;
-    Kokkos::Cuda h2d_instance;
-    Kokkos::Cuda d2h_instance;
-    Kokkos::Cuda pack_instance;
-    Kokkos::Cuda unpack_instance;
+    ExecSpace compute_instance;
+    ExecSpace h2d_instance;
+    ExecSpace d2h_instance;
+    ExecSpace pack_instance;
+    ExecSpace unpack_instance;
 
     typedef int value_type;
     int natoms;

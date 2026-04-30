@@ -54,7 +54,7 @@ Neighbor::Neighbor(int ntypes_)
 
   cutneighsq = float_1d_view_type("Neighbor::cutneighsq",ntypes*ntypes);
   new_maxneighs = int_1d_view_type("Neighbor::new_maxneighs",1);
-  h_new_maxneighs = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), new_maxneighs);
+  h_new_maxneighs = Kokkos::create_mirror_view(HostPinnedSpace(), new_maxneighs);
   team_neigh_build = 0;
 
   shared_mem_size = 0;
@@ -422,58 +422,17 @@ void Neighbor::binatoms(Atom &atom, int count)
 
     Kokkos::deep_copy(compute_instance, bincount,0);
     Kokkos::deep_copy(compute_instance, bin_has_local,0);
-    // Kokkos::fence();
-    // cudaError_t err = cudaPeekAtLastError();
-
-    // if (err != cudaSuccess) {
-    //     std::cout << "Captured Error: " << cudaGetErrorString(err) << std::endl;
-    // } else {
-    //     std::cout << "No error found." << std::endl;
-    // }
-
-    // Kokkos::fence();
-    /* count aotms in each bin */
-    // compute_instance.fence();
     Kokkos::parallel_reduce(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance,0,nall), *this, resize);
-    // Kokkos::fence();
-    // err = cudaPeekAtLastError();
-
-    // if (err != cudaSuccess) {
-    //     std::cout << "Captured Error: " << cudaGetErrorString(err) << std::endl;
-    // } else {
-    //     std::cout << "No error found." << std::endl;
-    // }
-    
 
     if(resize) {
       atoms_per_bin *= 2;
       bins = int_2d_view_type("Neighbor::bins", mbins , atoms_per_bin);
-      // Kokkos::fence();
-      // err = cudaPeekAtLastError();
-
-      // if (err != cudaSuccess) {
-      //     std::cout << "Captured Error: " << cudaGetErrorString(err) << std::endl;
-      // } else {
-      //     std::cout << "No error found." << std::endl;
-      // }
     }
   }
 
-  
-
-  // compute_instance.fence();
 
   Kokkos::deep_copy(compute_instance, bin_list,-1);
   Kokkos::parallel_scan(Kokkos::RangePolicy<TagNeighborBinning>(compute_instance,0,mbins), *this);
-  // Kokkos::fence();
-  // cudaError_t err = cudaPeekAtLastError();
-
-  //     if (err != cudaSuccess) {
-  //         std::cout << "Captured Error: " << cudaGetErrorString(err) << std::endl;
-  //     } else {
-  //         std::cout << "No error found." << std::endl;
-  //     }
-  // Kokkos::fence();
 }
 
 
@@ -722,8 +681,8 @@ MMD_float Neighbor::bindist(int i, int j, int k)
   return (delx * delx + dely * dely + delz * delz);
 }
 
-void Neighbor::suspend(Kokkos::Cuda instance) {
+void Neighbor::suspend(ExecSpace instance) {
   resume_cb = new CkCallbackResumeThread();
-  hapiAddCallback(instance.cuda_stream(), resume_cb);
+  hapiAddCallback(hapi_stream(instance), resume_cb);
   delete resume_cb;
 }

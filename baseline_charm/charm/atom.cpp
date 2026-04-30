@@ -120,7 +120,7 @@ void Atom::pack_comm(int n, int_1d_view_type list_in, float_1d_view_type buf_in,
   buf = buf_in;
   for(int i = 0; i < 4; i++) pbc_flags[i] = pbc_flags_in[i];
 
-  Kokkos::Cuda instance = pack_instance;
+  ExecSpace instance = pack_instance;
 
 
   if(pbc_flags[0] == 0) {
@@ -140,9 +140,8 @@ void Atom::unpack_comm(int n, int first_in, float_1d_view_type buf_in)
   first = first_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance = unpack_instance;
+  ExecSpace instance = unpack_instance;
 
-  //KOKKOS_ASSERT(instance.cuda_stream() != Kokkos::Cuda{}.cuda_stream());
   Kokkos::parallel_for(Kokkos::Experimental::require(
         Kokkos::RangePolicy<TagAtomUnpackComm>(instance,0,n),
         Kokkos::Experimental::WorkItemProperty::HintLightWeight), *this);
@@ -172,7 +171,7 @@ void Atom::pack_reverse(int n, int first_in, float_1d_view_type buf_in)
   first = first_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance;
+  ExecSpace instance;
 #ifdef PACK_UNPACK_COMPUTE
   instance = compute_instance;
 #else
@@ -190,7 +189,7 @@ void Atom::unpack_reverse(int n, int_1d_view_type list_in, float_1d_view_type bu
   list = list_in;
   buf = buf_in;
 
-  Kokkos::Cuda instance;
+  ExecSpace instance;
 #ifdef PACK_UNPACK_COMPUTE
   instance = compute_instance;
 #else
@@ -246,9 +245,9 @@ void Atom::sort(Neighbor &neighbor)
     // x_copy = x_view_type("atom::x_copy",nmax);
     // v_copy = x_view_type("atom::v_copy",nmax);
     // type_copy = int_1d_view_type("atom::type_copy",nmax);
-    resize_unmanaged_2d_views(x_copy, nmax, x_copy.extent(1), compute_instance.cuda_stream());
-    resize_unmanaged_2d_views(v_copy, nmax, x_copy.extent(1), compute_instance.cuda_stream());
-    resize_unmanaged_1d_views(type_copy, nmax, compute_instance.cuda_stream());
+    resize_unmanaged_2d_views(x_copy, nmax, x_copy.extent(1), hapi_stream(compute_instance));
+    resize_unmanaged_2d_views(v_copy, nmax, x_copy.extent(1), hapi_stream(compute_instance));
+    resize_unmanaged_1d_views(type_copy, nmax, hapi_stream(compute_instance));
     copy_size = nmax;
   }
 

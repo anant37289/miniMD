@@ -260,9 +260,9 @@ module block {
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
         //dealing with 0 size exchanges send and receive in a dummy buffer(mark as a dummy send)
         if(comm->send1_size==0)
-          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, pack_instance.cuda_stream()));//no callback needed here
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, hapi_stream(pack_instance)));//no callback needed here
         else 
-          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, false, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
+          thisProxy[comm->send1_chare].exchange_2_recv_1(tag, comm->send1_size, false, CkDeviceBuffer((char*)comm->send1, cb, hapi_stream(pack_instance)));
         cb_thread.send();
       }
     }
@@ -273,9 +273,9 @@ module block {
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
           CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
           if(comm->send2_size==0)
-            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, pack_instance.cuda_stream()));//no callback needed here
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, sizeof(MMD_float)*4, true, CkDeviceBuffer((char*)comm->buf_comm_dummy, hapi_stream(pack_instance)));//no callback needed here
           else
-            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, false, CkDeviceBuffer((char*)comm->send2, cb, pack_instance.cuda_stream()));
+            thisProxy[comm->send2_chare].exchange_2_recv_2(tag, comm->send2_size, false, CkDeviceBuffer((char*)comm->send2, cb, hapi_stream(pack_instance)));
           cb_thread.send();
       }
     }
@@ -328,7 +328,7 @@ module block {
         int tag = comm->maxswap_static*comm->iter + iswap;
         CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
         CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
+        thisProxy[comm->send1_chare].borders_recv_2(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, hapi_stream(pack_instance)));
       }
 
       
@@ -361,7 +361,7 @@ module block {
           int tag = comm->nswap*comm->iter + iswap;
           CkArrayIndex1D myIndex = CkArrayIndex1D(thisIndex);
           CkCallback cb(CkIndex_Block::send_done(), myIndex, thisArrayID);
-          thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, pack_instance.cuda_stream()));
+          thisProxy[comm->send1_chare].comms_recv(tag, comm->send1_size, CkDeviceBuffer((char*)comm->send1, cb, hapi_stream(pack_instance)));
         }
         when send_done() serial {
           cb.send();
@@ -402,16 +402,16 @@ module block {
 
 #ifdef PACK_UNPACK_COMPUTE
             // Enforce h2d -> compute dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
+            hapiEvent_t dep_event;
+            hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+            hapiCheck(hapiEventRecord(dep_event, hapi_stream(comm->h2d_instance)));
+            hapiCheck(hapiStreamWaitEvent(hapi_stream(comm->compute_instance), dep_event, 0));
 #else
             // Enforce h2d -> unpack dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
+            hapiEvent_t dep_event;
+            hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+            hapiCheck(hapiEventRecord(dep_event, hapi_stream(comm->h2d_instance)));
+            hapiCheck(hapiStreamWaitEvent(hapi_stream(comm->unpack_instance), dep_event, 0));
 #endif
 
             // Invoke unpacking kernel
@@ -450,16 +450,16 @@ module block {
 
 #ifdef PACK_UNPACK_COMPUTE
             // Enforce h2d -> compute dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->compute_instance.cuda_stream(), dep_event, 0));
+            hapiEvent_t dep_event;
+            hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+            hapiCheck(hapiEventRecord(dep_event, hapi_stream(comm->h2d_instance)));
+            hapiCheck(hapiStreamWaitEvent(hapi_stream(comm->compute_instance), dep_event, 0));
 #else
             // Enforce h2d -> unpack dependency
-            cudaEvent_t dep_event;
-            hapiCheck(cudaEventCreateWithFlags(&dep_event, cudaEventDisableTiming));
-            hapiCheck(cudaEventRecord(dep_event, comm->h2d_instance.cuda_stream()));
-            hapiCheck(cudaStreamWaitEvent(comm->unpack_instance.cuda_stream(), dep_event, 0));
+            hapiEvent_t dep_event;
+            hapiCheck(hapiEventCreateWithFlags(&dep_event, hapiEventDisableTiming));
+            hapiCheck(hapiEventRecord(dep_event, hapi_stream(comm->h2d_instance)));
+            hapiCheck(hapiStreamWaitEvent(hapi_stream(comm->unpack_instance), dep_event, 0));
 #endif
 
             // Invoke unpacking kernel

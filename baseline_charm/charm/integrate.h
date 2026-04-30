@@ -45,11 +45,11 @@ class Integrate
     struct TagInitialIntegrate {};
     struct TagFinalIntegrate {};
 
-    Kokkos::Cuda compute_instance;
-    Kokkos::Cuda h2d_instance;
-    Kokkos::Cuda d2h_instance;
-    Kokkos::Cuda pack_instance;
-    Kokkos::Cuda unpack_instance;
+    ExecSpace compute_instance;
+    ExecSpace h2d_instance;
+    ExecSpace d2h_instance;
+    ExecSpace pack_instance;
+    ExecSpace unpack_instance;
 
     MMD_float dt;
     MMD_float dtforce;

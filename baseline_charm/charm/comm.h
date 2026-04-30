@@ -50,11 +50,11 @@ class Comm : public CBase_Comm
     struct TagBorderUnpack {};
     typedef int value_type;
 
-    Kokkos::Cuda compute_instance;
-    Kokkos::Cuda h2d_instance;
-    Kokkos::Cuda d2h_instance;
-    Kokkos::Cuda pack_instance;
-    Kokkos::Cuda unpack_instance;
+    ExecSpace compute_instance;
+    ExecSpace h2d_instance;
+    ExecSpace d2h_instance;
+    ExecSpace pack_instance;
+    ExecSpace unpack_instance;
 
     KOKKOS_INLINE_FUNCTION
     void operator() (TagExchangeSendlist, const int&  ) const;
@@ -84,12 +84,12 @@ class Comm : public CBase_Comm
     void exchange(Atom &, bool);
     void borders(Atom &, bool);
     //void send(int, int, CkCallback cb);
-    void growsend(int, cudaStream_t);
-    void growrecv(int, cudaStream_t);
-    void growrecvcomm(int,int,cudaStream_t);
-    void growlist(int, int,cudaStream_t);
-    void suspend(Kokkos::Cuda);
-    void wait(Kokkos::Cuda, Kokkos::Cuda);
+    void growsend(int, hapiStream_t);
+    void growrecv(int, hapiStream_t);
+    void growrecvcomm(int,int,hapiStream_t);
+    void growlist(int, int,hapiStream_t);
+    void suspend(ExecSpace);
+    void wait(ExecSpace, ExecSpace);
 
   public:
     int iter;
@@ -120,7 +120,6 @@ class Comm : public CBase_Comm
     int_1d_host_view_type h_exc_sendflag;
     int_1d_host_view_type h_exc_sendlist;
     int_1d_host_view_type h_exc_copylist;
-    int_1d_dual_view_type count;
     int_1d_host_view_type count_host;
     int_1d_view_type count_device;
     bool h_exc_alloc;

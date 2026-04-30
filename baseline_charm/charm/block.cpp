@@ -77,17 +77,17 @@ void Block::init() {
 
   // Store CUDA execution instances
 
-  hapiCheck(cudaStreamCreateWithPriority(&compute_stream, cudaStreamDefault, 0));
-  hapiCheck(cudaStreamCreateWithPriority(&h2d_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&d2h_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&pack_stream, cudaStreamDefault, -1));
-  hapiCheck(cudaStreamCreateWithPriority(&unpack_stream, cudaStreamDefault, -1));
+  hapiCheck(hapiStreamCreateWithPriority(&compute_stream, hapiStreamDefault, 0));
+  hapiCheck(hapiStreamCreateWithPriority(&h2d_stream, hapiStreamDefault, -1));
+  hapiCheck(hapiStreamCreateWithPriority(&d2h_stream, hapiStreamDefault, -1));
+  hapiCheck(hapiStreamCreateWithPriority(&pack_stream, hapiStreamDefault, -1));
+  hapiCheck(hapiStreamCreateWithPriority(&unpack_stream, hapiStreamDefault, -1));
 
-  compute_instance = Kokkos::Cuda(compute_stream);
-  h2d_instance = Kokkos::Cuda(h2d_stream);
-  d2h_instance = Kokkos::Cuda(d2h_stream);
-  pack_instance = Kokkos::Cuda(pack_stream);
-  unpack_instance = Kokkos::Cuda(unpack_stream);
+  compute_instance = ExecSpace(compute_stream);
+  h2d_instance = ExecSpace(h2d_stream);
+  d2h_instance = ExecSpace(d2h_stream);
+  pack_instance = ExecSpace(pack_stream);
+  unpack_instance = ExecSpace(unpack_stream);
 
   atom.compute_instance = compute_instance;
   atom.h2d_instance = h2d_instance;
@@ -184,7 +184,7 @@ void Block::init() {
   }
 
   if (neighbor_size < 0 && in_datafile.empty()) {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCM)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     MMD_float neighscale = 0.6;
 #else
     MMD_float neighscale = 5.0 / 6.0;

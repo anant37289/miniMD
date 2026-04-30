@@ -6,43 +6,73 @@
 #undef ALIGN
 #undef ALIGN_BYTES
 
-#include "Kokkos_Core.hpp"
+#include "hapi.h"
+#include <Kokkos_Core.hpp>
 #include "Kokkos_DualView.hpp"
 #include <type_traits>
 #include <cassert>
-#include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
 
-inline void cudaCheckImpl(cudaError_t err,
+
+using ExecSpace = Kokkos::DefaultExecutionSpace;
+using RangePolicy = Kokkos::RangePolicy<ExecSpace>;
+using MDRangePolicy = Kokkos::MDRangePolicy<Kokkos::Rank<2>, ExecSpace>;
+using HostMemSpace = Kokkos::HostSpace;
+#ifdef GPU_BACKEND
+  #ifdef KOKKOS_ENABLE_CUDA
+  using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
+  #endif
+  #ifdef KOKKOS_ENABLE_HIP
+  using HostPinnedSpace = Kokkos::HIPHostPinnedSpace;
+  #endif
+#else
+  using HostPinnedSpace = HostMemSpace;
+#endif
+
+
+template <typename ExecSpace>
+hapiStream_t hapi_stream(ExecSpace execSpace)
+{
+    #if defined(KOKKOS_ENABLE_CUDA)
+    return execSpace.cuda_stream();
+    #elif defined(KOKKOS_ENABLE_HIP)
+    return execSpace.hip_stream();
+    #else
+    CmiAbort("Unsupported execution space for hapi_stream retrieval");
+    #endif
+}
+
+
+inline void hapiCheckImpl(hapiError_t err,
                           const char* file,
                           int line,
                           const char* call)
 {
-    if (err != cudaSuccess) {
+    if (err != hapiSuccess) {
         std::fprintf(stderr,
-                     "CUDA error at %s:%d\n"
+                     "HAPI error at %s:%d\n"
                      "  call: %s\n"
                      "  error: %s (%d)\n",
                      file, line, call,
-                     cudaGetErrorString(err),
+                     hapiGetErrorString(err),
                      static_cast<int>(err));
-        std::abort();
+        CmiAbort("Aborting due to HAPI error");
     }
 }
 
-#define CUDA_CHECK(call) \
-    cudaCheckImpl((call), __FILE__, __LINE__, #call)
+#define HAPI_CHECK(call) \
+    hapiCheckImpl((call), __FILE__, __LINE__, #call)
 
 typedef Kokkos::DefaultExecutionSpace DeviceType;
 typedef Kokkos::HostSpace::execution_space HostType;
 
-typedef Kokkos::DualView<MMD_float*[PAD],Kokkos::LayoutRight> x_dual_view_type;
-typedef Kokkos::DualView<MMD_float*> float_1d_dual_view_type;
-typedef Kokkos::DualView<MMD_float**> float_2d_dual_view_type;
-typedef Kokkos::DualView<MMD_int*> int_1d_dual_view_type;
-typedef Kokkos::DualView<MMD_int**> int_2d_dual_view_type;
-typedef Kokkos::DualView<MMD_int> int_dual_view_type;
+// typedef Kokkos::DualView<MMD_float*[PAD],Kokkos::LayoutRight> x_dual_view_type;
+// typedef Kokkos::DualView<MMD_float*> float_1d_dual_view_type;
+// typedef Kokkos::DualView<MMD_float**> float_2d_dual_view_type;
+// typedef Kokkos::DualView<MMD_int*> int_1d_dual_view_type;
+// typedef Kokkos::DualView<MMD_int**> int_2d_dual_view_type;
+// typedef Kokkos::DualView<MMD_int> int_dual_view_type;
 
 typedef Kokkos::View<MMD_float*[PAD],Kokkos::LayoutRight> x_view_type;
 typedef Kokkos::View<MMD_float**> float_2d_view_type;
@@ -115,17 +145,17 @@ template <class ViewType>
 void resize_unmanaged_1d_views(
     ViewType& view,
     size_t new_n0,
-    cudaStream_t stream = 0)
+    hapiStream_t stream = 0)
 {
 
-    cudaStreamSynchronize(stream);
+    hapiStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged,
                   "Requires unmanaged view");
 
     static_assert(std::is_same_v<
                     typename ViewType::memory_space,
-                    Kokkos::CudaSpace>,
-                  "Only supports Kokkos::CudaSpace");
+                    ExecSpace::memory_space>,
+                  "Only supports ExecSpace::memory_space");
 
     static_assert(ViewType::rank == 1, "Only rank-1 supported");
 
@@ -136,20 +166,20 @@ void resize_unmanaged_1d_views(
     const size_t old_n0 = view.extent(0);
 
     value_type* new_ptr = nullptr;
-    CUDA_CHECK(cudaMalloc(&new_ptr,
+    HAPI_CHECK(hapiMalloc(&new_ptr,
                     new_n0 * sizeof(value_type)));
 
     const size_t copy_n0 = std::min(old_n0, new_n0);
     if (copy_n0 > 0) {
-        CUDA_CHECK(cudaMemcpy(
+        HAPI_CHECK(hapiMemcpy(
             new_ptr,
             old_ptr,
             copy_n0 * sizeof(value_type),
-            cudaMemcpyDeviceToDevice));
+            hapiMemcpyDeviceToDevice));
     }
 
     if (old_ptr) {
-        CUDA_CHECK(cudaFree(old_ptr));
+        HAPI_CHECK(hapiFree(old_ptr));
     }
 
     view = ViewType(new_ptr, new_n0);
@@ -163,11 +193,11 @@ void resize_unmanaged_2d_views(
     ViewType& view,
     size_t new_n0, // New Rows
     size_t new_n1, // New Cols
-    cudaStream_t stream = 0)
+    hapiStream_t stream = 0)
 {
-    cudaStreamSynchronize(stream);
+    hapiStreamSynchronize(stream);
     static_assert(ViewType::memory_traits::is_unmanaged, "Requires unmanaged view");
-    static_assert(std::is_same_v<typename ViewType::memory_space, Kokkos::CudaSpace>, "Only supports CudaSpace");
+    static_assert(std::is_same_v<typename ViewType::memory_space, ExecSpace::memory_space>, "Only supports ExecSpace::memory_space");
     static_assert(ViewType::rank == 2, "Only rank-2 supported");
 
     using Layout = typename ViewType::array_layout;
@@ -186,7 +216,7 @@ void resize_unmanaged_2d_views(
     size_t new_size_bytes = new_n0 * new_n1 * sizeof(value_type);
     
     if (new_size_bytes > 0) {
-        CUDA_CHECK(cudaMalloc(&new_ptr, new_size_bytes));
+        HAPI_CHECK(hapiMalloc(&new_ptr, new_size_bytes));
     }
 
     if (old_ptr && new_ptr && old_n0 > 0 && old_n1 > 0) {
@@ -216,16 +246,16 @@ void resize_unmanaged_2d_views(
             dpitch = new_n0 * sizeof(value_type);
         }
 
-        CUDA_CHECK(cudaMemcpy2D(
+        HAPI_CHECK(hapiMemcpy2D(
             new_ptr, dpitch,
             old_ptr, spitch,
             width, height,
-            cudaMemcpyDeviceToDevice));
+            hapiMemcpyDeviceToDevice));
     }
 
     // 3. Free Old Memory
     if (old_ptr) {
-        CUDA_CHECK(cudaFree(old_ptr));
+        HAPI_CHECK(hapiFree(old_ptr));
     }
 
     // 4. Reconstruct View
