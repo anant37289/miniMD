@@ -1,26 +1,24 @@
 #KOKKOS_PATH ?= $(HOME)/kokkos/install
-KOKKOS_PATH = /u/ajain18/belobench/LibCharmtyles/kokkos_cuda12.6/install
+KOKKOS_PATH = /ccs/home/rrao/kokkos
 KOKKOS_INC = $(KOKKOS_PATH)/include
 KOKKOS_LIB = $(KOKKOS_PATH)/lib64
 
-CUDA_PATH ?= /sw/external/cudatoolkits/cuda-12.6.3
-CUDA_INC = $(CUDA_PATH)/include
-CUDA_LIB = $(CUDA_PATH)/lib64
+ROCM_PATH ?= /opt/rocm
+HIP_COMPILER = $(ROCM_PATH)/bin/hipcc
 
-NVCC_WRAPPER = $(KOKKOS_PATH)/bin/nvcc_wrapper
 OPTS = -O3 -std=c++17
 
-CHARM_PATH = /u/ajain18/charm/netlrts-linux-x86_64-cuda/
-CHARMC = $(CHARM_PATH)/bin/charmc -c++ $(NVCC_WRAPPER) $(OPTS)
-CHARM_LD = $(CHARM_PATH)/bin/charmc $(OPTS)
+CHARM_PATH = /ccs/home/rrao/charm_reconverse/multicore-linux-x86_64
 CHARM_INC = $(CHARM_PATH)/include
+CHARMC = $(CHARM_PATH)/bin/charmc -c++ $(HIP_COMPILER) $(OPTS) -I$(CHARM_INC) -I$(KOKKOS_INC)
+CHARM_LD = $(CHARM_PATH)/bin/charmc $(OPTS)
 
 TARGET = miniMD
 
 all: $(TARGET)
 
 $(TARGET): ljs.o input.o atom.o neighbor.o comm.o force_eam.o force_lj.o integrate.o thermo.o setup.o block.o
-	$(CHARM_LD) -language charm++ -L$(KOKKOS_LIB) -lkokkoscore -L$(CUDA_LIB) -o $@ $^
+	$(CHARM_LD) -language charm++ -L$(KOKKOS_LIB) -lkokkoscore -L$(ROCM_PATH)/lib -lamdhip64 -o $@ $^
 
 $(TARGET).decl.h: ljs.ci
 	$(CHARMC) $<
@@ -31,7 +29,7 @@ test: test.ci
 	$(CHARMC) $<
 
 %.o: %.cpp $(TARGET).decl.h $(TARGET).def.h
-	$(CHARMC) -c -I$(KOKKOS_INC) -I$(CHARM_INC) $<
+	$(CHARMC) -c $<
 
 clean:
 	rm -f $(TARGET) *.decl.h *.def.h *.o charmrun

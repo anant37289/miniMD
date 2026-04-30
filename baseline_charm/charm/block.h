@@ -33,17 +33,17 @@ public:
   double force_time=0;
   double neigh_time=0;
 
-  Kokkos::Cuda compute_instance;
-  Kokkos::Cuda h2d_instance;
-  Kokkos::Cuda d2h_instance;
-  Kokkos::Cuda pack_instance;
-  Kokkos::Cuda unpack_instance;
+  Kokkos::DefaultExecutionSpace compute_instance;
+  Kokkos::DefaultExecutionSpace h2d_instance;
+  Kokkos::DefaultExecutionSpace d2h_instance;
+  Kokkos::DefaultExecutionSpace pack_instance;
+  Kokkos::DefaultExecutionSpace unpack_instance;
 
-  cudaStream_t compute_stream;
-  cudaStream_t h2d_stream;
-  cudaStream_t d2h_stream;
-  cudaStream_t pack_stream;
-  cudaStream_t unpack_stream;
+  hapiStream_t compute_stream;
+  hapiStream_t h2d_stream;
+  hapiStream_t d2h_stream;
+  hapiStream_t pack_stream;
+  hapiStream_t unpack_stream;
 
   // For thermo communication
   int i;
@@ -59,11 +59,11 @@ public:
 
   ~Block(){
     //may want to delete instances[?]
-    cudaStreamDestroy(compute_stream);
-    cudaStreamDestroy(h2d_stream);
-    cudaStreamDestroy(d2h_stream);
-    cudaStreamDestroy(pack_stream);
-    cudaStreamDestroy(unpack_stream);
+    hapiStreamDestroy(compute_stream);
+    hapiStreamDestroy(h2d_stream);
+    hapiStreamDestroy(d2h_stream);
+    hapiStreamDestroy(pack_stream);
+    hapiStreamDestroy(unpack_stream);
 
     delete force;
   }
@@ -75,14 +75,14 @@ public:
   void run_neighbour_build(CkCallback cb);
   void run();
   void printConfig();
-  void suspend(Kokkos::Cuda instance){
-    hapiAddCallback(instance.cuda_stream(), CkCallbackResumeThread());
+  void suspend(Kokkos::DefaultExecutionSpace instance){
+    hapiAddCallback(kokkos_instance_stream(instance), CkCallbackResumeThread());
   }
   void comms_recv(int ref, size_t size, char*& data, CkDeviceBufferPost* postInfo){
       // ckout<<"comms_recv recv_size "<<size<<endl;
       int iswap = ref%comm->maxswap_static;
 
-      postInfo[0].hapi_stream = unpack_instance.cuda_stream();
+      postInfo[0].hapi_stream = kokkos_instance_stream(unpack_instance);
       data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
@@ -91,9 +91,9 @@ public:
     int iswap = ref%comm->maxswap_static;
     comm->nrecvcomm[iswap] = size / (sizeof(MMD_float)*atom.border_size);
     if (size / sizeof(MMD_float) > comm->maxrecvcomm[iswap]) {
-      comm->growrecvcomm(iswap, size / sizeof(MMD_float), pack_instance.cuda_stream());
+      comm->growrecvcomm(iswap, size / sizeof(MMD_float), kokkos_instance_stream(pack_instance));
     }
-    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    postInfo[0].hapi_stream = kokkos_instance_stream(pack_instance);
     data = (char*)((comm->buf_comms_recv[iswap]).data());
   }
 
@@ -102,16 +102,16 @@ public:
   int recv_idim = ref % 3;
   if(is_dummy) {
     comm->nrecvexchange[2*recv_idim] = 0;
-    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    postInfo[0].hapi_stream = kokkos_instance_stream(pack_instance);
     data = (char*)(comm->buf_comm_dummy);
     return;
   }
   size_t start_idx = comm->post_exchange_recv_count[recv_idim];
   comm->nrecvexchange[2*recv_idim] = size/sizeof(MMD_float);
   if(size / sizeof(MMD_float) > (comm->maxrecvcomm[recv_idim] - comm->post_exchange_recv_count[recv_idim])){
-    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], pack_instance.cuda_stream());
+    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], kokkos_instance_stream(pack_instance));
   }
-  postInfo[0].hapi_stream = pack_instance.cuda_stream();
+  postInfo[0].hapi_stream = kokkos_instance_stream(pack_instance);
   data = (char*)(comm->buf_comms_recv[recv_idim].data()+comm->post_exchange_recv_count[recv_idim]);
   comm->post_exchange_recv_count[recv_idim] += size/sizeof(MMD_float);
 }
@@ -121,16 +121,16 @@ void exchange_2_recv_2(int ref, size_t size, bool is_dummy, char*& data, CkDevic
   int recv_idim = ref % 3;
   if(is_dummy) {
     comm->nrecvexchange[2*recv_idim+1] = 0;
-    postInfo[0].hapi_stream = pack_instance.cuda_stream();
+    postInfo[0].hapi_stream = kokkos_instance_stream(pack_instance);
     data = (char*)(comm->buf_comm_dummy);
     return;
   }
   size_t start_idx = comm->post_exchange_recv_count[recv_idim];
   comm->nrecvexchange[2*recv_idim+1] = size/sizeof(MMD_float);
   if(size / sizeof(MMD_float) > (comm->maxrecvcomm[recv_idim] - comm->post_exchange_recv_count[recv_idim])){
-    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], pack_instance.cuda_stream());
+    comm->growrecvcomm(recv_idim, size / sizeof(MMD_float) + comm->post_exchange_recv_count[recv_idim], kokkos_instance_stream(pack_instance));
   }
-  postInfo[0].hapi_stream = pack_instance.cuda_stream();
+  postInfo[0].hapi_stream = kokkos_instance_stream(pack_instance);
   data = (char*)(comm->buf_comms_recv[recv_idim].data()+comm->post_exchange_recv_count[recv_idim]);
   comm->post_exchange_recv_count[recv_idim] += size/sizeof(MMD_float);
 }

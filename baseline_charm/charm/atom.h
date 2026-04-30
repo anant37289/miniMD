@@ -58,11 +58,11 @@ class Atom
     struct TagAtomUnpackReverse {};
     struct TagAtomSort {};
 
-    Kokkos::Cuda compute_instance;
-    Kokkos::Cuda h2d_instance;
-    Kokkos::Cuda d2h_instance;
-    Kokkos::Cuda pack_instance;
-    Kokkos::Cuda unpack_instance;
+    Kokkos::DefaultExecutionSpace compute_instance;
+    Kokkos::DefaultExecutionSpace h2d_instance;
+    Kokkos::DefaultExecutionSpace d2h_instance;
+    Kokkos::DefaultExecutionSpace pack_instance;
+    Kokkos::DefaultExecutionSpace unpack_instance;
 
     typedef int value_type;
     int natoms;

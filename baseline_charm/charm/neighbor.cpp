@@ -54,7 +54,7 @@ Neighbor::Neighbor(int ntypes_)
 
   cutneighsq = float_1d_view_type("Neighbor::cutneighsq",ntypes*ntypes);
   new_maxneighs = int_1d_view_type("Neighbor::new_maxneighs",1);
-  h_new_maxneighs = Kokkos::create_mirror_view(Kokkos::CudaHostPinnedSpace(), new_maxneighs);
+  h_new_maxneighs = Kokkos::create_mirror_view(DeviceHostPinnedSpace(), new_maxneighs);
   team_neigh_build = 0;
 
   shared_mem_size = 0;
@@ -722,8 +722,8 @@ MMD_float Neighbor::bindist(int i, int j, int k)
   return (delx * delx + dely * dely + delz * delz);
 }
 
-void Neighbor::suspend(Kokkos::Cuda instance) {
+void Neighbor::suspend(Kokkos::DefaultExecutionSpace instance) {
   resume_cb = new CkCallbackResumeThread();
-  hapiAddCallback(instance.cuda_stream(), resume_cb);
+  hapiAddCallback(kokkos_instance_stream(instance), resume_cb);
   delete resume_cb;
 }

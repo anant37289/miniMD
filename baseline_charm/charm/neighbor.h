@@ -45,11 +45,11 @@ class Neighbor
     template<int HALF_NEIGH,bool STACK_ARRAYS>
     struct TagNeighborBuild {};
 
-    Kokkos::Cuda compute_instance;
-    Kokkos::Cuda h2d_instance;
-    Kokkos::Cuda d2h_instance;
-    Kokkos::Cuda pack_instance;
-    Kokkos::Cuda unpack_instance;
+    Kokkos::DefaultExecutionSpace compute_instance;
+    Kokkos::DefaultExecutionSpace h2d_instance;
+    Kokkos::DefaultExecutionSpace d2h_instance;
+    Kokkos::DefaultExecutionSpace pack_instance;
+    Kokkos::DefaultExecutionSpace unpack_instance;
 
     int every;                       // re-neighbor every this often
     int nbinx, nbiny, nbinz;         // # of global bins
@@ -73,7 +73,7 @@ class Neighbor
     void dealloc();
     int setup(Atom &);               // setup bins based on box and cutoff
     void build(Atom &);              // create neighbor list
-    void suspend(Kokkos::Cuda);
+    void suspend(Kokkos::DefaultExecutionSpace);
 
     // Atom is going to call binatoms etc for sorting
     void binatoms(Atom & atom, int count = -1);           // bin all atoms

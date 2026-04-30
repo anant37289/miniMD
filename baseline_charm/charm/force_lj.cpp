@@ -107,7 +107,7 @@ void ForceLJ::compute(Atom &atom, Neighbor &neighbor, Comm* comm, int me)
   eng_vdwl = 0;
   virial = 0;
 
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABEL_ROCM)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_ROCM) || defined(KOKKOS_ENABLE_HIP)
   const int host_device = 0;
 #else
   const int host_device = 1;

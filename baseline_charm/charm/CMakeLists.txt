@@ -16,7 +16,15 @@ find_package(Kokkos 4.5 REQUIRED CONFIG)
 if(Charm_ENABLE_GPU)
     message(STATUS "Building for a GPU backend")
     add_definitions(-DGPU_BACKEND)
-    add_definitions(-DCUDA_DIR=\"${CUDA_DIR}\")
+
+    if(Kokkos_ENABLE_CUDA)
+        message(STATUS "Kokkos Backend: CUDA")
+        add_definitions(-DCUDA_DIR=\"${CUDA_DIR}\")
+    elseif(Kokkos_ENABLE_HIP)
+        message(STATUS "Kokkos Backend: HIP")
+        set(CMAKE_CXX_COMPILER hipcc)
+    endif()
+
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GPU_OPTS} ${LD_OPTS}")
 else()
     message(STATUS "Building for a CPU backend")
@@ -58,7 +66,7 @@ if(Charm_ENABLE_GPU)
         OUTPUT "${CMAKE_BINARY_DIR}/miniMD"
         COMMAND ${CHARMC} ${GPU_LINK_OPTS_LIST} $<TARGET_OBJECTS:miniMD> -o ${CMAKE_BINARY_DIR}/miniMD
         DEPENDS miniMD $<TARGET_OBJECTS:miniMD>
-        COMMENT "Linking miniMD build against kokkos and cuda"
+        COMMENT "Linking miniMD build against kokkos and cuda or hip"
         COMMAND_EXPAND_LISTS
     )
 
