@@ -3,10 +3,23 @@ MPI_PATH = $(MPI_ROOT)
 
 #Set the path to Kokkos
 KOKKOS_PATH = $(HOME)/kokkos
-#Set the Devices to compile for
+
+# Build target: "cuda" (default) or "hip" for AMD GPUs
+TARGET ?= cuda
+
+# ROCm install path (used when TARGET=hip)
+ROCM_PATH ?= /opt/rocm
+
+# Set the Devices to compile for and Architecture
+ifeq ($(TARGET), hip)
+KOKKOS_DEVICES = HIP
+# Default architecture for MI250X (CDNA2) — can be overridden by KOKKOS_ARCH
+KOKKOS_ARCH = AMD_GFX90A
+else
 KOKKOS_DEVICES = Cuda
-#Set the Architecture to compiler for
+# Set CUDA defaults
 KOKKOS_ARCH = Power9,Volta70
+endif
 #Set third party library usage
 KOKKOS_USE_TPL =
 
@@ -14,9 +27,21 @@ CXXFLAGS = -O3 -g
 LINKFLAGS =
 LIB =
 
-CXX = $(KOKKOS_PATH)/bin/nvcc_wrapper
 override CXXFLAGS += -I$(MPI_PATH)/include
+
+# Choose compiler wrapper depending on target
+ifeq ($(TARGET), hip)
+# Prefer system hipcc for HIP builds
+CXX ?= $(ROCM_PATH)/bin/hipcc
+# Ensure we define AMD HIP platform macro
+override CXXFLAGS += -D__HIP_PLATFORM_AMD__=1
+# Link AMD HIP runtime
 LINK = mpicxx
+LINKFLAGS += -L$(ROCM_PATH)/lib -lamdhip64
+else
+CXX ?= $(KOKKOS_PATH)/bin/nvcc_wrapper
+LINK = mpicxx
+endif
 
 EXE = miniMD
 

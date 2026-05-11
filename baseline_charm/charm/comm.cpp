@@ -81,6 +81,11 @@ Comm::Comm()
 
 Comm::~Comm() {}
 
+void Comm::commReady() {
+  // Notify Main that this Comm element is ready
+  main_proxy.commArrayReady();
+}
+
 int Comm::setup(MMD_float cutneigh, Atom &atom)
 {
   int i;

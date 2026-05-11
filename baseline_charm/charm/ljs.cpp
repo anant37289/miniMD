@@ -63,6 +63,9 @@ extern int input(const char* filename, int& in_nx, int& in_ny, int& in_nz,
 class Main : public CBase_Main {
   Main_SDAG_CODE
 
+private:
+  int comm_ready_count = 0;
+
 public:
   Main(CkArgMsg* m) {
     // Default parameters
@@ -256,6 +259,16 @@ public:
     // Their constructors shouldn't call Kokkos functions
     thisProxy.run();
   }
+
+public:
+  void commArrayReady() {
+    // Count contributions from Comm array elements
+    if (++comm_ready_count == num_chares) {
+      // All Comm elements are ready; broadcast Block init
+      block_proxy.init(comm_proxy.ckGetArrayID());
+      comm_ready_count = 0;
+    }
+  }
 };
 
 KokkosManager::KokkosManager() {
@@ -289,12 +302,13 @@ void KokkosManager::finalize() {
 void blockCommProxy::setblockcomm(CProxy_Block block, CProxy_Comm comm){
   block_proxy = block;
   comm_proxy = comm;
-  thisProxy[0].setblockcommdone();
+  // Don't trigger init here; let Comm array signal when ready via commReady()
 }
 
-void blockCommProxy::setblockcommdone(){
+void blockCommProxy::commReady(){
   if(++num_contrib==CmiNumNodes()){
-    block_proxy.init();
+    // All nodes' Comm arrays are ready; now safe to broadcast Block init
+    block_proxy.init(comm_proxy.ckGetArrayID());
     num_contrib=0;
   }
 }

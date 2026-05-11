@@ -132,6 +132,7 @@
 Main(CkArgMsg* impl_msg);
 void kokkosInitialized();
 void reduceVelocity(CkReductionMsg* impl_msg);
+void commArrayReady();
 void blockInitialized();
 void blockDone();
 void kokkosFinalized();
@@ -243,6 +244,30 @@ class CkIndex_Main:public CkIndex_Chare{
     static void _call_reduceVelocity_CkReductionMsg(void* impl_msg, void* impl_obj);
     
     static void _call_sdag_reduceVelocity_CkReductionMsg(void* impl_msg, void* impl_obj);
+    /* DECLS: void commArrayReady();
+     */
+    // Entry point registration at startup
+    
+    static int reg_commArrayReady_void();
+    // Entry point index lookup
+    
+    inline static int idx_commArrayReady_void() {
+      static int epidx = reg_commArrayReady_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_commArrayReady(void (Main::*)() ) {
+      return idx_commArrayReady_void();
+    }
+
+
+    
+    static int commArrayReady() { return idx_commArrayReady_void(); }
+    
+    static void _call_commArrayReady_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_commArrayReady_void(void* impl_msg, void* impl_obj);
     /* DECLS: void blockInitialized();
      */
     // Entry point registration at startup
@@ -434,6 +459,11 @@ class CProxy_Main:public CProxy_Chare{
     
     void reduceVelocity(CkReductionMsg* impl_msg);
 
+/* DECLS: void commArrayReady();
+ */
+    
+    void commArrayReady(const CkEntryOptions *impl_e_opts=NULL);
+
 /* DECLS: void blockInitialized();
  */
     
@@ -482,11 +512,11 @@ public:                                                                        \
   void kokkosInitialized(Closure_Main::kokkosInitialized_2_closure* genClosure);\
   void kokkosInitialized();                                                    \
   void reduceVelocity(CkReductionMsg* msg_msg);                                \
-  void blockInitialized(Closure_Main::blockInitialized_4_closure* genClosure); \
+  void blockInitialized(Closure_Main::blockInitialized_5_closure* genClosure); \
   void blockInitialized();                                                     \
-  void blockDone(Closure_Main::blockDone_5_closure* genClosure);               \
+  void blockDone(Closure_Main::blockDone_6_closure* genClosure);               \
   void blockDone();                                                            \
-  void kokkosFinalized(Closure_Main::kokkosFinalized_6_closure* genClosure);   \
+  void kokkosFinalized(Closure_Main::kokkosFinalized_7_closure* genClosure);   \
   void kokkosFinalized();                                                      \
 public:                                                                        \
   SDAG::dep_ptr __dep;                                                         \
@@ -851,7 +881,7 @@ typedef CBaseT1<Group, CProxy_KokkosManager>CBase_KokkosManager;
 /* DECLS: nodegroup blockCommProxy: NodeGroup{
 blockCommProxy();
 void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
-void setblockcommdone();
+void commReady();
 };
  */
  class blockCommProxy;
@@ -916,30 +946,30 @@ class CkIndex_blockCommProxy:public CkIndex_NodeGroup{
     static int _callmarshall_setblockcomm_marshall2(char* impl_buf, void* impl_obj_void);
     
     static void _marshallmessagepup_setblockcomm_marshall2(PUP::er &p,void *msg);
-    /* DECLS: void setblockcommdone();
+    /* DECLS: void commReady();
      */
     // Entry point registration at startup
     
-    static int reg_setblockcommdone_void();
+    static int reg_commReady_void();
     // Entry point index lookup
     
-    inline static int idx_setblockcommdone_void() {
-      static int epidx = reg_setblockcommdone_void();
+    inline static int idx_commReady_void() {
+      static int epidx = reg_commReady_void();
       return epidx;
     }
 
     
-    inline static int idx_setblockcommdone(void (blockCommProxy::*)() ) {
-      return idx_setblockcommdone_void();
+    inline static int idx_commReady(void (blockCommProxy::*)() ) {
+      return idx_commReady_void();
     }
 
 
     
-    static int setblockcommdone() { return idx_setblockcommdone_void(); }
+    static int commReady() { return idx_commReady_void(); }
     
-    static void _call_setblockcommdone_void(void* impl_msg, void* impl_obj);
+    static void _call_commReady_void(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_setblockcommdone_void(void* impl_msg, void* impl_obj);
+    static void _call_sdag_commReady_void(void* impl_msg, void* impl_obj);
 };
 /* --------------- element proxy ------------------ */
 class CProxyElement_blockCommProxy: public CProxyElement_NodeGroup{
@@ -1011,10 +1041,10 @@ int ckGetGroupPe(void) const
     
     void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockcommdone();
+/* DECLS: void commReady();
  */
     
-    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void commReady(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 /* ---------------- collective proxy -------------- */
@@ -1083,10 +1113,10 @@ operator CkGroupID () const { return ckGetGroupID(); }
     
     void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockcommdone();
+/* DECLS: void commReady();
  */
     
-    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void commReady(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 /* ---------------- section proxy -------------- */
@@ -1174,10 +1204,10 @@ inline int ckGetNumElements(int i) const
     
     void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void setblockcommdone();
+/* DECLS: void commReady();
  */
     
-    void setblockcommdone(const CkEntryOptions *impl_e_opts=NULL);
+    void commReady(const CkEntryOptions *impl_e_opts=NULL);
 
 };
 #define blockCommProxy_SDAG_CODE 
@@ -1234,16 +1264,19 @@ class Closure_Main {
 
 
 
-    struct blockInitialized_4_closure;
+    struct commArrayReady_4_closure;
 
 
-    struct blockDone_5_closure;
+    struct blockInitialized_5_closure;
 
 
-    struct kokkosFinalized_6_closure;
+    struct blockDone_6_closure;
 
 
-    struct run_7_closure;
+    struct kokkosFinalized_7_closure;
+
+
+    struct run_8_closure;
 
 };
 
@@ -1267,7 +1300,7 @@ class Closure_blockCommProxy {
     struct setblockcomm_2_closure;
 
 
-    struct setblockcommdone_3_closure;
+    struct commReady_3_closure;
 
 };
 

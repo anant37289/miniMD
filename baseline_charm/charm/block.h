@@ -67,7 +67,7 @@ public:
 
 
   void saveBoundArray();
-  void init();
+  void init(CkArrayID comm_array_id);
   void contCreateVelocity(double vxtot, double vytot, double vztot);
   void run_neighbour_build(CkCallback cb);
   void run();

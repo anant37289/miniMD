@@ -8,7 +8,7 @@
 
 /* DECLS: array Block: ArrayElement{
 Block();
-void init();
+void init(const CkArrayID &comm_array_id);
 threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
 threaded void run();
 threaded void run_neighbour_build(const CkCallback &cb);
@@ -89,30 +89,34 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static void _call_Block_void(void* impl_msg, void* impl_obj);
     
     static void _call_sdag_Block_void(void* impl_msg, void* impl_obj);
-    /* DECLS: void init();
+    /* DECLS: void init(const CkArrayID &comm_array_id);
      */
     // Entry point registration at startup
     
-    static int reg_init_void();
+    static int reg_init_marshall2();
     // Entry point index lookup
     
-    inline static int idx_init_void() {
-      static int epidx = reg_init_void();
+    inline static int idx_init_marshall2() {
+      static int epidx = reg_init_marshall2();
       return epidx;
     }
 
     
-    inline static int idx_init(void (Block::*)() ) {
-      return idx_init_void();
+    inline static int idx_init(void (Block::*)(const CkArrayID &comm_array_id) ) {
+      return idx_init_marshall2();
     }
 
 
     
-    static int init() { return idx_init_void(); }
+    static int init(const CkArrayID &comm_array_id) { return idx_init_marshall2(); }
     
-    static void _call_init_void(void* impl_msg, void* impl_obj);
+    static void _call_init_marshall2(void* impl_msg, void* impl_obj);
     
-    static void _call_sdag_init_void(void* impl_msg, void* impl_obj);
+    static void _call_sdag_init_marshall2(void* impl_msg, void* impl_obj);
+    
+    static int _callmarshall_init_marshall2(char* impl_buf, void* impl_obj_void);
+    
+    static void _marshallmessagepup_init_marshall2(PUP::er &p,void *msg);
     /* DECLS: threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
      */
     // Entry point registration at startup
@@ -1431,10 +1435,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
  */
     
     void insert(int onPE=-1, const CkEntryOptions *impl_e_opts=NULL);
-/* DECLS: void init();
+/* DECLS: void init(const CkArrayID &comm_array_id);
  */
     
-    void init(const CkEntryOptions *impl_e_opts=NULL) ;
+    void init(const CkArrayID &comm_array_id, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
  */
@@ -1739,10 +1743,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
     static CkArrayID ckNew(const int s1, const CkEntryOptions *impl_e_opts=NULL);
     static void ckNew(const int s1, CkCallback _ck_array_creation_cb, const CkEntryOptions *impl_e_opts=NULL);
 
-/* DECLS: void init();
+/* DECLS: void init(const CkArrayID &comm_array_id);
  */
     
-    void init(const CkEntryOptions *impl_e_opts=NULL) ;
+    void init(const CkArrayID &comm_array_id, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
  */
@@ -2119,10 +2123,10 @@ class CkIndex_Block:public CkIndex_ArrayElement{
  */
     
 
-/* DECLS: void init();
+/* DECLS: void init(const CkArrayID &comm_array_id);
  */
     
-    void init(const CkEntryOptions *impl_e_opts=NULL) ;
+    void init(const CkArrayID &comm_array_id, const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: threaded void contCreateVelocity(double vxtot, double vytot, double vztot);
  */
@@ -2769,6 +2773,7 @@ typedef CBaseT1<ArrayElementT<CkIndex1D>, CProxy_Block>CBase_Block;
 
 /* DECLS: array Comm: ArrayElement{
 Comm();
+void commReady();
 Comm(CkMigrateMessage* impl_msg);
 };
  */
@@ -2806,6 +2811,30 @@ class CkIndex_Comm:public CkIndex_ArrayElement{
     static void _call_Comm_void(void* impl_msg, void* impl_obj);
     
     static void _call_sdag_Comm_void(void* impl_msg, void* impl_obj);
+    /* DECLS: void commReady();
+     */
+    // Entry point registration at startup
+    
+    static int reg_commReady_void();
+    // Entry point index lookup
+    
+    inline static int idx_commReady_void() {
+      static int epidx = reg_commReady_void();
+      return epidx;
+    }
+
+    
+    inline static int idx_commReady(void (Comm::*)() ) {
+      return idx_commReady_void();
+    }
+
+
+    
+    static int commReady() { return idx_commReady_void(); }
+    
+    static void _call_commReady_void(void* impl_msg, void* impl_obj);
+    
+    static void _call_sdag_commReady_void(void* impl_msg, void* impl_obj);
     /* DECLS: Comm(CkMigrateMessage* impl_msg);
      */
     // Entry point registration at startup
@@ -2924,6 +2953,11 @@ class CkIndex_Comm:public CkIndex_ArrayElement{
  */
     
     void insert(int onPE=-1, const CkEntryOptions *impl_e_opts=NULL);
+/* DECLS: void commReady();
+ */
+    
+    void commReady(const CkEntryOptions *impl_e_opts=NULL) ;
+
 /* DECLS: Comm(CkMigrateMessage* impl_msg);
  */
 
@@ -3011,6 +3045,11 @@ class CkIndex_Comm:public CkIndex_ArrayElement{
     static void      ckNew(const CkArrayOptions &opts, CkCallback _ck_array_creation_cb, const CkEntryOptions *impl_e_opts=NULL);
     static CkArrayID ckNew(const int s1, const CkEntryOptions *impl_e_opts=NULL);
     static void ckNew(const int s1, CkCallback _ck_array_creation_cb, const CkEntryOptions *impl_e_opts=NULL);
+
+/* DECLS: void commReady();
+ */
+    
+    void commReady(const CkEntryOptions *impl_e_opts=NULL) ;
 
 /* DECLS: Comm(CkMigrateMessage* impl_msg);
  */
@@ -3172,6 +3211,11 @@ class CkIndex_Comm:public CkIndex_ArrayElement{
  */
     
 
+/* DECLS: void commReady();
+ */
+    
+    void commReady(const CkEntryOptions *impl_e_opts=NULL) ;
+
 /* DECLS: Comm(CkMigrateMessage* impl_msg);
  */
 
@@ -3318,6 +3362,9 @@ class Closure_Block {
 /* ---------------- method closures -------------- */
 class Closure_Comm {
   public:
+
+
+    struct commReady_2_closure;
 
 
 };

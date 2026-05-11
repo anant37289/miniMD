@@ -48,6 +48,7 @@ mainmodule miniMD {
     entry Main(CkArgMsg* m);
     entry [reductiontarget] void kokkosInitialized();
     entry [reductiontarget] void reduceVelocity(CkReductionMsg* msg);
+    entry void commArrayReady();
     entry [reductiontarget] void blockInitialized();
     entry [reductiontarget] void blockDone();
     entry [reductiontarget] void kokkosFinalized();
@@ -62,6 +63,7 @@ mainmodule miniMD {
         opts.bindTo(block_proxy);
         comm_proxy = CProxy_Comm::ckNew(opts);
         _blockCommProxy.setblockcomm(block_proxy, comm_proxy);
+        comm_proxy.commReady();
       }
 
       when reduceVelocity(CkReductionMsg* msg) serial {
@@ -108,7 +110,7 @@ mainmodule miniMD {
   nodegroup blockCommProxy {
     entry blockCommProxy();
     entry void setblockcomm(CProxy_Block block, CProxy_Comm comm);
-    entry void setblockcommdone();
+    entry void commReady();
   }
 };
 
@@ -117,7 +119,7 @@ module block {
 
   array [1d] Block {
     entry Block();
-    entry void init();
+    entry void init(CkArrayID comm_array_id);
     entry [threaded] void contCreateVelocity(double vxtot, double vytot, double vztot);
 
     // Main code flow
@@ -478,5 +480,6 @@ module block {
   // Bound array to Block
   array [1d] Comm {
     entry Comm();
+    entry void commReady();
   };
 };

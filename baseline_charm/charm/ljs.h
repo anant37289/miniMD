@@ -22,9 +22,9 @@ public:
 
 class blockCommProxy : public CBase_blockCommProxy {
   public:
-  int num_contrib;
+  int num_contrib = 0;
   void setblockcomm(CProxy_Block block, CProxy_Comm comm);
-  void setblockcommdone();//make comm
+  void commReady();
 };
 
 #endif

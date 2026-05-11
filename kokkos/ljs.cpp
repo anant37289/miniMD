@@ -308,7 +308,11 @@ int main(int argc, char** argv)
 
   Kokkos::InitializationSettings args_kokkos;
   int visible_devices;
+  #if defined(KOKKOS_ENABLE_HIP)
+  hipGetDeviceCount(&visible_devices);//number of devices on a node
+#else
   cudaGetDeviceCount(&visible_devices);//number of devices on a node
+#endif
   int my_local_rank = me % visible_devices;
   int my_device =  my_local_rank;
   printf("rank %d takes gpu %d\n", me, my_device);

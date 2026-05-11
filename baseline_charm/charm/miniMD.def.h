@@ -69,81 +69,101 @@
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Main::blockInitialized_4_closure : public SDAG::Closure {
+    struct Closure_Main::commArrayReady_4_closure : public SDAG::Closure {
       
 
-      blockInitialized_4_closure() {
+      commArrayReady_4_closure() {
         init();
       }
-      blockInitialized_4_closure(CkMigrateMessage*) {
+      commArrayReady_4_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~blockInitialized_4_closure() {
+      virtual ~commArrayReady_4_closure() {
       }
-      PUPable_decl(SINGLE_ARG(blockInitialized_4_closure));
+      PUPable_decl(SINGLE_ARG(commArrayReady_4_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Main::blockDone_5_closure : public SDAG::Closure {
+    struct Closure_Main::blockInitialized_5_closure : public SDAG::Closure {
       
 
-      blockDone_5_closure() {
+      blockInitialized_5_closure() {
         init();
       }
-      blockDone_5_closure(CkMigrateMessage*) {
+      blockInitialized_5_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~blockDone_5_closure() {
+      virtual ~blockInitialized_5_closure() {
       }
-      PUPable_decl(SINGLE_ARG(blockDone_5_closure));
+      PUPable_decl(SINGLE_ARG(blockInitialized_5_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Main::kokkosFinalized_6_closure : public SDAG::Closure {
+    struct Closure_Main::blockDone_6_closure : public SDAG::Closure {
       
 
-      kokkosFinalized_6_closure() {
+      blockDone_6_closure() {
         init();
       }
-      kokkosFinalized_6_closure(CkMigrateMessage*) {
+      blockDone_6_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~kokkosFinalized_6_closure() {
+      virtual ~blockDone_6_closure() {
       }
-      PUPable_decl(SINGLE_ARG(kokkosFinalized_6_closure));
+      PUPable_decl(SINGLE_ARG(blockDone_6_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_Main::run_7_closure : public SDAG::Closure {
+    struct Closure_Main::kokkosFinalized_7_closure : public SDAG::Closure {
       
 
-      run_7_closure() {
+      kokkosFinalized_7_closure() {
         init();
       }
-      run_7_closure(CkMigrateMessage*) {
+      kokkosFinalized_7_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~run_7_closure() {
+      virtual ~kokkosFinalized_7_closure() {
       }
-      PUPable_decl(SINGLE_ARG(run_7_closure));
+      PUPable_decl(SINGLE_ARG(kokkosFinalized_7_closure));
+    };
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
+
+    struct Closure_Main::run_8_closure : public SDAG::Closure {
+      
+
+      run_8_closure() {
+        init();
+      }
+      run_8_closure(CkMigrateMessage*) {
+        init();
+      }
+            void pup(PUP::er& __p) {
+        packClosure(__p);
+      }
+      virtual ~run_8_closure() {
+      }
+      PUPable_decl(SINGLE_ARG(run_8_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -225,21 +245,21 @@
 
 #ifndef CK_TEMPLATES_ONLY
 
-    struct Closure_blockCommProxy::setblockcommdone_3_closure : public SDAG::Closure {
+    struct Closure_blockCommProxy::commReady_3_closure : public SDAG::Closure {
       
 
-      setblockcommdone_3_closure() {
+      commReady_3_closure() {
         init();
       }
-      setblockcommdone_3_closure(CkMigrateMessage*) {
+      commReady_3_closure(CkMigrateMessage*) {
         init();
       }
             void pup(PUP::er& __p) {
         packClosure(__p);
       }
-      virtual ~setblockcommdone_3_closure() {
+      virtual ~commReady_3_closure() {
       }
-      PUPable_decl(SINGLE_ARG(setblockcommdone_3_closure));
+      PUPable_decl(SINGLE_ARG(commReady_3_closure));
     };
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -650,6 +670,7 @@ extern "C" void __xlater_roPup_in_thermo_nstat(void *_impl_pup_er) {
 Main(CkArgMsg* impl_msg);
 void kokkosInitialized();
 void reduceVelocity(CkReductionMsg* impl_msg);
+void commArrayReady();
 void blockInitialized();
 void blockDone();
 void kokkosFinalized();
@@ -785,6 +806,38 @@ void CkIndex_Main::_call_reduceVelocity_CkReductionMsg(void* impl_msg, void* imp
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
+/* DEFS: void commArrayReady();
+ */
+void CProxy_Main::commArrayReady(const CkEntryOptions *impl_e_opts)
+{
+  ckCheck();
+  void *impl_msg = CkAllocSysMsg(impl_e_opts);
+  if (ckIsDelegated()) {
+    int destPE=CkChareMsgPrep(CkIndex_Main::idx_commArrayReady_void(), impl_msg, &ckGetChareID());
+    if (destPE!=-1) ckDelegatedTo()->ChareSend(ckDelegatedPtr(),CkIndex_Main::idx_commArrayReady_void(), impl_msg, &ckGetChareID(),destPE);
+  } else {
+    CkSendMsg(CkIndex_Main::idx_commArrayReady_void(), impl_msg, &ckGetChareID(),0);
+  }
+}
+
+// Entry point registration function
+int CkIndex_Main::reg_commArrayReady_void() {
+  int epidx = CkRegisterEp("commArrayReady()",
+      reinterpret_cast<CkCallFnPtr>(_call_commArrayReady_void), 0, __idx, 0);
+  return epidx;
+}
+
+void CkIndex_Main::_call_commArrayReady_void(void* impl_msg, void* impl_obj_void)
+{
+  Main* impl_obj = static_cast<Main*>(impl_obj_void);
+  impl_obj->commArrayReady();
+  if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
+    CkFreeSysMsg(impl_msg);
+}
+PUPable_def(SINGLE_ARG(Closure_Main::commArrayReady_4_closure))
+#endif /* CK_TEMPLATES_ONLY */
+
+#ifndef CK_TEMPLATES_ONLY
 /* DEFS: void blockInitialized();
  */
 void CProxy_Main::blockInitialized(const CkEntryOptions *impl_e_opts)
@@ -802,7 +855,7 @@ void CkIndex_Main::_call_redn_wrapper_blockInitialized_void(void* impl_msg, void
 {
   Main* impl_obj = static_cast<Main*> (impl_obj_void);
   char* impl_buf = (char*)((CkReductionMsg*)impl_msg)->getData();
-Closure_Main::blockInitialized_4_closure* genClosure = new Closure_Main::blockInitialized_4_closure();
+Closure_Main::blockInitialized_5_closure* genClosure = new Closure_Main::blockInitialized_5_closure();
   genClosure->setRefnum(CkGetRefNum((CkReductionMsg*)impl_msg));
   impl_obj->blockInitialized(genClosure);
   genClosure->deref();
@@ -831,7 +884,7 @@ void CkIndex_Main::_call_blockInitialized_void(void* impl_msg, void* impl_obj_vo
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_Main::blockInitialized_4_closure))
+PUPable_def(SINGLE_ARG(Closure_Main::blockInitialized_5_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -852,7 +905,7 @@ void CkIndex_Main::_call_redn_wrapper_blockDone_void(void* impl_msg, void* impl_
 {
   Main* impl_obj = static_cast<Main*> (impl_obj_void);
   char* impl_buf = (char*)((CkReductionMsg*)impl_msg)->getData();
-Closure_Main::blockDone_5_closure* genClosure = new Closure_Main::blockDone_5_closure();
+Closure_Main::blockDone_6_closure* genClosure = new Closure_Main::blockDone_6_closure();
   genClosure->setRefnum(CkGetRefNum((CkReductionMsg*)impl_msg));
   impl_obj->blockDone(genClosure);
   genClosure->deref();
@@ -881,7 +934,7 @@ void CkIndex_Main::_call_blockDone_void(void* impl_msg, void* impl_obj_void)
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_Main::blockDone_5_closure))
+PUPable_def(SINGLE_ARG(Closure_Main::blockDone_6_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -902,7 +955,7 @@ void CkIndex_Main::_call_redn_wrapper_kokkosFinalized_void(void* impl_msg, void*
 {
   Main* impl_obj = static_cast<Main*> (impl_obj_void);
   char* impl_buf = (char*)((CkReductionMsg*)impl_msg)->getData();
-Closure_Main::kokkosFinalized_6_closure* genClosure = new Closure_Main::kokkosFinalized_6_closure();
+Closure_Main::kokkosFinalized_7_closure* genClosure = new Closure_Main::kokkosFinalized_7_closure();
   genClosure->setRefnum(CkGetRefNum((CkReductionMsg*)impl_msg));
   impl_obj->kokkosFinalized(genClosure);
   genClosure->deref();
@@ -931,7 +984,7 @@ void CkIndex_Main::_call_kokkosFinalized_void(void* impl_msg, void* impl_obj_voi
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_Main::kokkosFinalized_6_closure))
+PUPable_def(SINGLE_ARG(Closure_Main::kokkosFinalized_7_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -963,7 +1016,7 @@ void CkIndex_Main::_call_run_void(void* impl_msg, void* impl_obj_void)
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_Main::run_7_closure))
+PUPable_def(SINGLE_ARG(Closure_Main::run_8_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -983,6 +1036,9 @@ void CkIndex_Main::__register(const char *s, size_t size) {
   // REG: void reduceVelocity(CkReductionMsg* impl_msg);
   idx_reduceVelocity_CkReductionMsg();
   idx_redn_wrapper_reduceVelocity_CkReductionMsg();
+
+  // REG: void commArrayReady();
+  idx_commArrayReady_void();
 
   // REG: void blockInitialized();
   idx_blockInitialized_void();
@@ -1069,7 +1125,7 @@ void Main::_when_0_end() {
 void Main::_serial_0() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_0()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 52 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 53 "/ccs/home/rrao/miniMD/baseline_charm/charm/ljs.ci"
 
         printf("[Main] Kokkos initialized\n");
         fflush(stdout);
@@ -1079,8 +1135,9 @@ void Main::_serial_0() {
         opts.bindTo(block_proxy);
         comm_proxy = CProxy_Comm::ckNew(opts);
         _blockCommProxy.setblockcomm(block_proxy, comm_proxy);
+        comm_proxy.commReady();
       
-#line 1084 "miniMD.def.h"
+#line 1141 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_0_end();
@@ -1123,7 +1180,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
   {
     CkReductionMsg*& msg = gen0;
     { // begin serial block
-#line 62 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 64 "/ccs/home/rrao/miniMD/baseline_charm/charm/ljs.ci"
 
         CkPrintf("[Main] Reducing velocities...\n");
         double vxtot = 0;
@@ -1139,7 +1196,7 @@ void Main::_serial_1(CkReductionMsg* gen0) {
         }
         block_proxy.contCreateVelocity(vxtot, vytot, vztot);
       
-#line 1143 "miniMD.def.h"
+#line 1200 "miniMD.def.h"
     } // end serial block
   }
   _TRACE_END_EXECUTE(); 
@@ -1177,12 +1234,12 @@ void Main::_when_2_end() {
 void Main::_serial_2() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_2()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 77 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 79 "/ccs/home/rrao/miniMD/baseline_charm/charm/ljs.ci"
 
         CkPrintf("[Main] Blocks initialized\n");
         block_proxy.run();
       
-#line 1186 "miniMD.def.h"
+#line 1243 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_2_end();
@@ -1219,13 +1276,13 @@ void Main::_when_3_end() {
 void Main::_serial_3() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_3()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 81 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 83 "/ccs/home/rrao/miniMD/baseline_charm/charm/ljs.ci"
 
         printf("[Main] Blocks complete\n");
         fflush(stdout);
         kokkos_proxy.finalize();
       
-#line 1229 "miniMD.def.h"
+#line 1286 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_3_end();
@@ -1262,12 +1319,12 @@ void Main::_when_4_end() {
 void Main::_serial_4() {
   _TRACE_BEGIN_EXECUTE_DETAILED(-1, -1, (_sdag_idx_Main_serial_4()), CkMyPe(), 0, NULL, this); 
   { // begin serial block
-#line 86 "/u/ajain18/miniMD/baseline_charm/charm/ljs.ci"
+#line 88 "/ccs/home/rrao/miniMD/baseline_charm/charm/ljs.ci"
 
         CkPrintf("[Main] Kokkos finalized\n");
         CkExit();
       
-#line 1271 "miniMD.def.h"
+#line 1328 "miniMD.def.h"
   } // end serial block
   _TRACE_END_EXECUTE(); 
   _when_4_end();
@@ -1316,14 +1373,14 @@ void Main::reduceVelocity(CkReductionMsg* msg_msg){
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Main::blockInitialized(){
-  Closure_Main::blockInitialized_4_closure* genClosure = new Closure_Main::blockInitialized_4_closure();
+  Closure_Main::blockInitialized_5_closure* genClosure = new Closure_Main::blockInitialized_5_closure();
   blockInitialized(genClosure);
   genClosure->deref();
 }
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Main::blockInitialized(Closure_Main::blockInitialized_4_closure* genClosure){
+void Main::blockInitialized(Closure_Main::blockInitialized_5_closure* genClosure){
   if (!__dep.get()) _sdag_init();
   __dep->pushBuffer(2, genClosure);
   SDAG::Continuation* c = __dep->tryFindContinuation(2);
@@ -1339,14 +1396,14 @@ void Main::blockInitialized(Closure_Main::blockInitialized_4_closure* genClosure
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Main::blockDone(){
-  Closure_Main::blockDone_5_closure* genClosure = new Closure_Main::blockDone_5_closure();
+  Closure_Main::blockDone_6_closure* genClosure = new Closure_Main::blockDone_6_closure();
   blockDone(genClosure);
   genClosure->deref();
 }
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Main::blockDone(Closure_Main::blockDone_5_closure* genClosure){
+void Main::blockDone(Closure_Main::blockDone_6_closure* genClosure){
   if (!__dep.get()) _sdag_init();
   __dep->pushBuffer(3, genClosure);
   SDAG::Continuation* c = __dep->tryFindContinuation(3);
@@ -1362,14 +1419,14 @@ void Main::blockDone(Closure_Main::blockDone_5_closure* genClosure){
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
 void Main::kokkosFinalized(){
-  Closure_Main::kokkosFinalized_6_closure* genClosure = new Closure_Main::kokkosFinalized_6_closure();
+  Closure_Main::kokkosFinalized_7_closure* genClosure = new Closure_Main::kokkosFinalized_7_closure();
   kokkosFinalized(genClosure);
   genClosure->deref();
 }
 
 #endif /* CK_TEMPLATES_ONLY */
 #ifndef CK_TEMPLATES_ONLY
-void Main::kokkosFinalized(Closure_Main::kokkosFinalized_6_closure* genClosure){
+void Main::kokkosFinalized(Closure_Main::kokkosFinalized_7_closure* genClosure){
   if (!__dep.get()) _sdag_init();
   __dep->pushBuffer(4, genClosure);
   SDAG::Continuation* c = __dep->tryFindContinuation(4);
@@ -1414,15 +1471,17 @@ void Main::__sdag_register() { // Potentially missing Main_SDAG_CODE in your cla
   (void)_sdag_idx_Main_serial_3();
   (void)_sdag_idx_Main_serial_4();
   PUPable_reg(SINGLE_ARG(Closure_Main::kokkosInitialized_2_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::blockInitialized_4_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::blockDone_5_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::kokkosFinalized_6_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::run_7_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::commArrayReady_4_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::blockInitialized_5_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::blockDone_6_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::kokkosFinalized_7_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::run_8_closure));
   PUPable_reg(SINGLE_ARG(Closure_Main::kokkosInitialized_2_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::blockInitialized_4_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::blockDone_5_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::kokkosFinalized_6_closure));
-  PUPable_reg(SINGLE_ARG(Closure_Main::run_7_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::commArrayReady_4_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::blockInitialized_5_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::blockDone_6_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::kokkosFinalized_7_closure));
+  PUPable_reg(SINGLE_ARG(Closure_Main::run_8_closure));
 }
 #endif /* CK_TEMPLATES_ONLY */
 
@@ -1720,7 +1779,7 @@ void CkIndex_KokkosManager::__register(const char *s, size_t size) {
 /* DEFS: nodegroup blockCommProxy: NodeGroup{
 blockCommProxy();
 void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
-void setblockcommdone();
+void commReady();
 };
  */
 #ifndef CK_TEMPLATES_ONLY
@@ -1767,17 +1826,17 @@ void CProxyElement_blockCommProxy::setblockcomm(const CProxy_Block &block, const
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void setblockcommdone();
+/* DEFS: void commReady();
  */
-void CProxyElement_blockCommProxy::setblockcommdone(const CkEntryOptions *impl_e_opts)
+void CProxyElement_blockCommProxy::commReady(const CkEntryOptions *impl_e_opts)
 {
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupID());
-     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupPe(), ckGetGroupID());
   } else {
-    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
+    CkSendMsgNodeBranch(CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupPe(), ckGetGroupID(),0);
   }
 }
 #endif /* CK_TEMPLATES_ONLY */
@@ -1900,33 +1959,33 @@ PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setblockcomm_2_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void setblockcommdone();
+/* DEFS: void commReady();
  */
-void CProxy_blockCommProxy::setblockcommdone(const CkEntryOptions *impl_e_opts)
+void CProxy_blockCommProxy::commReady(const CkEntryOptions *impl_e_opts)
 {
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupID());
-     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupID());
-  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetGroupID(),0);
+     CkNodeGroupMsgPrep(CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupID());
+     ckDelegatedTo()->NodeGroupBroadcast(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupID());
+  } else CkBroadcastMsgNodeBranch(CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetGroupID(),0);
 }
 
 // Entry point registration function
-int CkIndex_blockCommProxy::reg_setblockcommdone_void() {
-  int epidx = CkRegisterEp("setblockcommdone()",
-      reinterpret_cast<CkCallFnPtr>(_call_setblockcommdone_void), 0, __idx, 0);
+int CkIndex_blockCommProxy::reg_commReady_void() {
+  int epidx = CkRegisterEp("commReady()",
+      reinterpret_cast<CkCallFnPtr>(_call_commReady_void), 0, __idx, 0);
   return epidx;
 }
 
-void CkIndex_blockCommProxy::_call_setblockcommdone_void(void* impl_msg, void* impl_obj_void)
+void CkIndex_blockCommProxy::_call_commReady_void(void* impl_msg, void* impl_obj_void)
 {
   blockCommProxy* impl_obj = static_cast<blockCommProxy*>(impl_obj_void);
-  impl_obj->setblockcommdone();
+  impl_obj->commReady();
   if(UsrToEnv(impl_msg)->isVarSysMsg() == 0)
     CkFreeSysMsg(impl_msg);
 }
-PUPable_def(SINGLE_ARG(Closure_blockCommProxy::setblockcommdone_3_closure))
+PUPable_def(SINGLE_ARG(Closure_blockCommProxy::commReady_3_closure))
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
@@ -1971,19 +2030,19 @@ void CProxySection_blockCommProxy::setblockcomm(const CProxy_Block &block, const
 #endif /* CK_TEMPLATES_ONLY */
 
 #ifndef CK_TEMPLATES_ONLY
-/* DEFS: void setblockcommdone();
+/* DEFS: void commReady();
  */
-void CProxySection_blockCommProxy::setblockcommdone(const CkEntryOptions *impl_e_opts)
+void CProxySection_blockCommProxy::commReady(const CkEntryOptions *impl_e_opts)
 {
   ckCheck();
   void *impl_msg = CkAllocSysMsg(impl_e_opts);
   if (ckIsDelegated()) {
-     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
+     ckDelegatedTo()->NodeGroupSectionSend(ckDelegatedPtr(),CkIndex_blockCommProxy::idx_commReady_void(), impl_msg, ckGetNumSections(), ckGetSectionIDs());
   } else {
     void *impl_msg_tmp;
     for (int i=0; i<ckGetNumSections(); ++i) {
        impl_msg_tmp= (i<ckGetNumSections()-1) ? CkCopyMsg((void **) &impl_msg):impl_msg;
-       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_setblockcommdone_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
+       CkSendMsgNodeBranchMulti(CkIndex_blockCommProxy::idx_commReady_void(), impl_msg_tmp, ckGetGroupIDn(i), ckGetNumElements(i), ckGetElements(i),0);
     }
   }
 }
@@ -2003,8 +2062,8 @@ void CkIndex_blockCommProxy::__register(const char *s, size_t size) {
   // REG: void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
   idx_setblockcomm_marshall2();
 
-  // REG: void setblockcommdone();
-  idx_setblockcommdone_void();
+  // REG: void commReady();
+  idx_commReady_void();
 
 }
 #endif /* CK_TEMPLATES_ONLY */
@@ -2100,6 +2159,7 @@ void _registerminiMD(void)
 Main(CkArgMsg* impl_msg);
 void kokkosInitialized();
 void reduceVelocity(CkReductionMsg* impl_msg);
+void commArrayReady();
 void blockInitialized();
 void blockDone();
 void kokkosFinalized();
@@ -2119,7 +2179,7 @@ void finalize();
 /* REG: nodegroup blockCommProxy: NodeGroup{
 blockCommProxy();
 void setblockcomm(const CProxy_Block &block, const CProxy_Comm &comm);
-void setblockcommdone();
+void commReady();
 };
 */
   CkIndex_blockCommProxy::__register("blockCommProxy", sizeof(blockCommProxy));

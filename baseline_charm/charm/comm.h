@@ -78,6 +78,7 @@ class Comm : public CBase_Comm
     Comm();
     ~Comm();
     void init();
+    void commReady();
     int setup(MMD_float, Atom &);
     void communicate(Atom &, bool);
     void reverse_communicate(Atom &, bool);

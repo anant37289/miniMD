@@ -58,9 +58,13 @@ extern void create_velocity_2(double t_request, Atom &atom, Thermo &thermo,
 Block::Block() : atom(ntypes), neighbor(ntypes), integrate(), thermo(thisIndex),
   comm(nullptr), force(nullptr) {}
 
-void Block::init() {
-  // Save pointer to Comm bound array element
-  comm = comm_proxy(thisIndex).ckLocal();
+void Block::init(CkArrayID comm_array_id) {
+  CProxy_Comm comm_pxy(comm_array_id);
+  // Save pointer to Comm bound array element (guaranteed to exist now)
+  comm = comm_pxy(thisIndex).ckLocal();
+  if (comm == nullptr) {
+    CkAbort("[Block::init] ERROR: Comm element not available on this PE after synchronization!");
+  }
 
   // Create force object
   if (in_forcetype == FORCEEAM) {
