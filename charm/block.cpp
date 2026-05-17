@@ -370,9 +370,11 @@ void Block::iterate(){
         if((iter+1)%(lb_every)==0)
           if(shouldDoLB) {
             Kokkos::fence();
+            #ifdef CMK_LB_USER_DATA
             thisProxy[thisIndex].mark_lb_start(CkCallbackResumeThread());
             void *data = getObjUserData(CkpvAccess(_lb_obj_index)); 
             *(size_t*)data = getAllocSize();
+            #endif
             AtSync();
             shouldDoLB = false;
             return;

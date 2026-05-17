@@ -33,7 +33,6 @@
 #define ATOM_H
 
 #include "types.h"
-#include "Kokkos_Sort.hpp"
 
 class Neighbor;
 struct Box {
